@@ -19,7 +19,7 @@ export const getBinData = async (): Promise<BinData> => {
   try {
     const res = await fetch(JSONBIN_URL_GET, {
       cache: "no-store",
-      headers: { "Accept": "application/json" }
+      headers: { Accept: "application/json" },
     });
     if (!res.ok) {
       console.warn("Could not fetch bin, returning empty");
@@ -38,9 +38,9 @@ export const putBinData = async (data: BinData): Promise<void> => {
     const res = await fetch(JSONBIN_URL_PUT, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
     if (!res.ok) {
       console.error("Failed to update bin");

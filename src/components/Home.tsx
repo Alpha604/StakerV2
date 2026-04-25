@@ -1,95 +1,334 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Trophy, TrendingUp, Users, Activity, BarChart3, ArrowUpRight } from 'lucide-react';
-import { useUser } from '../context/UserContext';
-import { cn } from '../lib/utils';
-import { Leaderboard } from './Leaderboard';
+import React from "react";
+import { motion } from "motion/react";
+import {
+  Search,
+  Info,
+  Flame,
+  Grid,
+  Gamepad2,
+  Tv,
+  ArrowRightSquare,
+} from "lucide-react";
+import { useUser } from "../context/UserContext";
+import { cn } from "../lib/utils";
+import { Link } from "react-router-dom";
 
-export function Home({ setView }: { setView: (view: any) => void }) {
-  const { user, balance } = useUser();
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+const games = [
+  {
+    name: "DICE",
+    players: "3 305",
+    img: "https://mediumrare.imgix.net/30688668d7d2d48d472edd0f1e2bca0758e7ec51cbab8c04d8b7f157848640e0?w=180&h=236&fit=min&auto=format",
+    link: "dice",
+  },
+  {
+    name: "MINES",
+    players: "4 323",
+    img: "https://mediumrare.imgix.net/15a51a2ae2895872ae2b600fa6fe8d7f8d32c9814766b66ddea2b288d04ba89c?w=180&h=236&fit=min&auto=format",
+    link: "mines",
+  },
+  {
+    name: "PLINKO",
+    players: "2 467",
+    img: "https://mediumrare.imgix.net/8c1768b783a43931a4ebc8784ce64085e39139d262e6bb50da242b9f3fda70da?w=180&h=236&fit=min&auto=format",
+    link: "plinko",
+    badge: "10000×",
+  },
+  {
+    name: "MOLES",
+    players: "856",
+    img: "https://mediumrare.imgix.net/5e6f7bb02df67a02a9182aab05d0976a9abbac7f45997975eed765332a8b7d73?w=180&h=236&fit=min&auto=format",
+    link: "chicken",
+  },
+  {
+    name: "CHICKEN",
+    players: "830",
+    img: "https://mediumrare.imgix.net/a91aa468f459264d55fb9e2706c3684782cc5ecf716892c187122c611acf2773?w=180&h=236&fit=min&auto=format",
+    link: "chicken",
+  },
+  {
+    name: "CRASH",
+    players: "1 734",
+    img: "https://mediumrare.imgix.net/c830595cbd07b2561ac76a365c2f01869dec9a8fe5e7be30634d78c51b2cc91e?w=180&h=236&fit=min&auto=format",
+    link: "crash",
+  },
+  {
+    name: "KENO",
+    players: "2 340",
+    img: "https://mediumrare.imgix.net/102cf3d7c840018b939cd787bf013e080b996d80e604f3008f21dddf1f1aa201?w=180&h=236&fit=min&auto=format",
+    link: "keno",
+  },
+  {
+    name: "LIMBO",
+    players: "2 918",
+    img: "https://mediumrare.imgix.net/11caec5df20098884ae9071848e1951b8b34e5ec84a7241f2e7c5afd4b323dfd?w=180&h=236&fit=min&auto=format",
+    link: "limbo",
+    badge: "900×",
+  },
+];
 
-  const stats = [
-     { label: 'Gain le plus élevé', value: '€24,500.00', icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-     { label: 'Joueurs actifs', value: '14,203', icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-     { label: 'Pari Total 24h', value: '€1.2M', icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-     { label: 'Mines RTP', value: '99.00%', icon: Activity, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+const newGames = [
+  {
+    name: "Sweet Bonanza Stake",
+    img: "https://mediumrare.imgix.net/5292ebbf1d5d1c251d17cf3607736dbdf1da3e3bb5140bf6f168019a3eb6ea9f?w=180&h=236&fit=min&auto=format",
+    link: "slots",
+  },
+  {
+    name: "Gates of Stake",
+    img: "https://mediumrare.imgix.net/ed306767eb326d96de5b8db5c07740eadd2453c8969f6ba5d99cd2ff9d7fbef8?w=180&h=236&fit=min&auto=format",
+    link: "slots",
+  },
+  {
+    name: "Tome of Life",
+    img: "https://mediumrare.imgix.net/931cf1fd7147d0d0deda93f16fb8ef556d6d42df3586214f6539a9cfcfcf57b9?w=180&h=236&fit=min&auto=format",
+    link: "tome-of-life",
+  },
+  {
+    name: "Sugar Rush Stake",
+    img: "https://mediumrare.imgix.net/23fb04e6c9cf1c26b2160d5dd70a3c42878efaeacaae59a4be2ab8eb746571fa?w=180&h=236&fit=min&auto=format",
+    link: "slots",
+  },
+  {
+    name: "Stake's Book of Pyramids",
+    img: "https://mediumrare.imgix.net/df723c3b01aeff024daaf321f8a846ff9d8cf218c5e636fba7298c430e3bb4a7?w=180&h=236&fit=min&auto=format",
+    link: "slots",
+  },
+  {
+    name: "Wanted Dead or a Wild",
+    img: "https://mediumrare.imgix.net/30413009aa2db97ce93259ce34b172a39223bb35afdc1eebdb63dd9df88d75cf?w=180&h=236&fit=min&auto=format",
+    link: "slots",
+  },
+  {
+    name: "Dork Unit",
+    img: "https://mediumrare.imgix.net/eeb27572adbf7a845942472dffbd551ed9ac36468a52934ff24ca51ca22eeda7?w=180&h=236&fit=min&auto=format",
+    link: "slots",
+  },
+];
+
+export function Home({ setView }: { setView: (view: string) => void }) {
+  const [activeTab, setActiveTab] = React.useState("Accueil du casino");
+  const tabs = [
+    { name: "Accueil du casino", icon: Grid },
+    { name: "Uniquement sur Stake", icon: Flame },
+    { name: "Nouvelles sorties", icon: Info },
+    { name: "Originaux de Stake", icon: Gamepad2 },
+    { name: "Machines à sous", icon: ArrowRightSquare },
+    { name: "Casino en direct", icon: Tv },
   ];
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col gap-8 min-h-[calc(100vh-80px)] overflow-x-hidden">
-      
-      {/* Hero Banner */}
-      <div className="relative w-full h-[280px] md:h-[320px] rounded-2xl overflow-hidden shadow-2xl flex flex-col justify-center px-8 md:px-16 border border-border-medium">
-         {/* Background */}
-         <div className="absolute inset-0 bg-gradient-to-r from-[#1475e1] to-[#0d2b52] z-0"></div>
-         
-         {/* Abstract shapes */}
-         <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 z-0 pointer-events-none">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
-               <polygon points="0,100 100,0 100,100" fill="url(#hero-gradient)" />
-               <defs>
-                  <linearGradient id="hero-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                     <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
-                     <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-                  </linearGradient>
-               </defs>
-            </svg>
-         </div>
-
-         {/* Content */}
-         <div className="relative z-10 max-w-xl">
-            <h1 className="text-4xl md:text-5xl font-black text-white leading-tight mb-4 drop-shadow-lg">
-               L'expérience de jeu <br/><span className="text-yellow-400">ultime.</span>
-            </h1>
-            <p className="text-blue-100 text-lg mb-8 max-w-md">Découvrez une large sélection de jeux originaux avec les rendements les plus élevés du marché.</p>
-            <button 
-               onClick={() => setView('originals')}
-               className="bg-white text-[#1475e1] hover:bg-gray-100 px-8 py-3.5 rounded-md font-bold shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center gap-2 w-fit"
-            >
-               Jouer Maintenant <ArrowUpRight size={20} />
+    <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
+      {/* Banners */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div
+          className="bg-[#213743] rounded-xl flex overflow-hidden relative min-h-[160px] group cursor-pointer"
+          onClick={() => setView("slots")}
+        >
+          <div className="flex flex-col z-10 w-2/3 p-5">
+            <span className="text-[10px] text-[#00bcd4] bg-[#00bcd4]/10 w-max px-2 py-0.5 rounded font-bold mb-2 uppercase">
+              Uniquement Sur Stake
+            </span>
+            <h3 className="text-white font-bold text-lg leading-tight mb-1">
+              Dream Princess
+            </h3>
+            <p className="text-text-secondary text-sm mb-4">Titan Gaming</p>
+            <button className="bg-transparent border border-text-secondary group-hover:border-white text-white font-bold py-1.5 px-4 rounded text-sm w-fit mt-auto transition-colors">
+              Jouez maintenant
             </button>
-         </div>
+          </div>
+          <div className="absolute right-0 top-0 bottom-0 w-[45%]">
+            <img
+              src="https://mediumrare.imgix.net/14d7a0494fb21ecef5c40ee55a407db3ea80d19e9131ff1c7a40eb82087da2ba?w=400&h=250&fit=crop&auto=format"
+              alt="Dream Princess"
+              className="w-full h-full object-cover object-left"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#213743] to-transparent"></div>
+          </div>
+        </div>
+
+        <div
+          className="bg-[#1a3848] rounded-xl flex overflow-hidden relative min-h-[160px] group cursor-pointer"
+          onClick={() => setView("stats")}
+        >
+          <div className="flex flex-col z-10 w-2/3 p-5">
+            <span className="text-[10px] text-accent bg-accent/10 w-max px-2 py-0.5 rounded font-bold mb-2 uppercase">
+              Only on Stake
+            </span>
+            <h3 className="text-white font-bold text-lg leading-tight mb-1">
+              Boost VIP, Uniquement s...
+            </h3>
+            <p className="text-text-secondary text-sm mb-4 line-clamp-2">
+              Progression VIP boostée à 2x
+            </p>
+            <button className="bg-transparent border border-text-secondary group-hover:border-white text-white font-bold py-1.5 px-4 rounded text-sm w-fit mt-auto transition-colors">
+              En savoir plus
+            </button>
+          </div>
+          <div className="absolute right-0 top-0 bottom-0 w-[45%]">
+            <img
+              src="https://stake.com/_next/image?url=https%3A%2F%2Fmediumrare.imgix.net%2Fac8444aebbdb9af510bd55110eb2b48d28a303dd5e777ccae63a2cb859a013ad&w=800&q=75"
+              alt="Boost VIP"
+              className="w-full h-full object-cover object-left scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#1a3848] to-transparent"></div>
+          </div>
+        </div>
+
+        <div
+          className="bg-[#242635] rounded-xl flex overflow-hidden relative min-h-[160px] group cursor-pointer"
+          onClick={() => setView("originals")}
+        >
+          <div className="flex flex-col z-10 w-[60%] p-5">
+            <span className="text-[10px] text-white bg-white/20 w-max px-2 py-0.5 rounded font-bold mb-2 uppercase">
+              Promotion
+            </span>
+            <h3 className="text-white font-bold text-lg leading-tight mb-1">
+              Course Quotidienne
+            </h3>
+            <p className="text-text-secondary text-sm mb-4">
+              Entrez dans le jeu !
+            </p>
+            <button className="bg-transparent border border-text-secondary group-hover:border-white text-white font-bold py-1.5 px-4 rounded text-sm w-fit mt-auto transition-colors">
+              Jouez maintenant
+            </button>
+          </div>
+          <div className="absolute right-0 top-0 bottom-0 w-1/2">
+            <img
+              src="https://stake.com/_next/image?url=https%3A%2F%2Fmediumrare.imgix.net%2F58ddf1883be12e752be3d01fcfab8195a9de2898bdafb3799d1e3ee410da202a&w=800&q=75"
+              alt="Course"
+              className="w-full h-full object-cover object-left"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#242635] to-transparent"></div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <h2 className="text-white text-xl font-bold tracking-tight -mb-2 flex items-center gap-2 mt-4">
-         <BarChart3 className="text-accent" /> Statistiques de la plateforme
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-         {stats.map((stat, i) => {
-            const Icon = stat.icon;
-            return (
-               <div key={i} className="bg-bg-panel border border-border-medium rounded-xl p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform">
-                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center shrink-0", stat.bg)}>
-                     <Icon className={stat.color} size={24} />
-                  </div>
-                  <div>
-                     <p className="text-text-secondary text-xs uppercase font-bold tracking-wider mb-1">{stat.label}</p>
-                     <p className="text-white font-black text-xl tabular-nums">{stat.value}</p>
-                  </div>
-               </div>
-            )
-         })}
+      {/* Search Input */}
+      <div className="relative mb-6">
+        <Search
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
+          size={20}
+        />
+        <input
+          type="text"
+          placeholder="Cherchez votre jeu"
+          className="w-full bg-bg-panel border border-border-subtle rounded-xl py-3 pl-12 pr-4 text-white font-medium focus:outline-none focus:border-border-medium hover:border-border-medium transition-colors cursor-text hover:bg-bg-inner"
+        />
       </div>
 
-      {/* Leaderboard Preview */}
-      <div className="mt-4 flex flex-col items-center justify-center bg-bg-panel border border-border-medium rounded-xl p-8">
-         <Trophy className="text-yellow-400 mb-4" size={48} />
-         <h3 className="text-white font-bold text-2xl mb-2">Classement Mondial</h3>
-         <p className="text-text-secondary mb-6 text-center max-w-md">Découvrez les joueurs ayant le plus grand solde et affrontez-les pour devenir le numéro 1 !</p>
-         <button 
-             onClick={() => setShowLeaderboard(true)}
-             className="bg-accent hover:bg-accent-hover text-white font-bold py-3 px-8 rounded-md transition-colors"
-         >
-             Voir le Leaderboard
-         </button>
+      {/* Nav Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide border-b border-border-subtle mb-6">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.name;
+          return (
+            <button
+              key={tab.name}
+              onClick={() => setActiveTab(tab.name)}
+              className={cn(
+                "whitespace-nowrap px-4 py-2.5 rounded-full flex items-center gap-2 text-sm font-bold transition-colors",
+                active
+                  ? "bg-bg-inner text-white"
+                  : "text-text-secondary hover:bg-bg-panel hover:text-white",
+              )}
+            >
+              <Icon size={16} /> {tab.name}
+            </button>
+          );
+        })}
       </div>
 
-      {showLeaderboard && (
-         <Leaderboard onClose={() => setShowLeaderboard(false)} />
-      )}
+      {/* section: Originaux de Stake */}
+      <div className="flex items-center justify-between mb-4 mt-2">
+        <h2 className="text-white font-bold text-xl flex items-center gap-2">
+          <Flame className="text-text-secondary" size={24} /> Originaux de Stake
+        </h2>
+        <button
+          onClick={() => setView("originals")}
+          className="text-sm font-bold text-text-secondary hover:text-white transition-colors"
+        >
+          Voir Tout
+        </button>
+      </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
+        {games.map((game) => (
+          <div
+            key={game.name}
+            className="flex flex-col group cursor-pointer"
+            onClick={() => setView(game.link)}
+          >
+            <div className="relative rounded-lg overflow-hidden aspect-[3/4] mb-2 bg-bg-panel group-hover:-translate-y-1 transition-transform shadow-lg">
+              <img
+                src={game.img}
+                alt={game.name}
+                className="w-full h-full object-cover"
+              />
+              {game.badge && (
+                <div className="absolute top-2 left-2 bg-[#ffb300] text-[#0f172a] text-[10px] font-black px-1.5 rounded uppercase tracking-tighter">
+                  {game.badge}
+                </div>
+              )}
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
+              <div className="absolute bottom-2 inset-x-0 bottom-indicator group-hover:opacity-100 opacity-0 transition-opacity flex justify-center">
+                <div className="bg-black/60 rounded-full px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1 backdrop-blur-sm">
+                  <Info size={10} /> Info
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#00e676]"></div>
+              <span className="text-[11px] font-bold text-text-secondary group-hover:text-white transition-colors">
+                {game.players}{" "}
+                <span className="font-medium opacity-70">joueurs</span>
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* section: Machines à sous (Only on Stake / new games) */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white font-bold text-xl flex items-center gap-2">
+          <ArrowRightSquare className="text-text-secondary" size={24} />{" "}
+          Machines à sous
+        </h2>
+        <button
+          onClick={() => setView("slots")}
+          className="text-sm font-bold text-text-secondary hover:text-white transition-colors"
+        >
+          Voir Tout
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+        {newGames.map((game) => (
+          <div
+            key={game.name}
+            className="flex flex-col group cursor-pointer"
+            onClick={() => setView(game.link)}
+          >
+            <div className="relative rounded-lg overflow-hidden aspect-[3/4] mb-2 bg-bg-panel group-hover:-translate-y-1 transition-transform shadow-lg">
+              <img
+                src={game.img}
+                alt={game.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-bold text-text-secondary group-hover:text-white transition-colors truncate">
+                {game.name}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-center mt-4 mb-12">
+        <button className="bg-bg-panel hover:bg-bg-inner border border-text-secondary hover:border-white text-white font-bold px-12 py-3 rounded-full text-sm transition-colors cursor-pointer">
+          Charger Plus
+        </button>
+      </div>
     </div>
   );
 }
