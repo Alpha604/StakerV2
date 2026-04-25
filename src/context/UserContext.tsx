@@ -97,6 +97,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedUser)
     }).catch(console.error);
+
+    // Also sync to our robust local fallback
+    const allUsersStr = localStorage.getItem('stake_all_users') || '{}';
+    const allUsers = JSON.parse(allUsersStr);
+    if (allUsers[updatedUser.username]) {
+       allUsers[updatedUser.username] = { ...allUsers[updatedUser.username], ...updatedUser };
+       localStorage.setItem('stake_all_users', JSON.stringify(allUsers));
+    }
   };
 
   const login = async (username: string, password?: string, isRegister?: boolean) => {
@@ -123,6 +131,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const data = await res.json();
           localUser.balance = data.user?.balance ?? 100;
           localUser.vault = data.user?.vault ?? 1000;
+        } else {
+           throw new Error("API not ok");
         }
       } else {
         const res = await fetch('/api/user/login', {
@@ -137,22 +147,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localUser.totalWagered = data.user?.totalWagered ?? 0;
           localUser.totalWon = data.user?.totalWon ?? 0;
         } else {
-          return false; // Wrong password
+          throw new Error("API not ok");
         }
       }
     } catch (e) {
-      console.warn("API Error, falling back to local storage login");
-      // Fallback: If it's a login, check if there's a stored user that matches
-      const saved = localStorage.getItem('stake_user_session');
-      if (saved && !isRegister) {
-        const parsedUser = JSON.parse(saved) as CustomUser;
-        if (parsedUser.username !== username) {
-           return false;
-        }
-        localUser.balance = parsedUser.balance;
-        localUser.vault = parsedUser.vault;
-        localUser.totalWagered = parsedUser.totalWagered;
-        localUser.totalWon = parsedUser.totalWon;
+      console.warn("API Error, utilizing local storage user base");
+      const allUsersStr = localStorage.getItem('stake_all_users') || '{}';
+      const allUsers = JSON.parse(allUsersStr);
+
+      if (isRegister) {
+         if (allUsers[username]) {
+            return false; // user exists
+         }
+         allUsers[username] = { ...localUser, password }; // storing pw just locally for simple match
+         localStorage.setItem('stake_all_users', JSON.stringify(allUsers));
+      } else {
+         const found = allUsers[username];
+         if (!found || found.password !== password) return false;
+         
+         localUser.balance = found.balance;
+         localUser.vault = found.vault;
+         localUser.totalWagered = found.totalWagered;
+         localUser.totalWon = found.totalWon;
       }
     }
 
