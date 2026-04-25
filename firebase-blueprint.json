@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user's profile and wallet balance.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID matching auth.uid" },
+        "email": { "type": "string", "description": "User's email" },
+        "displayName": { "type": "string", "description": "User's display name" },
+        "photoURL": { "type": "string", "description": "User's avatar URL" },
+        "balance": { "type": "number", "description": "User's StakeCoin balance" },
+        "totalWagered": { "type": "number", "description": "Total amount wagered" },
+        "totalWon": { "type": "number", "description": "Total amount won" },
+        "createdAt": { "type": "number", "description": "Timestamp of creation" },
+        "updatedAt": { "type": "number", "description": "Timestamp of last update" }
+      },
+      "required": ["userId", "balance", "createdAt", "updatedAt"]
+    },
+    "Bet": {
+      "title": "Bet",
+      "description": "A record of a game bet for the live feed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "game": { "type": "string" },
+        "betAmount": { "type": "number" },
+        "multiplier": { "type": "number" },
+        "payout": { "type": "number" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["userId", "userName", "game", "betAmount", "multiplier", "payout", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and wallet data."
+    },
+    "/bets/{betId}": {
+      "schema": "Bet",
+      "description": "Global bet stream."
+    }
+  }
+}

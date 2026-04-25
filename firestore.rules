@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- PRIMITIVES ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // --- VALIDATION BLUEPRINTS ---
+    function isValidUser(data, isCreate) {
+      return (
+        data.userId is string && data.userId == request.auth.uid &&
+        data.balance is number && data.balance >= 0 &&
+        data.createdAt is number &&
+        data.updatedAt is number &&
+        data.get('email', '') is string && data.get('email', '').size() <= 200 &&
+        data.get('displayName', '') is string && data.get('displayName', '').size() <= 100 &&
+        data.get('photoURL', '') is string && data.get('photoURL', '').size() <= 500 &&
+        data.get('totalWagered', 0) is number &&
+        data.get('totalWon', 0) is number
+      ) &&
+      (!isCreate || data.keys().size() <= 9);
+    }
+
+    function isValidBet(data) {
+      return (
+        data.userId is string && data.userId == request.auth.uid &&
+        data.userName is string && data.userName.size() <= 100 &&
+        data.game is string && data.game.size() <= 50 &&
+        data.betAmount is number && data.betAmount >= 0 &&
+        data.multiplier is number && data.multiplier >= 0 &&
+        data.payout is number &&
+        data.timestamp is number &&
+        data.keys().size() <= 8
+      );
+    }
+
+    // --- COLLECTIONS ---
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming(), true);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming(), false) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'balance', 'totalWagered', 'totalWon', 'updatedAt', 'displayName', 'photoURL'
+        ]) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt;
+      allow delete: if false; 
+    }
+
+    match /bets/{betId} {
+      allow read: if true; 
+      allow create: if isSignedIn() && isValidId(betId) && isValidBet(incoming());
+      allow update, delete: if false; 
+    }
+  }
+}
