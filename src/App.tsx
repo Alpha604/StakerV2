@@ -21,8 +21,10 @@ import { Baccarat } from './components/Baccarat';
 import { TomeOfLife } from './components/TomeOfLife';
 import { Stats } from './components/Stats';
 import { LiveSessionWidget } from './components/LiveSessionWidget';
+import { Blackjack } from './components/Blackjack';
+import { Chicken } from './components/Chicken';
 
-export type ViewType = 'home' | 'originals' | 'mines' | 'roulette' | 'keno' | 'dice' | 'plinko' | 'crash' | 'limbo' | 'wheel' | 'hilo' | 'dragon-tower' | 'flip' | 'slide' | 'video-poker' | 'baccarat' | 'tome-of-life' | 'stats';
+export type ViewType = 'home' | 'originals' | 'mines' | 'roulette' | 'keno' | 'dice' | 'plinko' | 'crash' | 'limbo' | 'wheel' | 'hilo' | 'dragon-tower' | 'flip' | 'slide' | 'video-poker' | 'baccarat' | 'tome-of-life' | 'stats' | 'blackjack' | 'chicken';
 
 export default function App() {
   const [view, setView] = useState<ViewType>('home');
@@ -52,6 +54,8 @@ export default function App() {
               {view === 'video-poker' && <VideoPoker />}
               {view === 'baccarat' && <Baccarat />}
               {view === 'tome-of-life' && <TomeOfLife />}
+              {view === 'blackjack' && <Blackjack />}
+              {view === 'chicken' && <Chicken />}
               {view === 'stats' && <Stats />}
            </main>
         </div>

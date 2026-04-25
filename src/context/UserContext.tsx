@@ -102,47 +102,63 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password?: string, isRegister?: boolean) => {
     if (username.length < 3) return false;
     
-    if (isRegister) {
-      const res = await fetch('/api/user/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      const localUser: CustomUser = {
-        id: data.user.username,
-        username: data.user.username,
-        balance: data.user.balance,
-        vault: data.user.vault,
-        totalWagered: data.user.totalWagered,
-        totalWon: data.user.totalWon,
-      };
-      
-      setUser(localUser);
-      localStorage.setItem('stake_user_session', JSON.stringify(localUser));
-      return true;
-    } else {
-      const res = await fetch('/api/user/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      const localUser: CustomUser = {
-        id: data.user.username,
-        username: data.user.username,
-        balance: data.user.balance,
-        vault: data.user.vault,
-        totalWagered: data.user.totalWagered,
-        totalWon: data.user.totalWon,
-      };
-      
-      setUser(localUser);
-      localStorage.setItem('stake_user_session', JSON.stringify(localUser));
-      return true;
+    // Always create a generic user first via local
+    const localUser: CustomUser = {
+      id: username,
+      username: username,
+      balance: isRegister ? 100 : 0, // give some initial balance
+      vault: 1000,
+      totalWagered: 0,
+      totalWon: 0,
+    };
+
+    try {
+      if (isRegister) {
+        const res = await fetch('/api/user/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localUser.balance = data.user?.balance ?? 100;
+          localUser.vault = data.user?.vault ?? 1000;
+        }
+      } else {
+        const res = await fetch('/api/user/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localUser.balance = data.user?.balance ?? 0;
+          localUser.vault = data.user?.vault ?? 1000;
+          localUser.totalWagered = data.user?.totalWagered ?? 0;
+          localUser.totalWon = data.user?.totalWon ?? 0;
+        } else {
+          return false; // Wrong password
+        }
+      }
+    } catch (e) {
+      console.warn("API Error, falling back to local storage login");
+      // Fallback: If it's a login, check if there's a stored user that matches
+      const saved = localStorage.getItem('stake_user_session');
+      if (saved && !isRegister) {
+        const parsedUser = JSON.parse(saved) as CustomUser;
+        if (parsedUser.username !== username) {
+           return false;
+        }
+        localUser.balance = parsedUser.balance;
+        localUser.vault = parsedUser.vault;
+        localUser.totalWagered = parsedUser.totalWagered;
+        localUser.totalWon = parsedUser.totalWon;
+      }
     }
+
+    setUser(localUser);
+    localStorage.setItem('stake_user_session', JSON.stringify(localUser));
+    return true;
   };
 
   const logoutUser = async () => {

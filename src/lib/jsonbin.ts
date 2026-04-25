@@ -5,6 +5,7 @@ export interface BinUser {
   username: string;
   password?: string;
   balance: number;
+  vault?: number;
   totalWagered: number;
   totalWon: number;
 }

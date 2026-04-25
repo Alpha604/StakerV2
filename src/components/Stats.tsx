@@ -52,7 +52,7 @@ export function Stats() {
     return acc;
   }, {} as Record<string, number>);
   
-  const barData = Object.entries(gamesProfit).map(([name, profit]) => ({ name, profit: parseFloat(profit.toFixed(2)) })).sort((a,b) => b.profit - a.profit);
+  const barData = Object.entries(gamesProfit).map(([name, profit]) => ({ name, profit: parseFloat((profit as number).toFixed(2)) })).sort((a,b) => b.profit - a.profit);
 
   // Profit over time chart data
   let currentProfit = 0;
