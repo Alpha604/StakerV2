@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { X, ArrowRightLeft, Wallet, Vault, CreditCard, Bitcoin, Landmark } from 'lucide-react';
+import { X, ArrowRightLeft, Wallet, Vault, CreditCard, Bitcoin, Landmark, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 export function WalletModal({ onClose }: { onClose: () => void }) {
-  const { user, balance, vault, transferToVault, transferFromVault, addBalance } = useUser();
+  const { user, balance, vault, transferToVault, transferFromVault, addBalance, subtractBalance } = useUser();
   const [amount, setAmount] = useState('100');
-  const [tab, setTab] = useState<'deposit' | 'withdraw' | 'buy'>('buy');
+  const [tab, setTab] = useState<'buy' | 'cashout' | 'vault_in' | 'vault_out'>('buy');
   const [method, setMethod] = useState<'crypto' | 'card' | 'bank'>('crypto');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   
   const handleAction = async () => {
     setError('');
+    setSuccessMsg('');
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) {
       setError("Montant invalide");
@@ -23,26 +25,44 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
 
     if (tab === 'buy') {
-      // Simulate real money deposit adding directly to vault OR balance
       setTimeout(async () => {
          await addBalance(val);
          setLoading(false);
          setAmount('');
+         setSuccessMsg(`Dépôt de $${val} réussi !`);
+         setTimeout(() => setSuccessMsg(''), 3000);
+      }, 1000);
+      return;
+    }
+
+    if (tab === 'cashout') {
+      setTimeout(async () => {
+         const ok = await subtractBalance(val);
+         setLoading(false);
+         if (!ok) {
+            setError('Fonds insuffisants');
+         } else {
+            setAmount('');
+            setSuccessMsg(`Retrait de $${val} initié avec succès !`);
+            setTimeout(() => setSuccessMsg(''), 3000);
+         }
       }, 1000);
       return;
     }
 
     let success = false;
-    if (tab === 'deposit') {
+    if (tab === 'vault_out') {
        success = await transferFromVault(val);
        if (!success) setError('Fonds insuffisants dans le Vault (Coffre)');
-    } else if (tab === 'withdraw') {
+    } else if (tab === 'vault_in') {
        success = await transferToVault(val);
-       if (!success) setError('Fonds insuffisants dans la Balance de Jeu');
+       if (!success) setError('Fonds insuffisants dans le Solde de Jeu');
     }
     
     if (success) {
       setAmount('');
+      setSuccessMsg('Transfert réussi !');
+      setTimeout(() => setSuccessMsg(''), 3000);
     }
     setLoading(false);
   };
@@ -53,12 +73,12 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="bg-bg-panel border border-border-medium rounded-2xl w-full max-w-md overflow-hidden flex flex-col"
+        className="bg-bg-panel border border-border-medium rounded-2xl w-full max-w-lg overflow-hidden flex flex-col shadow-2xl"
       >
         <div className="flex justify-between items-center p-4 border-b border-border-medium bg-bg-base/50">
           <h2 className="text-white font-bold text-lg flex items-center gap-2">
             <Wallet size={20} className="text-accent" />
-            Wallet & Vault
+            Portefeuille & Vault
           </h2>
           <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors bg-bg-inner p-1.5 rounded-full">
             <X size={18} />
@@ -71,7 +91,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
              <div className="flex-1 bg-bg-base border border-border-medium rounded-xl p-4 flex flex-col justify-center items-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-accent opacity-5 blur-xl rounded-full"></div>
                 <span className="text-xs text-text-secondary uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
-                   <Wallet size={12} /> Jeu
+                   <Wallet size={12} /> Solde Jeu
                 </span>
                 <span className="text-xl font-bold font-mono text-white">${balance.toFixed(2)}</span>
              </div>
@@ -85,32 +105,38 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                 <span className="text-xs text-text-secondary uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
                    <Vault size={12} /> Vault
                 </span>
-                <span className="text-xl font-bold font-mono text-indigo-400">${vault?.toFixed(2) || '0.00'}</span>
+                <span className="text-xl font-bold font-mono text-indigo-400">${vault.toFixed(2)}</span>
              </div>
           </div>
 
-          <div className="bg-bg-base rounded-xl p-1 flex">
+          <div className="bg-bg-base border border-border-medium rounded-xl p-1 grid grid-cols-4 gap-1">
              <button
                onClick={() => setTab('buy')}
-               className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", tab === 'buy' ? "bg-bg-panel text-white shadow" : "text-text-secondary hover:text-white")}
+               className={cn("py-2 px-1 text-xs font-bold rounded-lg transition-all flex flex-col items-center justify-center gap-1", tab === 'buy' ? "bg-bg-panel text-white shadow border border-border-medium" : "text-text-secondary hover:text-white")}
              >
-               Acheter
+               <ArrowDownToLine size={14} className="text-green-500"/> Acheter
              </button>
              <button
-               onClick={() => setTab('deposit')}
-               className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", tab === 'deposit' ? "bg-bg-panel text-white shadow" : "text-text-secondary hover:text-white")}
+               onClick={() => setTab('cashout')}
+               className={cn("py-2 px-1 text-xs font-bold rounded-lg transition-all flex flex-col items-center justify-center gap-1", tab === 'cashout' ? "bg-bg-panel text-white shadow border border-border-medium" : "text-text-secondary hover:text-white")}
              >
-               Sortir du Vault
+               <ArrowUpFromLine size={14} className="text-red-500"/> Retirer
              </button>
              <button
-               onClick={() => setTab('withdraw')}
-               className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", tab === 'withdraw' ? "bg-bg-panel text-white shadow" : "text-text-secondary hover:text-white")}
+               onClick={() => setTab('vault_in')}
+               className={cn("py-2 px-1 text-xs font-bold rounded-lg transition-all flex flex-col items-center justify-center gap-1", tab === 'vault_in' ? "bg-bg-panel text-white shadow border border-border-medium" : "text-text-secondary hover:text-white")}
              >
-               Mettre au Vault
+               <Vault size={14} className="text-indigo-400"/> Vers Vault
+             </button>
+             <button
+               onClick={() => setTab('vault_out')}
+               className={cn("py-2 px-1 text-xs font-bold rounded-lg transition-all flex flex-col items-center justify-center gap-1", tab === 'vault_out' ? "bg-bg-panel text-white shadow border border-border-medium" : "text-text-secondary hover:text-white")}
+             >
+               <Wallet size={14} className="text-accent"/> Vers Jeu
              </button>
           </div>
 
-          {tab === 'buy' && (
+          {(tab === 'buy' || tab === 'cashout') && (
              <div className="flex gap-2">
                 {(['crypto', 'card', 'bank'] as const).map(m => (
                   <button 
@@ -134,7 +160,12 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
 
           <div className="flex flex-col gap-4">
              <div className="flex flex-col gap-1.5">
-               <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Montant ($)</label>
+               <div className="flex justify-between items-center">
+                 <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Montant ($)</label>
+                 {(tab === 'vault_in' || tab === 'cashout') && <span className="text-xs text-text-secondary font-mono">Max: ${balance.toFixed(2)}</span>}
+                 {tab === 'vault_out' && <span className="text-xs text-text-secondary font-mono">Max: ${vault.toFixed(2)}</span>}
+               </div>
+               
                <div className="relative">
                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-bold">$</span>
                  <input 
@@ -149,7 +180,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                      <button 
                        key={m}
                        onClick={() => {
-                          if (m === 'Max') setAmount(tab === 'deposit' ? String(vault || 0) : String(balance));
+                          if (m === 'Max') setAmount(tab === 'vault_out' ? String(vault || 0) : String(balance));
                           else setAmount(m);
                        }}
                        className="text-xs font-bold bg-bg-panel hover:bg-border-medium text-text-secondary hover:text-white px-2 py-1.5 rounded transition-colors"
@@ -159,25 +190,28 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                    ))}
                  </div>
                </div>
-               {error && <span className="text-xs text-red-500 font-semibold">{error}</span>}
+               {error && <span className="text-xs text-red-500 font-semibold mt-1">{error}</span>}
+               {successMsg && <span className="text-xs text-[#00e676] font-semibold mt-1">{successMsg}</span>}
              </div>
 
              <button 
                onClick={handleAction}
                disabled={loading}
                className={cn(
-                 "w-full font-bold py-4 rounded-xl mt-2 transition-colors flex justify-center items-center gap-2",
-                 tab === 'buy'
-                   ? "bg-[#00e676] hover:bg-[#00c853] text-[#0a1e12]"
-                   : tab === 'deposit' 
-                     ? "bg-indigo-600 hover:bg-indigo-500 text-white" 
-                     : "bg-[#1475e1] hover:bg-[#1b80f0] text-white"
+                 "w-full font-bold py-4 rounded-xl mt-2 transition-all flex justify-center items-center gap-2",
+                 tab === 'buy' ? "bg-[#00e676] hover:bg-[#00c853] text-[#0a1e12] shadow-[0_0_15px_rgba(0,230,118,0.2)]" : 
+                 tab === 'cashout' ? "bg-bg-inner hover:bg-border-subtle border border-border-medium text-white" :
+                 tab === 'vault_out' ? "bg-indigo-600 hover:bg-indigo-500 text-white" : 
+                 "bg-[#1475e1] hover:bg-[#1b80f0] text-white"
                )}
              >
                {loading ? (
                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                ) : (
-                 tab === 'buy' ? 'Acheter' : tab === 'deposit' ? 'Transférer vers Solde de Jeu' : 'Mettre au coffre (Vault)'
+                 tab === 'buy' ? 'Acheter depuis le compte' : 
+                 tab === 'cashout' ? 'Encaisser (Retirer sur compte)' : 
+                 tab === 'vault_out' ? 'Transférer vers Solde de Jeu' : 
+                 'Mettre au coffre (Vault)'
                )}
              </button>
           </div>

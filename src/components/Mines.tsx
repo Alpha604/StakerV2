@@ -64,8 +64,15 @@ export function Mines() {
   
   const calculateMultiplier = (mines: number, revealed: number) => {
     if (revealed === 0) return 1.00;
-    const baseMult = 1 + (mines * 0.1);
-    return Number(Math.pow(baseMult, revealed).toFixed(2));
+    
+    let prob = 1;
+    for (let i = 0; i < revealed; i++) {
+        prob *= (25 - mines - i) / (25 - i);
+    }
+    
+    // House edge of 3%
+    const expectedMult = (1 / prob) * 0.97;
+    return Number(expectedMult.toFixed(2));
   };
 
   const currentMultiplier = calculateMultiplier(minesCount, revealedCount);

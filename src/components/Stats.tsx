@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
-import { Activity, TrendingUp, TrendingDown, Target, Coins } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
+import { Activity, TrendingUp, TrendingDown, Target, Coins, BarChart3 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-const COLORS = ['#1475e1', '#00e676', '#ed4163', '#e0b553', '#fbc02d', '#9b59b6', '#00bcd4', '#e67e22', '#1abc9c', '#34495e'];
+const COLORS = ['#1475e1', '#00e676', '#ed4163', '#9b59b6', '#00bcd4', '#fbc02d', '#e67e22', '#1abc9c', '#34495e'];
 
 export function Stats() {
   const { user, sessionBets } = useUser();
@@ -45,6 +45,14 @@ export function Stats() {
     return acc;
   }, {} as Record<string, number>);
   const pieData = Object.entries(gamesCount).map(([name, value]) => ({ name, value: Number(value) })).sort((a,b) => b.value - a.value);
+
+  // Bar chart data for profit by game
+  const gamesProfit = bets.reduce((acc, b) => {
+    acc[b.game] = (acc[b.game] || 0) + b.profit;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const barData = Object.entries(gamesProfit).map(([name, profit]) => ({ name, profit: parseFloat(profit.toFixed(2)) })).sort((a,b) => b.profit - a.profit);
 
   // Profit over time chart data
   let currentProfit = 0;
@@ -89,32 +97,63 @@ export function Stats() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
          {/* Area Chart */}
-         <div className="bg-bg-panel border border-border-medium rounded-xl p-6 shadow-xl">
-            <h3 className="text-white font-bold mb-6 text-lg">Évolution du Bénéfice</h3>
-            <div className="h-[300px] w-full">
+         <div className="bg-bg-panel border border-border-medium rounded-xl p-6 shadow-xl lg:col-span-2">
+            <div className="flex items-center gap-2 mb-6">
+               <TrendingUp className="text-[#00e676]" size={20} />
+               <h3 className="text-white font-bold text-lg">Évolution du Bénéfice</h3>
+            </div>
+            <div className="h-[350px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={timeData}>
+                  <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                      <defs>
                         <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#00e676" stopOpacity={0.4}/>
+                           <stop offset="5%" stopColor="#00e676" stopOpacity={0.6}/>
                            <stop offset="95%" stopColor="#00e676" stopOpacity={0}/>
                         </linearGradient>
                      </defs>
-                     <XAxis dataKey="name" stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} />
+                     <CartesianGrid strokeDasharray="3 3" stroke="#2c3b47" vertical={false} />
+                     <XAxis dataKey="name" stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} dy={10} />
                      <YAxis stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#0f212e', borderColor: '#2f4553', borderRadius: '8px', color: '#fff' }}
-                        itemStyle={{ color: '#00e676' }}
+                        cursor={{ stroke: '#5b7b93', strokeWidth: 1, strokeDasharray: '5 5' }}
+                        contentStyle={{ backgroundColor: '#0f212e', borderColor: '#2f4553', borderRadius: '8px', color: '#fff', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
+                        itemStyle={{ color: '#00e676', fontWeight: 'bold' }}
                      />
-                     <Area type="monotone" dataKey="profit" stroke="#00e676" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" />
+                     <Area type="monotone" dataKey="profit" stroke="#00e676" strokeWidth={4} fillOpacity={1} fill="url(#colorProfit)" />
                   </AreaChart>
+               </ResponsiveContainer>
+            </div>
+         </div>
+
+         {/* Bar Chart (Profit by Game) */}
+         <div className="bg-bg-panel border border-border-medium rounded-xl p-6 shadow-xl flex flex-col">
+            <div className="flex items-center gap-2 mb-6">
+               <BarChart3 className="text-accent" size={20} />
+               <h3 className="text-white font-bold text-lg">Bénéfice par Jeu</h3>
+            </div>
+            <div className="h-[300px] w-full flex-1">
+               <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                     <CartesianGrid strokeDasharray="3 3" stroke="#2c3b47" vertical={false} />
+                     <XAxis dataKey="name" stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                     <YAxis stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                     <Tooltip 
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                        contentStyle={{ backgroundColor: '#0f212e', borderColor: '#2f4553', borderRadius: '8px', color: '#fff' }}
+                     />
+                     <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
+                       {barData.map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#00e676' : '#ed4163'} />
+                       ))}
+                     </Bar>
+                  </BarChart>
                </ResponsiveContainer>
             </div>
          </div>
 
          {/* Pie Chart */}
          <div className="bg-bg-panel border border-border-medium rounded-xl p-6 shadow-xl flex flex-col">
-            <h3 className="text-white font-bold mb-6 text-lg">Répartition des Jeux</h3>
+            <h3 className="text-white font-bold mb-6 text-lg">Répartition des Jeux Joués</h3>
             <div className="h-[300px] w-full flex-1">
                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -122,10 +161,12 @@ export function Stats() {
                         data={pieData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={80}
-                        outerRadius={110}
-                        paddingAngle={5}
+                        innerRadius={90}
+                        outerRadius={120}
+                        paddingAngle={4}
                         dataKey="value"
+                        stroke="rgba(0,0,0,0.2)"
+                        strokeWidth={2}
                      >
                         {pieData.map((entry, index) => (
                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -138,11 +179,11 @@ export function Stats() {
                </ResponsiveContainer>
             </div>
             {/* Legend inside pie card */}
-            <div className="flex flex-wrap justify-center gap-4 mt-4">
+            <div className="flex flex-wrap justify-center gap-4 mt-6">
                {pieData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-2 text-sm font-bold text-text-secondary">
-                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
-                     {d.name} ({d.value})
+                  <div key={d.name} className="flex items-center gap-2 text-sm font-bold text-text-secondary bg-bg-inner px-3 py-1.5 rounded-full border border-border-subtle">
+                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
+                     {d.name} <span className="text-white ml-1">{d.value}</span>
                   </div>
                ))}
             </div>
@@ -151,13 +192,13 @@ export function Stats() {
 
       {/* History Table */}
       <div className="bg-bg-panel border border-border-medium rounded-xl shadow-xl overflow-hidden mt-4">
-         <div className="p-6 border-b border-border-medium">
+         <div className="p-6 border-b border-border-medium bg-bg-inner/30">
             <h3 className="text-white font-bold text-lg">Historique Récent (50 derniers)</h3>
          </div>
          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-bg-inner/50 border-b border-border-medium">
+                  <tr className="bg-bg-inner/80 border-b border-border-medium">
                      <th className="p-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Jeu</th>
                      <th className="p-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Heure</th>
                      <th className="p-4 text-xs font-bold text-text-secondary uppercase tracking-wider text-right">Mise</th>
@@ -170,13 +211,17 @@ export function Stats() {
                   {[...bets].reverse().slice(0, 50).map((b, i) => {
                      const profit = b.profit;
                      return (
-                        <tr key={b.timestamp + i} className="border-b border-border-medium/50 hover:bg-white/[0.02] transition-colors">
-                           <td className="p-4 text-sm font-bold text-white capitalize">{b.game.replace('-', ' ')}</td>
+                        <tr key={b.timestamp + i} className="border-b border-border-medium/50 hover:bg-white/[0.04] transition-colors">
+                           <td className="p-4 text-sm font-bold text-white capitalize flex items-center gap-2">
+                             <div className="w-2 h-2 rounded-full bg-accent"></div>
+                             {b.game.replace('-', ' ')}
+                           </td>
                            <td className="p-4 text-sm text-text-secondary font-mono">{new Date(b.timestamp).toLocaleTimeString()}</td>
                            <td className="p-4 text-sm font-mono text-white text-right">${b.wagered.toFixed(2)}</td>
                            <td className="p-4 text-sm font-mono text-text-secondary text-right">{b.multiplier.toFixed(2)}x</td>
                            <td className="p-4 text-sm font-mono text-white text-right">${b.payout.toFixed(2)}</td>
-                           <td className={cn("p-4 text-sm font-black font-mono text-right", profit > 0 ? "text-[#00e676]" : profit < 0 ? "text-[#ed4163]" : "text-text-secondary")}>
+                           <td className={cn("p-4 text-sm font-black font-mono text-right bg-gradient-to-r bg-clip-text text-transparent", 
+                               profit > 0 ? "from-[#00e676] to-[#00b25e]" : profit < 0 ? "from-[#ed4163] to-[#c8324e]" : "from-text-secondary to-text-secondary")}>
                               {profit > 0 ? '+' : ''}{profit.toFixed(2)}
                            </td>
                         </tr>
