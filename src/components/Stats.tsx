@@ -48,10 +48,10 @@ export function Stats() {
 
   // Profit over time chart data
   let currentProfit = 0;
-  const timeData = bets.map(b => {
+  const timeData = bets.map((b, i) => {
     currentProfit += b.profit;
     return {
-      name: new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      name: `Bet ${i+1}`,
       profit: parseFloat(currentProfit.toFixed(2))
     };
   });

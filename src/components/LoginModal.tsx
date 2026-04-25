@@ -17,7 +17,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
     setError('');
 
     try {
-      const success = await login(username, password);
+      const success = await login(username, password, isRegister);
       // Our simple login function creates a user if they don't exist
       // But if passwords don't match, it returns false
       if (success) {

@@ -1,144 +1,187 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { X, ArrowDownToLine, ArrowUpFromLine, Bitcoin, Landmark, CreditCard, History, CheckCircle2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { X, ArrowRightLeft, Wallet, Vault, CreditCard, Bitcoin, Landmark } from 'lucide-react';
+import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 export function WalletModal({ onClose }: { onClose: () => void }) {
-  const { balance, addBalance, subtractBalance, user } = useUser();
-  const [tab, setTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit');
-  const [amount, setAmount] = useState<string>('50');
+  const { user, balance, vault, transferToVault, transferFromVault, addBalance } = useUser();
+  const [amount, setAmount] = useState('100');
+  const [tab, setTab] = useState<'deposit' | 'withdraw' | 'buy'>('buy');
   const [method, setMethod] = useState<'crypto' | 'card' | 'bank'>('crypto');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const handleTransaction = async () => {
-    if (!user) return;
+  
+  const handleAction = async () => {
+    setError('');
     const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) return;
-
+    if (isNaN(val) || val <= 0) {
+      setError("Montant invalide");
+      return;
+    }
+    
     setLoading(true);
-    setSuccess(false);
 
-    // Simulate network delay
-    setTimeout(async () => {
-      if (tab === 'deposit') {
-        await addBalance(val);
-        setSuccess(true);
-      } else if (tab === 'withdraw') {
-        const ok = await subtractBalance(val);
-        setSuccess(ok);
-      }
-      setLoading(false);
+    if (tab === 'buy') {
+      // Simulate real money deposit adding directly to vault OR balance
+      setTimeout(async () => {
+         await addBalance(val);
+         setLoading(false);
+         setAmount('');
+      }, 1000);
+      return;
+    }
+
+    let success = false;
+    if (tab === 'deposit') {
+       success = await transferFromVault(val);
+       if (!success) setError('Fonds insuffisants dans le Vault (Coffre)');
+    } else if (tab === 'withdraw') {
+       success = await transferToVault(val);
+       if (!success) setError('Fonds insuffisants dans la Balance de Jeu');
+    }
+    
+    if (success) {
       setAmount('');
-      
-      setTimeout(() => setSuccess(false), 3000);
-    }, 1500);
+    }
+    setLoading(false);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-lg bg-bg-panel border border-border-medium rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="bg-bg-panel border border-border-medium rounded-2xl w-full max-w-md overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between p-4 border-b border-border-subtle bg-bg-base">
+        <div className="flex justify-between items-center p-4 border-b border-border-medium bg-bg-base/50">
           <h2 className="text-white font-bold text-lg flex items-center gap-2">
-            Wallet <span className="text-text-secondary font-mono bg-bg-inner px-2 py-1 rounded text-sm">${balance.toFixed(2)}</span>
+            <Wallet size={20} className="text-accent" />
+            Wallet & Vault
           </h2>
-          <button onClick={onClose} className="p-2 text-text-secondary hover:text-white rounded-full hover:bg-bg-inner transition-colors">
-            <X size={20} />
+          <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors bg-bg-inner p-1.5 rounded-full">
+            <X size={18} />
           </button>
         </div>
-
-        <div className="flex border-b border-border-subtle bg-bg-base">
-          <button 
-            onClick={() => setTab('deposit')}
-            className={cn("flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors", tab === 'deposit' ? "text-accent border-accent" : "text-text-secondary border-transparent hover:text-white hover:bg-bg-inner")}
-          >
-            <ArrowDownToLine size={16} /> Dépôt
-          </button>
-          <button 
-            onClick={() => setTab('withdraw')}
-            className={cn("flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors", tab === 'withdraw' ? "text-accent border-accent" : "text-text-secondary border-transparent hover:text-white hover:bg-bg-inner")}
-          >
-            <ArrowUpFromLine size={16} /> Retrait
-          </button>
-        </div>
-
+        
         <div className="p-6 flex flex-col gap-6">
-          <div className="flex gap-2">
-            {(['crypto', 'card', 'bank'] as const).map(m => (
-              <button 
-                key={m}
-                onClick={() => setMethod(m)}
-                className={cn(
-                  "flex-1 py-3 rounded-lg flex flex-col items-center gap-2 border transition-all",
-                  method === m 
-                    ? "bg-accent/10 border-accent text-accent" 
-                    : "bg-bg-inner border-border-medium text-text-secondary hover:text-white"
-                )}
-              >
-                {m === 'crypto' && <Bitcoin size={24} />}
-                {m === 'card' && <CreditCard size={24} />}
-                {m === 'bank' && <Landmark size={24} />}
-                <span className="text-xs font-bold uppercase">{m}</span>
-              </button>
-            ))}
+          {/* Balances Display */}
+          <div className="flex gap-4">
+             <div className="flex-1 bg-bg-base border border-border-medium rounded-xl p-4 flex flex-col justify-center items-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-accent opacity-5 blur-xl rounded-full"></div>
+                <span className="text-xs text-text-secondary uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
+                   <Wallet size={12} /> Jeu
+                </span>
+                <span className="text-xl font-bold font-mono text-white">${balance.toFixed(2)}</span>
+             </div>
+             
+             <div className="flex items-center justify-center text-border-medium">
+                <ArrowRightLeft size={20} />
+             </div>
+             
+             <div className="flex-1 bg-bg-base border border-border-medium shadow-inner rounded-xl p-4 flex flex-col justify-center items-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-16 h-16 bg-indigo-500 opacity-5 blur-xl rounded-full"></div>
+                <span className="text-xs text-text-secondary uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
+                   <Vault size={12} /> Vault
+                </span>
+                <span className="text-xl font-bold font-mono text-indigo-400">${vault?.toFixed(2) || '0.00'}</span>
+             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-text-secondary">Montant (USD)</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-bold">$</span>
-              <input 
-                type="number"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full bg-bg-inner border border-border-medium rounded-lg py-3 pl-8 pr-4 text-white font-mono text-lg focus:outline-none focus:border-accent"
-              />
-            </div>
-            {tab === 'deposit' && (
-              <div className="flex gap-2 mt-2">
-                {[50, 100, 250, 1000].map(v => (
+          <div className="bg-bg-base rounded-xl p-1 flex">
+             <button
+               onClick={() => setTab('buy')}
+               className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", tab === 'buy' ? "bg-bg-panel text-white shadow" : "text-text-secondary hover:text-white")}
+             >
+               Acheter
+             </button>
+             <button
+               onClick={() => setTab('deposit')}
+               className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", tab === 'deposit' ? "bg-bg-panel text-white shadow" : "text-text-secondary hover:text-white")}
+             >
+               Sortir du Vault
+             </button>
+             <button
+               onClick={() => setTab('withdraw')}
+               className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", tab === 'withdraw' ? "bg-bg-panel text-white shadow" : "text-text-secondary hover:text-white")}
+             >
+               Mettre au Vault
+             </button>
+          </div>
+
+          {tab === 'buy' && (
+             <div className="flex gap-2">
+                {(['crypto', 'card', 'bank'] as const).map(m => (
                   <button 
-                    key={v} 
-                    onClick={() => setAmount(v.toString())}
-                    className="flex-1 py-1 bg-bg-inner hover:bg-border-subtle rounded border border-border-medium text-text-secondary hover:text-white transition-colors text-sm font-mono"
+                    key={m}
+                    onClick={() => setMethod(m)}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl flex flex-col items-center gap-2 border transition-all",
+                      method === m 
+                        ? "bg-accent/10 border-accent text-accent" 
+                        : "bg-bg-inner border-border-medium text-text-secondary hover:text-white"
+                    )}
                   >
-                    ${v}
+                    {m === 'crypto' && <Bitcoin size={20} />}
+                    {m === 'card' && <CreditCard size={20} />}
+                    {m === 'bank' && <Landmark size={20} />}
+                    <span className="text-xs font-bold uppercase">{m}</span>
                   </button>
                 ))}
-              </div>
-            )}
-            {tab === 'withdraw' && (
-              <div className="flex gap-2 mt-2">
-                 <button 
-                    onClick={() => setAmount(balance.toString())}
-                    className="flex-1 py-1 bg-bg-inner hover:bg-border-subtle rounded border border-border-medium text-text-secondary hover:text-white transition-colors text-sm font-bold uppercase"
-                  >
-                    Max (${balance.toFixed(2)})
-                  </button>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          <button 
-            disabled={loading || !amount || parseFloat(amount) <= 0 || (tab === 'withdraw' && parseFloat(amount) > balance)}
-            onClick={handleTransaction}
-            className="w-full py-4 rounded-lg bg-accent hover:bg-accent-hover text-white font-bold text-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : success ? (
-               <><CheckCircle2 size={20} /> Succès !</>
-            ) : (
-              tab === 'deposit' ? 'Confirmer le Dépôt' : 'Demander le Retrait'
-            )}
-          </button>
+          <div className="flex flex-col gap-4">
+             <div className="flex flex-col gap-1.5">
+               <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Montant ($)</label>
+               <div className="relative">
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-bold">$</span>
+                 <input 
+                   type="number" 
+                   value={amount}
+                   onChange={e => setAmount(e.target.value)}
+                   className="w-full bg-bg-inner border border-border-medium rounded-xl p-4 pl-10 text-white font-mono font-bold focus:outline-none focus:border-accent transition-colors"
+                   placeholder="0.00"
+                 />
+                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                   {['10', '50', tab === 'buy' ? '100' : 'Max'].map(m => (
+                     <button 
+                       key={m}
+                       onClick={() => {
+                          if (m === 'Max') setAmount(tab === 'deposit' ? String(vault || 0) : String(balance));
+                          else setAmount(m);
+                       }}
+                       className="text-xs font-bold bg-bg-panel hover:bg-border-medium text-text-secondary hover:text-white px-2 py-1.5 rounded transition-colors"
+                     >
+                       {m}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+               {error && <span className="text-xs text-red-500 font-semibold">{error}</span>}
+             </div>
+
+             <button 
+               onClick={handleAction}
+               disabled={loading}
+               className={cn(
+                 "w-full font-bold py-4 rounded-xl mt-2 transition-colors flex justify-center items-center gap-2",
+                 tab === 'buy'
+                   ? "bg-[#00e676] hover:bg-[#00c853] text-[#0a1e12]"
+                   : tab === 'deposit' 
+                     ? "bg-indigo-600 hover:bg-indigo-500 text-white" 
+                     : "bg-[#1475e1] hover:bg-[#1b80f0] text-white"
+               )}
+             >
+               {loading ? (
+                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+               ) : (
+                 tab === 'buy' ? 'Acheter' : tab === 'deposit' ? 'Transférer vers Solde de Jeu' : 'Mettre au coffre (Vault)'
+               )}
+             </button>
+          </div>
+          
         </div>
       </motion.div>
     </div>

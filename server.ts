@@ -12,46 +12,99 @@ const JSONBIN_KEY = "$2a$10$IwjzylKTtK7iiXGJPWGTNesdMO8SzFxTZKMlJLu0/3sbpUtGr6kM
 const JSONBIN_URL_GET = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
 const JSONBIN_URL_PUT = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
 
-// API Routes
-app.get("/api/bin", async (req, res) => {
+let cachedBinData: { users: any[], globalBets: any[] } = { users: [], globalBets: [] };
+let isBinFetched = false;
+let flushTimeout: any = null;
+
+async function fetchBinInitial() {
   try {
     const response = await fetch(`${JSONBIN_URL_GET}/latest`, {
       headers: { "X-Master-Key": JSONBIN_KEY },
       cache: "no-store"
     });
-    if (!response.ok) {
-      if (response.status === 404) {
-        return res.json({ record: { users: [], globalBets: [] } });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.record && data.record.users) {
+        cachedBinData = data.record;
       }
-      return res.status(response.status).json({ error: "Failed to fetch from JSONBin" });
     }
-    const data = await response.json();
-    res.json(data);
+    isBinFetched = true;
   } catch (error) {
-    console.error("Bin fetch error", error);
-    res.status(500).json({ error: "Internal error" });
+    console.error("Initial bin fetch error", error);
+    isBinFetched = true;
   }
+}
+
+function scheduleFlush() {
+  if (flushTimeout) return;
+  flushTimeout = setTimeout(async () => {
+    try {
+      await fetch(JSONBIN_URL_PUT, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": JSONBIN_KEY
+        },
+        body: JSON.stringify(cachedBinData)
+      });
+    } catch (error) {
+      console.error("Bin update error", error);
+    } finally {
+      flushTimeout = null;
+    }
+  }, 5000);
+}
+
+app.use(async (req, res, next) => {
+  if (req.path.startsWith("/api/") && !isBinFetched) {
+    await fetchBinInitial();
+  }
+  next();
 });
 
-app.put("/api/bin", async (req, res) => {
-  try {
-    const response = await fetch(JSONBIN_URL_PUT, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": JSONBIN_KEY
-      },
-      body: JSON.stringify(req.body)
-    });
-    if (!response.ok) {
-      return res.status(response.status).json({ error: "Failed to update JSONBin" });
-    }
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Bin update error", error);
-    res.status(500).json({ error: "Internal error" });
+// API Routes
+app.get("/api/bin", (req, res) => {
+  res.json({ record: cachedBinData });
+});
+
+app.post("/api/user/sync", (req, res) => {
+  const { username, balance, vault, totalWagered, totalWon } = req.body;
+  const user = cachedBinData.users.find(u => u.username === username);
+  if (user) {
+    if (balance !== undefined) user.balance = balance;
+    if (vault !== undefined) user.vault = vault;
+    if (totalWagered !== undefined) user.totalWagered = totalWagered;
+    if (totalWon !== undefined) user.totalWon = totalWon;
+    scheduleFlush();
   }
+  res.json({ success: true });
+});
+
+app.post("/api/user/register", (req, res) => {
+  const { username, password } = req.body;
+  if (cachedBinData.users.some(u => u.username === username)) {
+    return res.status(400).json({ error: "Username already exists" });
+  }
+  const newUser = {
+    username,
+    password,
+    balance: 0,
+    vault: 1000,
+    totalWagered: 0,
+    totalWon: 0
+  };
+  cachedBinData.users.push(newUser);
+  scheduleFlush();
+  res.json({ success: true, user: newUser });
+});
+
+app.post("/api/user/login", (req, res) => {
+  const { username, password } = req.body;
+  const user = cachedBinData.users.find(u => u.username === username);
+  if (!user || user.password !== password) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+  res.json({ success: true, user });
 });
 
 async function startServer() {
