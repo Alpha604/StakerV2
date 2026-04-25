@@ -46,6 +46,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeSession = async () => {
       const savedUser = localStorage.getItem('stake_user_session');
+      const savedBets = localStorage.getItem('stake_session_bets');
+      
+      if (savedBets) {
+        try {
+          setSessionBets(JSON.parse(savedBets));
+        } catch (e) {}
+      }
+
       if (savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser) as CustomUser;
@@ -182,18 +190,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     saveUserLocal(updatedUser);
 
-    setSessionBets(prev => [...prev, {
-      game,
-      wagered: safeBetAmount,
-      multiplier: multiplier,
-      payout: actualPayout,
-      profit: safeProfit,
-      timestamp: Date.now()
-    }]);
+    setSessionBets(prev => {
+      const newBets = [...prev, {
+        game,
+        wagered: safeBetAmount,
+        multiplier: multiplier,
+        payout: actualPayout,
+        profit: safeProfit,
+        timestamp: Date.now()
+      }];
+      localStorage.setItem('stake_session_bets', JSON.stringify(newBets));
+      return newBets;
+    });
   };
 
   const resetSession = () => {
     setSessionBets([]);
+    localStorage.removeItem('stake_session_bets');
   };
 
   return (

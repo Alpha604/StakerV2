@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { Activity, TrendingUp, TrendingDown, Target, Coins } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-const COLORS = ['#1475e1', '#00e676', '#ed4163', '#e0b553', '#fbc02d', '#9c27b0', '#00bcd4'];
+const COLORS = ['#1475e1', '#00e676', '#ed4163', '#e0b553', '#fbc02d', '#9b59b6', '#00bcd4', '#e67e22', '#1abc9c', '#34495e'];
 
 export function Stats() {
   const { user, sessionBets } = useUser();
@@ -88,20 +88,26 @@ export function Stats() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         {/* Line Chart */}
+         {/* Area Chart */}
          <div className="bg-bg-panel border border-border-medium rounded-xl p-6 shadow-xl">
             <h3 className="text-white font-bold mb-6 text-lg">Évolution du Bénéfice</h3>
             <div className="h-[300px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeData}>
+                  <AreaChart data={timeData}>
+                     <defs>
+                        <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                           <stop offset="5%" stopColor="#00e676" stopOpacity={0.4}/>
+                           <stop offset="95%" stopColor="#00e676" stopOpacity={0}/>
+                        </linearGradient>
+                     </defs>
                      <XAxis dataKey="name" stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} />
                      <YAxis stroke="#5b7b93" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                      <Tooltip 
                         contentStyle={{ backgroundColor: '#0f212e', borderColor: '#2f4553', borderRadius: '8px', color: '#fff' }}
                         itemStyle={{ color: '#00e676' }}
                      />
-                     <Line type="monotone" dataKey="profit" stroke="#00e676" strokeWidth={3} dot={false} />
-                  </LineChart>
+                     <Area type="monotone" dataKey="profit" stroke="#00e676" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" />
+                  </AreaChart>
                </ResponsiveContainer>
             </div>
          </div>

@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 
 export function LoginModal({ onClose }: { onClose: () => void }) {
   const { login } = useUser();
+  const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,10 +18,12 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
 
     try {
       const success = await login(username, password);
+      // Our simple login function creates a user if they don't exist
+      // But if passwords don't match, it returns false
       if (success) {
         onClose();
       } else {
-        setError('Identifiants incorrects.');
+        setError(isRegister ? 'Ce nom d\'utilisateur est déjà pris' : 'Identifiants incorrects.');
       }
     } catch (err) {
       setError('Une erreur est survenue.');
@@ -37,7 +40,20 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
         className="bg-bg-panel border border-border-medium rounded-xl w-full max-w-md overflow-hidden shadow-2xl"
       >
         <div className="flex justify-between items-center p-4 border-b border-border-medium bg-bg-base/50">
-          <h2 className="text-white font-bold text-lg">Connexion</h2>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setIsRegister(false)}
+              className={`font-bold transition-colors ${!isRegister ? 'text-white' : 'text-text-secondary hover:text-white'}`}
+            >
+              Connexion
+            </button>
+            <button 
+              onClick={() => setIsRegister(true)}
+              className={`font-bold transition-colors ${isRegister ? 'text-white' : 'text-text-secondary hover:text-white'}`}
+            >
+              Inscription
+            </button>
+          </div>
           <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors">
             <X size={20} />
           </button>
@@ -52,7 +68,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
               type="text" 
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="bg-bg-inner border border-border-medium rounded p-3 text-white focus:outline-none focus:border-accent"
+              className="bg-bg-inner border border-border-medium rounded p-3 text-white focus:outline-none focus:border-accent transition-colors"
               placeholder="Ex: romeo59"
               required
             />
@@ -64,7 +80,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
               type="password" 
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="bg-bg-inner border border-border-medium rounded p-3 text-white focus:outline-none focus:border-accent"
+              className="bg-bg-inner border border-border-medium rounded p-3 text-white focus:outline-none focus:border-accent transition-colors"
               placeholder="••••••••"
               required
             />
@@ -72,10 +88,10 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
           
           <button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || username.length < 3 || password.length === 0}
             className="w-full bg-[#1475e1] hover:bg-[#1b80f0] text-white font-bold py-3 rounded mt-2 transition-colors disabled:opacity-50"
           >
-            {isLoading ? 'Connexion...' : 'Se connecter'}
+            {isLoading ? 'Chargement...' : (isRegister ? 'S\'inscrire' : 'Se connecter')}
           </button>
         </form>
       </motion.div>
