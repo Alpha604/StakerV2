@@ -1,248 +1,250 @@
 import React, { useState } from 'react';
 import { useUser, renderCryptoIcon } from '../context/UserContext';
-import { Coins } from 'lucide-react';
 import { WinPopup } from './WinPopup';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-
-type Difficulty = 'easy' | 'medium' | 'hard';
-
-const MULTIPLIERS = {
-   easy: [1.1, 1.25, 1.45, 1.7, 2.0, 2.4, 2.9, 3.5, 4.3, 5.3],
-   medium: [1.15, 1.37, 1.64, 2.00, 2.46, 3.05, 3.8, 4.8, 6.1, 7.8],
-   hard: [1.3, 1.75, 2.4, 3.5, 5.0, 7.5, 11.5, 18.0, 28.0, 45.0],
-};
-
-const SURVIVAL_RATES = {
-   easy: 0.88,
-   medium: 0.80,
-   hard: 0.65,
-};
+import { useSound } from '../lib/useSound';
 
 export function Chicken() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
-  const [betAmount, setBetAmount] = useState<number>(1);
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
+  const { playTick, playWin, playLoss, playHit } = useSound();
+  const [betAmount, setBetAmount] = useState<number>(10);
+  const [bonesCount, setBonesCount] = useState<number>(5);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [step, setStep] = useState(0); // 0 = start line
-  const [crushedAt, setCrushedAt] = useState<number | null>(null);
+  
+  // Game state
+  const [board, setBoard] = useState<{isBone: boolean, revealed: boolean}[]>(Array(25).fill({isBone: false, revealed: false}));
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
   const [winInfo, setWinInfo] = useState<{ multiplier: number, payout: number } | null>(null);
-  const [carAnimInfo, setCarAnimInfo] = useState<{ lane: number, id: number } | null>(null);
 
   const start = async () => {
     if (!user || balance < betAmount || betAmount <= 0) return;
-    const success = await subtractBalance(betAmount);
+    const success = subtractBalance(betAmount);
     if (!success) return;
+    playTick();
+
+    // Generate board
+    const newBoard = Array(25).fill({ isBone: false, revealed: false });
+    let bonesPlaced = 0;
+    while (bonesPlaced < bonesCount) {
+       const idx = Math.floor(Math.random() * 25);
+       if (!newBoard[idx].isBone) {
+          newBoard[idx] = { isBone: true, revealed: false };
+          bonesPlaced++;
+       }
+    }
+
+    setBoard(newBoard);
     setIsPlaying(true);
-    setStep(0);
-    setCrushedAt(null);
+    setGameOver(false);
+    setRevealedCount(0);
     setWinInfo(null);
   };
 
-  const currentMultipliers = MULTIPLIERS[difficulty];
-  const nextMultiplier = currentMultipliers[step];
-  const currentMultiplier = step > 0 ? currentMultipliers[step - 1] : 1;
-  const currentProfit = step > 0 ? betAmount * currentMultiplier : 0;
-
-  const handleAllez = () => {
-    if (!isPlaying || crushedAt !== null) return;
-    
-    // Check survival
-    const survived = Math.random() < SURVIVAL_RATES[difficulty];
-
-    if (survived) {
-       setStep(s => s + 1);
-       if (step + 1 >= currentMultipliers.length) {
-          // Finished the road!
-          const maxMulti = currentMultipliers[currentMultipliers.length - 1];
-          cashout(maxMulti);
-       }
-    } else {
-       // Crushed
-       setCrushedAt(step + 1);
-       setCarAnimInfo({ lane: step + 1, id: Date.now() });
-       setTimeout(() => {
-           setIsPlaying(false);
-           recordBet('Chicken', betAmount, 0, -betAmount);
-       }, 1000);
+  const calculateMultiplier = (cleared: number, totalBones: number) => {
+    if (cleared === 0) return 1;
+    const totalTiles = 25;
+    let prob = 1;
+    for (let i = 0; i < cleared; i++) {
+        prob *= (totalTiles - totalBones - i) / (totalTiles - i);
     }
+    return prob > 0 ? (0.99 / prob) : 0; 
+  };
+
+  const currentMultiplier = revealedCount > 0 ? calculateMultiplier(revealedCount, bonesCount) : 1;
+  const currentProfit = betAmount * currentMultiplier;
+
+  const handleClick = (idx: number) => {
+     if (!isPlaying || gameOver || board[idx].revealed) return;
+
+     const newBoard = [...board];
+     newBoard[idx] = { ...newBoard[idx], revealed: true };
+     setBoard(newBoard);
+
+     if (newBoard[idx].isBone) {
+         playLoss();
+         setGameOver(true);
+         setIsPlaying(false);
+         recordBet('Chicken', betAmount, 0, -betAmount);
+         setBoard(newBoard.map(b => ({ ...b, revealed: true })));
+     } else {
+         playHit();
+         setRevealedCount(r => r + 1);
+         
+         const newRevealedCount = revealedCount + 1;
+         if (newRevealedCount === 25 - bonesCount) {
+             const multi = calculateMultiplier(newRevealedCount, bonesCount);
+             cashout(multi);
+         }
+     }
   };
 
   const cashout = (forcedMulti?: number) => {
-    if (!isPlaying || crushedAt !== null) return;
-    const multi = forcedMulti || currentMultiplier;
-    if (multi > 1 || forcedMulti) {
-       const payout = betAmount * multi;
-       addBalance(payout);
-       setWinInfo({ multiplier: multi, payout });
-       recordBet('Chicken', betAmount, multi, payout - betAmount);
-    }
-    setIsPlaying(false);
+      if (!isPlaying || gameOver) return;
+      const multi = forcedMulti || currentMultiplier;
+      const payout = betAmount * multi;
+      
+      playWin();
+      addBalance(payout);
+      setWinInfo({ multiplier: multi, payout });
+      recordBet('Chicken', betAmount, multi, payout - betAmount);
+      
+      setGameOver(true);
+      setIsPlaying(false);
+      setBoard(board.map(b => ({ ...b, revealed: true })));
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
-      {/* Controls Sidebar */}
-      <div className="w-full md:w-80 bg-bg-panel border border-border-medium rounded-t-xl md:rounded-l-xl md:rounded-tr-none flex flex-col h-fit order-2 md:order-1 z-10 p-4 gap-4">
-         
-         <div className="flex bg-bg-inner p-1 rounded-full w-fit mb-2 border border-border-medium">
-            <button className="px-6 py-1.5 rounded-full text-sm font-bold bg-border-medium text-white shadow-sm">Manuel</button>
-            <button className="px-6 py-1.5 rounded-full text-sm font-bold text-text-secondary hover:text-white transition-colors">Auto</button>
-         </div>
+    <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-[320px_1fr] bg-bg-panel rounded-lg overflow-hidden shadow-2xl min-h-[600px]">
+        
+        {/* Controls Sidebar */}
+        <div className="bg-bg-panel lg:bg-[#213743] p-4 flex flex-col gap-5 border-b lg:border-b-0 lg:border-r border-border-medium z-10">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-sm font-bold text-white bg-[#2f4553] rounded-full py-2 transition-colors">Manuel</button>
+            <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded-full py-2 transition-colors">Auto</button>
+          </div>
 
-         <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center text-sm font-bold text-text-secondary uppercase tracking-wider">
-               <span>Montant du Pari</span>
-               <span>{betAmount > 0 ? betAmount.toFixed(2) : '0.00'}</span>
+          <div className="flex flex-col gap-4">
+            {/* Bet Amount */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-text-secondary text-xs font-bold"> Montant de la mise </label>
+                <span className="text-text-secondary text-xs font-bold flex items-center gap-1"> $ {(balance || 0).toFixed(2)} </span>
+              </div>
+              <div className="relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] p-1 transition-colors focus-within:border-border-hover">
+                <div className="pl-2 pr-1 flex items-center justify-center"> {renderCryptoIcon(activeCrypto, "w-4 h-4")} </div>
+                <input
+                  type="number"
+                  value={betAmount === 0 ? "" : betAmount}
+                  onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent text-white font-bold outline-none tabular-nums text-sm px-1 py-1"
+                  min="0"
+                  step="0.01"
+                  disabled={isPlaying}
+                />
+                <div className="flex items-center gap-1 pr-1 border-l border-[#2f4553] pl-2">
+                  <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors" disabled={isPlaying}> ½ </button>
+                  <div className="w-px h-3 bg-[#2f4553]"></div>
+                  <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors" disabled={isPlaying}> 2× </button>
+                </div>
+              </div>
             </div>
-            <div className="relative bg-bg-inner border border-border-medium rounded flex items-center hover:border-text-secondary transition-colors focus-within:border-accent">
-               <span className="pl-3 text-[#f7931a] flex items-center justify-center">{renderCryptoIcon(activeCrypto, "w-5 h-5")}</span>
-               <input 
-                 type="number"
-                 value={betAmount || ''}
-                 onChange={(e) => setBetAmount(Number(e.target.value))}
-                 disabled={isPlaying}
-                 className="w-full bg-transparent text-white font-mono p-3 outline-none"
-               />
-               <div className="pr-1 flex gap-1">
-                   <button onClick={() => setBetAmount(b => b/2)} className="bg-bg-panel hover:bg-border-subtle p-1.5 rounded font-bold text-xs" disabled={isPlaying}>1/2</button>
-                   <button onClick={() => setBetAmount(b => b*2)} className="bg-bg-panel hover:bg-border-subtle p-1.5 rounded font-bold text-xs" disabled={isPlaying}>2x</button>
-               </div>
-            </div>
-         </div>
 
-         <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center text-sm font-bold text-text-secondary uppercase tracking-wider">
-               <span>Difficulté</span>
-            </div>
-            <div className="relative bg-bg-inner border border-border-medium rounded hover:border-text-secondary transition-colors">
-               <select 
-                 value={difficulty}
-                 onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                 disabled={isPlaying}
-                 className="w-full bg-transparent text-white font-bold p-3 outline-none appearance-none"
-               >
-                  <option value="easy">Facile</option>
-                  <option value="medium">Moyen</option>
-                  <option value="hard">Difficile</option>
-               </select>
-            </div>
-         </div>
-
-         {isPlaying ? (
-            <div className="flex gap-2 mt-2">
-                <button 
-                  onClick={() => cashout()}
-                  disabled={step === 0 || crushedAt !== null}
-                  className="flex-1 py-3.5 rounded text-white font-black text-lg bg-[#2f4553] hover:bg-[#3d5a6c] transition-colors shadow disabled:opacity-50"
+            {/* Bones Selection */}
+            <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center px-1">
+                    <label className="text-text-secondary text-xs font-bold"> Os (Pièges) </label>
+                </div>
+                <select 
+                    value={bonesCount}
+                    onChange={(e) => setBonesCount(Number(e.target.value))}
+                    disabled={isPlaying}
+                    className="w-full bg-[#0f212e] text-white font-bold text-sm rounded border border-[#2f4553] p-2.5 focus:border-border-hover outline-none transition-colors appearance-none cursor-pointer disabled:opacity-50"
+                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1bad3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right .7rem top 50%', backgroundSize: '.65rem auto' }}
                 >
-                  Retrait
-                </button>
-                <button 
-                  onClick={handleAllez}
-                  disabled={crushedAt !== null}
-                  className="flex-1 py-3.5 rounded text-[#0f172a] font-black text-lg bg-accent hover:bg-accent-hover transition-colors shadow disabled:opacity-50"
-                >
-                  Allez
-                </button>
+                    {[...Array(24)].map((_, i) => (
+                        <option key={i+1} value={i+1}>{i+1}</option>
+                    ))}
+                </select>
             </div>
-         ) : (
-             <button 
+          </div>
+
+          <div className="flex-1"></div>
+
+          {isPlaying ? (
+              <button 
+                onClick={() => cashout()}
+                disabled={revealedCount === 0 || gameOver}
+                className="w-full py-3.5 mt-2 rounded text-white font-bold text-sm bg-[#e53935] hover:bg-[#ef5350] transition-colors shadow disabled:opacity-50"
+              >
+                 Retirer {currentProfit.toFixed(2)} $
+              </button>
+          ) : (
+              <button 
                 onClick={start}
                 disabled={!user || balance < betAmount}
-                className="w-full py-3.5 mt-2 rounded text-[#0f172a] font-black text-lg bg-accent hover:bg-accent-hover transition-colors shadow disabled:opacity-50"
-             >
-                Jouer
-             </button>
-         )}
+                className={cn(
+                    "w-full py-3.5 rounded font-bold text-sm transition-all bg-[#00e676] hover:bg-[#1bc86a] text-[#0f1116]",
+                    (!user || balance < betAmount) && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                 Pari
+              </button>
+          )}
 
-         <div className="flex flex-col gap-2 mt-2">
-            <div className="flex justify-between items-center text-sm font-bold text-text-secondary uppercase tracking-wider">
-               <span>Profit total ({step > 0 ? currentMultiplier.toFixed(2) : '1.00'}x)</span>
+        </div>
+
+        {/* Game Area */}
+        <div className="bg-[#0f212e] relative p-4 lg:p-8 flex flex-col items-center justify-center min-h-[400px]">
+            {winInfo && <WinPopup multiplier={winInfo.multiplier} payout={winInfo.payout} onClose={() => setWinInfo(null)} />}
+            
+            <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-4 max-w-[500px] w-full">
+                {board.map((tile, idx) => {
+                    const isWinningTile = tile.revealed && !tile.isBone;
+                    const isLosingTile = tile.revealed && tile.isBone && gameOver;
+                    
+                    return (
+                    <div 
+                        key={idx} 
+                        onClick={() => handleClick(idx)}
+                        className={cn(
+                            "aspect-square rounded-xl transition-all duration-300 relative group flex items-center justify-center",
+                            tile.revealed 
+                                ? (tile.isBone ? "bg-[#2f4553] shadow-inner" : "bg-[#2f4553] shadow-inner")
+                                : isPlaying 
+                                ? "bg-[#3d5a6c] hover:bg-[#4a6b80] hover:-translate-y-1 shadow-[0_6px_0_#283c48] cursor-pointer" 
+                                : "bg-[#2f4553] opacity-80 shadow-[0_6px_0_#1e2d36]"
+                        )}
+                    >
+                        <div className={cn(
+                            "absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-500",
+                            tile.revealed ? "opacity-100 scale-100" : "opacity-0 scale-50"
+                        )}>
+                            {tile.revealed && (
+                                tile.isBone 
+                                ? <span className="text-3xl sm:text-4xl md:text-5xl filter drop-shadow opacity-90 relative">
+                                       <span className="absolute inset-0 flex items-center justify-center">🦴</span>
+                                       {isLosingTile && <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl animate-pulse"></div>}
+                                  </span> 
+                                : <span className="text-3xl sm:text-4xl md:text-5xl filter drop-shadow">
+                                       🍗
+                                  </span>
+                            )}
+                        </div>
+                        {/* Cloche dome if not revealed */}
+                        {!tile.revealed && (
+                            <span className="text-2xl sm:text-3xl md:text-4xl filter drop-shadow opacity-50 group-hover:opacity-80 transition-opacity">
+                                🍽️
+                            </span>
+                        )}
+                    </div>
+                )})}
             </div>
-            <div className="relative bg-bg-inner border border-border-medium rounded flex items-center">
-               <span className="pl-3 text-[#f7931a] flex items-center justify-center">{renderCryptoIcon(activeCrypto, "w-5 h-5")}</span>
-               <input 
-                 readOnly
-                 value={currentProfit.toFixed(8)}
-                 className="w-full bg-transparent text-white font-mono p-3 outline-none opacity-50"
-               />
+            
+            {/* Multiplier Track below */}
+            <div className="w-full max-w-[500px] mt-8 bg-[#0b161f] rounded-lg p-2 flex gap-1 overflow-x-auto scrollbar-hide border border-[#2f4553]">
+                {Array.from({length: Math.min(6, 25 - bonesCount)}).map((_, i) => {
+                    const stepNum = Math.max(1, revealedCount - 2 + i);
+                    if (stepNum > 25 - bonesCount) return null;
+                    const mult = calculateMultiplier(stepNum, bonesCount);
+                    const isCurrent = stepNum === revealedCount;
+                    
+                    return (
+                        <div key={stepNum} className={cn(
+                            "flex-1 min-w-[50px] py-2 flex flex-col items-center justify-center rounded transition-all",
+                            isCurrent ? "bg-[#00e676] text-[#0f1116] scale-105 shadow-[0_0_10px_rgba(0,230,118,0.3)] z-10 font-black" : 
+                            stepNum < revealedCount ? "bg-[#00e676]/20 text-[#00e676] font-bold" : "bg-[#2f4553] text-white/50 font-bold"
+                        )}>
+                           <span className="text-[10px] sm:text-xs">{mult.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×</span>
+                        </div>
+                    )
+                })}
             </div>
-         </div>
-      </div>
-
-      {/* Game Area */}
-      <div className="flex-1 bg-[#0f212e] rounded-b-xl md:rounded-r-xl border border-border-medium relative overflow-hidden order-1 md:order-2 p-8 flex flex-col justify-end min-h-[500px]">
-          {winInfo && <WinPopup multiplier={winInfo.multiplier} payout={winInfo.payout} onClose={() => setWinInfo(null)} />}
-          
-          <div className="flex-1 w-full bg-[#1a2c38] rounded-xl overflow-hidden shadow-inner flex flex-col relative">
-             {/* Lanes */}
-             <div className="flex flex-1 h-full items-end pb-8 pl-12 overflow-x-auto scrollbar-hide">
-                 
-                 {/* Start point */}
-                 <div className="flex flex-col items-center justify-end h-full w-24 shrink-0 relative mr-4">
-                     <div className="absolute top-8 left-1/2 -translate-x-1/2 w-6 h-20 bg-bg-panel border-2 border-border-medium rounded flex flex-col justify-around p-1">
-                         <div className="w-3 h-3 rounded-full bg-yellow-500 mx-auto"></div>
-                         <div className="w-3 h-3 rounded-full bg-[#2f4553] mx-auto"></div>
-                     </div>
-                     <div className="w-full h-12 border-t-4 border-dashed border-white/20 mt-auto flex items-center justify-center">
-                         {step === 0 && crushedAt === null && (
-                            <motion.div layoutId="chicken" className="text-4xl filter drop-shadow z-20">🐔</motion.div>
-                         )}
-                     </div>
-                 </div>
-
-                 {currentMultipliers.map((multi, idx) => {
-                     const laneNum = idx + 1;
-                     const isCurrent = step === laneNum;
-                     const isCrushedHere = crushedAt === laneNum;
-                     const passed = step >= laneNum;
-                     
-                     return (
-                         <div key={idx} className="flex flex-col items-center justify-end h-full w-24 shrink-0 relative border-l border-white/5">
-                             {/* Car animation if crushed here */}
-                             {isCrushedHere && carAnimInfo?.lane === laneNum && (
-                                 <motion.div 
-                                    initial={{ y: -300 }}
-                                    animate={{ y: 0 }}
-                                    transition={{ duration: 0.3, ease: 'easeIn' }}
-                                    className="absolute bottom-12 z-30 text-5xl"
-                                 >
-                                     🚓
-                                 </motion.div>
-                             )}
-
-                             {/* Road markings */}
-                             <div className="absolute inset-0 flex flex-col items-center justify-evenly pointer-events-none opacity-20">
-                                <div className="h-4 w-1 bg-white rounded-full"></div>
-                                <div className="h-4 w-1 bg-white rounded-full"></div>
-                                <div className="h-4 w-1 bg-white rounded-full"></div>
-                                <div className="h-4 w-1 bg-white rounded-full"></div>
-                                <div className="h-4 w-1 bg-white rounded-full"></div>
-                             </div>
-
-                             <div className="w-full h-12 flex items-center justify-center relative mt-auto z-10">
-                                 {isCurrent && crushedAt === null && (
-                                     <motion.div layoutId="chicken" className="text-4xl filter drop-shadow z-20">🐔</motion.div>
-                                 )}
-                                 {isCrushedHere && (
-                                     <div className="text-4xl filter drop-shadow z-10 opacity-70 scale-y-50 mt-4">🐔</div>
-                                 )}
-                             </div>
-                             
-                             <div className={cn(
-                                 "w-20 py-2 rounded-full mt-4 text-center text-sm font-bold shadow-sm transition-colors relative z-20",
-                                 passed && crushedAt === null ? "bg-accent text-[#0f172a]" : 
-                                 isCrushedHere ? "bg-[#ed4163] text-white" : "bg-[#2f4553] text-white/80"
-                             )}>
-                                 {multi.toFixed(2)}x
-                             </div>
-                         </div>
-                     );
-                 })}
-             </div>
-          </div>
+        </div>
       </div>
     </div>
   );
 }
+
