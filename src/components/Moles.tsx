@@ -230,7 +230,11 @@ export function Moles() {
             {/* Multiplier Track below */}
             <div className="w-full max-w-[500px] mt-8 bg-[#0b161f] rounded-lg p-2 flex gap-1 overflow-x-auto scrollbar-hide border border-[#2f4553]">
                 {Array.from({length: Math.min(6, molesCount)}).map((_, i) => {
-                    const stepNum = Math.max(1, revealedCount - 2 + i);
+                    let startStep = Math.max(1, revealedCount - 2);
+                    if (startStep + Math.min(5, molesCount - 1) > molesCount) {
+                        startStep = Math.max(1, molesCount - Math.min(5, molesCount - 1));
+                    }
+                    const stepNum = startStep + i;
                     if (stepNum > molesCount) return null;
                     const mult = calculateMultiplier(stepNum, molesCount);
                     const isCurrent = stepNum === revealedCount;

@@ -6,7 +6,7 @@ import { Coins } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
 export function Slide() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [targetMultiplier, setTargetMultiplier] = useState<number>(2.0);
   const [isPlaying, setIsPlaying] = useState(false);

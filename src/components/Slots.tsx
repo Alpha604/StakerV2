@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
 export function Slots() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
   const [betAmount, setBetAmount] = useState<number>(1);
   const [isSpinning, setIsSpinning] = useState(false);
   const [reels, setReels] = useState<string[][]>([

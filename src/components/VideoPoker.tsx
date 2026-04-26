@@ -29,7 +29,7 @@ interface Card {
 }
 
 export function VideoPoker() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [cards, setCards] = useState<Card[]>([]);
   const [heldCards, setHeldCards] = useState<boolean[]>([
