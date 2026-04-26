@@ -78,45 +78,17 @@ const games = [
 
 const newGames = [
   {
-    name: "Sweet Bonanza Stake",
-    img: "https://mediumrare.imgix.net/5292ebbf1d5d1c251d17cf3607736dbdf1da3e3bb5140bf6f168019a3eb6ea9f?w=180&h=236&fit=min&auto=format",
-    link: "slots",
-    releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-  },
-  {
-    name: "Gates of Stake",
-    img: "https://mediumrare.imgix.net/ed306767eb326d96de5b8db5c07740eadd2453c8969f6ba5d99cd2ff9d7fbef8?w=180&h=236&fit=min&auto=format",
-    link: "slots",
-    releaseDate: "2023-05-10T00:00:00.000Z",
-  },
-  {
     name: "Tome of Life",
     img: "https://mediumrare.imgix.net/931cf1fd7147d0d0deda93f16fb8ef556d6d42df3586214f6539a9cfcfcf57b9?w=180&h=236&fit=min&auto=format",
     link: "tome-of-life",
     releaseDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 days ago
   },
   {
-    name: "Sugar Rush Stake",
-    img: "https://mediumrare.imgix.net/23fb04e6c9cf1c26b2160d5dd70a3c42878efaeacaae59a4be2ab8eb746571fa?w=180&h=236&fit=min&auto=format",
+    name: "Classic Slots",
+    img: "https://mediumrare.imgix.net/5292ebbf1d5d1c251d17cf3607736dbdf1da3e3bb5140bf6f168019a3eb6ea9f?w=180&h=236&fit=min&auto=format",
     link: "slots",
-    releaseDate: "2023-08-15T00:00:00.000Z",
-  },
-  {
-    name: "Stake's Book of Pyramids",
-    img: "https://mediumrare.imgix.net/df723c3b01aeff024daaf321f8a846ff9d8cf218c5e636fba7298c430e3bb4a7?w=180&h=236&fit=min&auto=format",
-    link: "slots",
-    releaseDate: "2022-11-20T00:00:00.000Z",
-  },
-  {
-    name: "Wanted Dead or a Wild",
-    img: "https://mediumrare.imgix.net/30413009aa2db97ce93259ce34b172a39223bb35afdc1eebdb63dd9df88d75cf?w=180&h=236&fit=min&auto=format",
-    link: "slots",
-  },
-  {
-    name: "Dork Unit",
-    img: "https://mediumrare.imgix.net/eeb27572adbf7a845942472dffbd551ed9ac36468a52934ff24ca51ca22eeda7?w=180&h=236&fit=min&auto=format",
-    link: "slots",
-  },
+    releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  }
 ];
 
 export function Home({ setView }: { setView: (view: string) => void }) {
@@ -178,7 +150,7 @@ export function Home({ setView }: { setView: (view: string) => void }) {
                   : "text-text-secondary hover:bg-bg-panel hover:text-white",
               )}
             >
-              <Icon size={16} /> {tab.name}
+              <Icon size={16} /> <span>{tab.name}</span>
             </button>
           );
         })}
@@ -187,7 +159,7 @@ export function Home({ setView }: { setView: (view: string) => void }) {
       {/* section: Originaux de Stake */}
       <div className="flex items-center justify-between mb-4 mt-2">
         <h2 className="text-white font-bold text-xl flex items-center gap-2">
-          <Flame className="text-text-secondary" size={24} /> Originaux de Stake
+          <Flame className="text-text-secondary" size={24} /> <span>Originaux de Stake</span>
         </h2>
         <button
           onClick={() => setView("originals")}
@@ -253,7 +225,7 @@ export function Home({ setView }: { setView: (view: string) => void }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-white font-bold text-xl flex items-center gap-2">
           <ArrowRightSquare className="text-text-secondary" size={24} />{" "}
-          Machines à sous
+          <span>Machines à sous</span>
         </h2>
         <button
           onClick={() => setView("slots")}

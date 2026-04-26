@@ -360,6 +360,7 @@ export function Mines() {
                     <AnimatePresence>
                       {(cell === "picked_gem" || cell === "revealed_gem") && (
                         <motion.div
+                          key="gem"
                           initial={cell === "picked_gem" ? { scale: 0 } : { opacity: 0 }}
                           animate={cell === "picked_gem" ? { scale: 1 } : { opacity: 0.4 }}
                           transition={cell === "picked_gem" ? { type: "spring", stiffness: 400, damping: 15, delay: 0.1 } : { duration: 0.3 }}
@@ -367,6 +368,7 @@ export function Mines() {
                         >
                           {cell === "picked_gem" && (
                             <motion.div
+                              key="gem-effect"
                               initial={{ opacity: 0, scale: 0 }}
                               animate={{ opacity: [0, 0.4, 0], scale: [1, 1.5, 2] }}
                               transition={{ duration: 0.5, ease: "easeOut" }}
@@ -389,6 +391,7 @@ export function Mines() {
                       )}
                       {(cell === "picked_bomb" || cell === "revealed_bomb") && (
                         <motion.div
+                          key="bomb"
                           initial={cell === "picked_bomb" ? { scale: 0 } : { opacity: 0 }}
                           animate={cell === "picked_bomb" ? { scale: [1, 1.2, 1] } : { opacity: 0.5 }}
                           transition={{ duration: 0.4, delay: 0.1 }}
@@ -396,6 +399,7 @@ export function Mines() {
                         >
                           {cell === "picked_bomb" && (
                             <motion.div
+                              key="bomb-effect"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: [0, 0.5, 0] }}
                               transition={{ duration: 0.5 }}
