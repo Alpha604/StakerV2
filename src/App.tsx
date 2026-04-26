@@ -3,7 +3,6 @@ import { UserProvider } from "./context/UserContext";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { Home } from "./components/Home";
-import { Originals } from "./components/Originals";
 import { Mines } from "./components/Mines";
 import { Roulette } from "./components/Roulette";
 import { Keno } from "./components/Keno";
@@ -19,17 +18,19 @@ import { Slide } from "./components/Slide";
 import { VideoPoker } from "./components/VideoPoker";
 import { Baccarat } from "./components/Baccarat";
 import { TomeOfLife } from "./components/TomeOfLife";
-import { Stats } from "./components/Stats";
 import { LiveSessionWidget } from "./components/LiveSessionWidget";
 import { Blackjack } from "./components/Blackjack";
 import { Chicken } from "./components/Chicken";
 import { Moles } from "./components/Moles";
-
 import { Slots } from "./components/Slots";
+import { Leaderboard } from "./components/Leaderboard";
 
 export type ViewType =
   | "home"
+  | "favorites"
   | "originals"
+  | "slots"
+  | "leaderboard"
   | "mines"
   | "roulette"
   | "keno"
@@ -45,11 +46,10 @@ export type ViewType =
   | "video-poker"
   | "baccarat"
   | "tome-of-life"
-  | "stats"
   | "blackjack"
   | "chicken"
   | "moles"
-  | "slots";
+  | "slots-game";
 
 export default function App() {
   const [view, setView] = useState<ViewType>("home");
@@ -64,9 +64,13 @@ export default function App() {
         />
         <div className="flex flex-1 relative">
           {sidebarOpen && <Sidebar view={view} setView={setView as any} />}
-          <main className="flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)]">
-            {view === "home" && <Home setView={setView as any} />}
-            {view === "originals" && <Originals setView={setView as any} />}
+          <main className="flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative">
+            {(view === "home" || view === "favorites" || view === "originals" || view === "slots") && <Home view={view} setView={setView as any} />}
+            {view === "leaderboard" && (
+                <div className="p-4 md:p-8 relative min-h-full">
+                    <Leaderboard onClose={() => setView("home")} isPage={true} />
+                </div>
+            )}
             {view === "mines" && <Mines />}
             {view === "roulette" && <Roulette />}
             {view === "keno" && <Keno />}
@@ -82,11 +86,10 @@ export default function App() {
             {view === "video-poker" && <VideoPoker />}
             {view === "baccarat" && <Baccarat />}
             {view === "tome-of-life" && <TomeOfLife />}
-            {view === "slots" && <Slots />}
+            {view === "slots-game" && <Slots />}
             {view === "blackjack" && <Blackjack />}
             {view === "chicken" && <Chicken />}
             {view === "moles" && <Moles />}
-            {view === "stats" && <Stats />}
           </main>
         </div>
         <LiveSessionWidget />

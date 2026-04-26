@@ -13,6 +13,7 @@ import {
   Grid,
   CircleDollarSign,
   Headset,
+  Tv,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -29,29 +30,17 @@ export function Sidebar({
     <aside className="hidden md:flex flex-col w-[60px] h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] bg-bg-panel border-r border-border-subtle sticky top-16 md:top-20 left-0 overflow-y-auto z-40 items-center py-4 gap-4">
       {/* Active green item */}
       <div
-        className="w-full h-12 bg-accent flex items-center justify-center cursor-pointer mb-2"
+        className={cn("w-full h-12 flex items-center justify-center cursor-pointer mb-2 transition-colors", view === "home" ? "bg-accent" : "hover:bg-bg-inner")}
         onClick={() => setView("home")}
         title="Casino"
       >
-        <Home size={22} className="text-[#0f212e]" />
+        <Home size={22} className={view === "home" ? "text-[#0f212e]" : "text-text-secondary"} />
       </div>
 
-      {/* Other items */}
       <button
-        className="w-10 h-10 rounded-full hover:bg-bg-inner flex items-center justify-center text-text-secondary hover:text-white transition-colors"
-        title="Sports"
-      >
-        <Trophy size={20} />
-      </button>
-      <button
-        className="w-10 h-10 rounded-full hover:bg-bg-inner flex items-center justify-center text-text-secondary hover:text-white transition-colors"
+        onClick={() => setView("favorites")}
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "favorites" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
         title="Favoris"
-      >
-        <Bookmark size={20} />
-      </button>
-      <button
-        className="w-10 h-10 rounded-full hover:bg-bg-inner flex items-center justify-center text-text-secondary hover:text-white transition-colors"
-        title="Aimés"
       >
         <Heart size={20} />
       </button>
@@ -61,7 +50,7 @@ export function Sidebar({
 
       <button
         onClick={() => setView("originals")}
-        className="w-10 h-10 rounded-full hover:bg-bg-inner flex items-center justify-center text-text-secondary hover:text-white transition-colors"
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "originals" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
         title="Stake Originals"
       >
         <Zap size={20} />
@@ -69,7 +58,7 @@ export function Sidebar({
 
       <button
         onClick={() => setView("slots")}
-        className="w-10 h-10 rounded-full hover:bg-bg-inner flex items-center justify-center text-text-secondary hover:text-white transition-colors"
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "slots" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
         title="Machines à sous"
       >
         <Grid size={20} />
@@ -79,11 +68,11 @@ export function Sidebar({
       <div className="w-6 h-px bg-border-medium my-1"></div>
 
       <button
-        onClick={() => setView("stats")}
-        className="w-10 h-10 rounded-full hover:bg-bg-inner flex items-center justify-center text-text-secondary hover:text-white transition-colors"
-        title="Statistiques"
+        onClick={() => setView("leaderboard")}
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "leaderboard" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+        title="Classement"
       >
-        <Activity size={20} />
+        <Tv size={20} />
       </button>
 
       <button
