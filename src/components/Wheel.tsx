@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion, useAnimation } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { Coins } from "lucide-react";
 import { WinPopup } from "./WinPopup";
@@ -93,7 +93,7 @@ const SEGMENTS = {
 };
 
 export function Wheel() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [risk, setRisk] = useState<"low" | "high">("low");
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useAnimation } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { Coins, Target } from "lucide-react";
 
 export function Crash() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [autoCashout, setAutoCashout] = useState<number>(2.0);
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useAnimation } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { Coins, Target } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
 export function Limbo() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [targetMultiplier, setTargetMultiplier] = useState<number>(2.0);
   const [resultMultiplier, setResultMultiplier] = useState<number>(1.0);

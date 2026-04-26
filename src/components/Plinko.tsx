@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { Coins } from "lucide-react";
 import { WinPopup } from "./WinPopup";
@@ -17,7 +17,7 @@ type Ball = {
 };
 
 export function Plinko() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [balls, setBalls] = useState<Ball[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);

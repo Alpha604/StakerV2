@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { Coins } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
 export function Dice() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [condition, setCondition] = useState<"over" | "under">("over");
   const [target, setTarget] = useState<number>(50.5);

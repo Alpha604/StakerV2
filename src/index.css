@@ -22,3 +22,12 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-sans);
 }
+
+@layer utilities {
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+}

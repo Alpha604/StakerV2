@@ -8,10 +8,17 @@ import {
   Gamepad2,
   Tv,
   ArrowRightSquare,
+  Heart,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { cn } from "../lib/utils";
 import { Link } from "react-router-dom";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const calculateIsNew = (releaseDate?: string) => {
+  if (!releaseDate) return false;
+  return Date.now() - new Date(releaseDate).getTime() < SEVEN_DAYS_MS;
+};
 
 const games = [
   {
@@ -37,19 +44,22 @@ const games = [
     name: "MOLES",
     players: "856",
     img: "https://mediumrare.imgix.net/5e6f7bb02df67a02a9182aab05d0976a9abbac7f45997975eed765332a8b7d73?w=180&h=236&fit=min&auto=format",
-    link: "chicken",
+    link: "moles",
+    releaseDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
   },
   {
     name: "CHICKEN",
     players: "830",
     img: "https://mediumrare.imgix.net/a91aa468f459264d55fb9e2706c3684782cc5ecf716892c187122c611acf2773?w=180&h=236&fit=min&auto=format",
     link: "chicken",
+    releaseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
   },
   {
     name: "CRASH",
     players: "1 734",
     img: "https://mediumrare.imgix.net/c830595cbd07b2561ac76a365c2f01869dec9a8fe5e7be30634d78c51b2cc91e?w=180&h=236&fit=min&auto=format",
     link: "crash",
+    releaseDate: "2023-01-01T00:00:00.000Z",
   },
   {
     name: "KENO",
@@ -71,26 +81,31 @@ const newGames = [
     name: "Sweet Bonanza Stake",
     img: "https://mediumrare.imgix.net/5292ebbf1d5d1c251d17cf3607736dbdf1da3e3bb5140bf6f168019a3eb6ea9f?w=180&h=236&fit=min&auto=format",
     link: "slots",
+    releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
   },
   {
     name: "Gates of Stake",
     img: "https://mediumrare.imgix.net/ed306767eb326d96de5b8db5c07740eadd2453c8969f6ba5d99cd2ff9d7fbef8?w=180&h=236&fit=min&auto=format",
     link: "slots",
+    releaseDate: "2023-05-10T00:00:00.000Z",
   },
   {
     name: "Tome of Life",
     img: "https://mediumrare.imgix.net/931cf1fd7147d0d0deda93f16fb8ef556d6d42df3586214f6539a9cfcfcf57b9?w=180&h=236&fit=min&auto=format",
     link: "tome-of-life",
+    releaseDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 days ago
   },
   {
     name: "Sugar Rush Stake",
     img: "https://mediumrare.imgix.net/23fb04e6c9cf1c26b2160d5dd70a3c42878efaeacaae59a4be2ab8eb746571fa?w=180&h=236&fit=min&auto=format",
     link: "slots",
+    releaseDate: "2023-08-15T00:00:00.000Z",
   },
   {
     name: "Stake's Book of Pyramids",
     img: "https://mediumrare.imgix.net/df723c3b01aeff024daaf321f8a846ff9d8cf218c5e636fba7298c430e3bb4a7?w=180&h=236&fit=min&auto=format",
     link: "slots",
+    releaseDate: "2022-11-20T00:00:00.000Z",
   },
   {
     name: "Wanted Dead or a Wild",
@@ -106,102 +121,32 @@ const newGames = [
 
 export function Home({ setView }: { setView: (view: string) => void }) {
   const [activeTab, setActiveTab] = React.useState("Accueil du casino");
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [likedGames, setLikedGames] = React.useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('liked_games') || '[]');
+    } catch { return []; }
+  });
+
+  const toggleLike = (e: React.MouseEvent, gameName: string) => {
+    e.stopPropagation();
+    setLikedGames(prev => {
+      const newLiked = prev.includes(gameName) ? prev.filter(g => g !== gameName) : [...prev, gameName];
+      localStorage.setItem('liked_games', JSON.stringify(newLiked));
+      return newLiked;
+    });
+  };
+
   const tabs = [
     { name: "Accueil du casino", icon: Grid },
     { name: "Uniquement sur Stake", icon: Flame },
     { name: "Nouvelles sorties", icon: Info },
     { name: "Originaux de Stake", icon: Gamepad2 },
     { name: "Machines à sous", icon: ArrowRightSquare },
-    { name: "Casino en direct", icon: Tv },
   ];
 
   return (
     <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
-      {/* Banners */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div
-          className="bg-[#213743] rounded-xl flex overflow-hidden relative min-h-[160px] group cursor-pointer"
-          onClick={() => setView("slots")}
-        >
-          <div className="flex flex-col z-10 w-2/3 p-5">
-            <span className="text-[10px] text-[#00bcd4] bg-[#00bcd4]/10 w-max px-2 py-0.5 rounded font-bold mb-2 uppercase">
-              Uniquement Sur Stake
-            </span>
-            <h3 className="text-white font-bold text-lg leading-tight mb-1">
-              Dream Princess
-            </h3>
-            <p className="text-text-secondary text-sm mb-4">Titan Gaming</p>
-            <button className="bg-transparent border border-text-secondary group-hover:border-white text-white font-bold py-1.5 px-4 rounded text-sm w-fit mt-auto transition-colors">
-              Jouez maintenant
-            </button>
-          </div>
-          <div className="absolute right-0 top-0 bottom-0 w-[45%]">
-            <img
-              src="https://mediumrare.imgix.net/14d7a0494fb21ecef5c40ee55a407db3ea80d19e9131ff1c7a40eb82087da2ba?w=400&h=250&fit=crop&auto=format"
-              alt="Dream Princess"
-              className="w-full h-full object-cover object-left"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#213743] to-transparent"></div>
-          </div>
-        </div>
-
-        <div
-          className="bg-[#1a3848] rounded-xl flex overflow-hidden relative min-h-[160px] group cursor-pointer"
-          onClick={() => setView("stats")}
-        >
-          <div className="flex flex-col z-10 w-2/3 p-5">
-            <span className="text-[10px] text-accent bg-accent/10 w-max px-2 py-0.5 rounded font-bold mb-2 uppercase">
-              Only on Stake
-            </span>
-            <h3 className="text-white font-bold text-lg leading-tight mb-1">
-              Boost VIP, Uniquement s...
-            </h3>
-            <p className="text-text-secondary text-sm mb-4 line-clamp-2">
-              Progression VIP boostée à 2x
-            </p>
-            <button className="bg-transparent border border-text-secondary group-hover:border-white text-white font-bold py-1.5 px-4 rounded text-sm w-fit mt-auto transition-colors">
-              En savoir plus
-            </button>
-          </div>
-          <div className="absolute right-0 top-0 bottom-0 w-[45%]">
-            <img
-              src="https://stake.com/_next/image?url=https%3A%2F%2Fmediumrare.imgix.net%2Fac8444aebbdb9af510bd55110eb2b48d28a303dd5e777ccae63a2cb859a013ad&w=800&q=75"
-              alt="Boost VIP"
-              className="w-full h-full object-cover object-left scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#1a3848] to-transparent"></div>
-          </div>
-        </div>
-
-        <div
-          className="bg-[#242635] rounded-xl flex overflow-hidden relative min-h-[160px] group cursor-pointer"
-          onClick={() => setView("originals")}
-        >
-          <div className="flex flex-col z-10 w-[60%] p-5">
-            <span className="text-[10px] text-white bg-white/20 w-max px-2 py-0.5 rounded font-bold mb-2 uppercase">
-              Promotion
-            </span>
-            <h3 className="text-white font-bold text-lg leading-tight mb-1">
-              Course Quotidienne
-            </h3>
-            <p className="text-text-secondary text-sm mb-4">
-              Entrez dans le jeu !
-            </p>
-            <button className="bg-transparent border border-text-secondary group-hover:border-white text-white font-bold py-1.5 px-4 rounded text-sm w-fit mt-auto transition-colors">
-              Jouez maintenant
-            </button>
-          </div>
-          <div className="absolute right-0 top-0 bottom-0 w-1/2">
-            <img
-              src="https://stake.com/_next/image?url=https%3A%2F%2Fmediumrare.imgix.net%2F58ddf1883be12e752be3d01fcfab8195a9de2898bdafb3799d1e3ee410da202a&w=800&q=75"
-              alt="Course"
-              className="w-full h-full object-cover object-left"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#242635] to-transparent"></div>
-          </div>
-        </div>
-      </div>
-
       {/* Search Input */}
       <div className="relative mb-6">
         <Search
@@ -211,6 +156,8 @@ export function Home({ setView }: { setView: (view: string) => void }) {
         <input
           type="text"
           placeholder="Cherchez votre jeu"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-bg-panel border border-border-subtle rounded-xl py-3 pl-12 pr-4 text-white font-medium focus:outline-none focus:border-border-medium hover:border-border-medium transition-colors cursor-text hover:bg-bg-inner"
         />
       </div>
@@ -251,7 +198,7 @@ export function Home({ setView }: { setView: (view: string) => void }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
-        {games.map((game) => (
+        {games.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase())).map((game) => (
           <div
             key={game.name}
             className="flex flex-col group cursor-pointer"
@@ -263,13 +210,29 @@ export function Home({ setView }: { setView: (view: string) => void }) {
                 alt={game.name}
                 className="w-full h-full object-cover"
               />
+              {calculateIsNew(game.releaseDate) && (
+                <div className="absolute top-2 right-2 bg-[#1475e1] text-white text-[10px] font-black px-1.5 rounded uppercase tracking-tighter shadow-md z-10 w-fit">
+                  Nouveau
+                </div>
+              )}
               {game.badge && (
                 <div className="absolute top-2 left-2 bg-[#ffb300] text-[#0f172a] text-[10px] font-black px-1.5 rounded uppercase tracking-tighter">
                   {game.badge}
                 </div>
               )}
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
-              <div className="absolute bottom-2 inset-x-0 bottom-indicator group-hover:opacity-100 opacity-0 transition-opacity flex justify-center">
+              {/* Like Button */}
+              <div 
+                className="absolute top-2 left-2 z-20 cursor-pointer p-1"
+                onClick={(e) => toggleLike(e, game.name)}
+              >
+                <Heart 
+                  size={16} 
+                  className={cn("transition-colors", likedGames.includes(game.name) ? "fill-[#ed4163] text-[#ed4163]" : "text-white/50 hover:text-white")} 
+                />
+              </div>
+
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors pointer-events-none"></div>
+              <div className="absolute bottom-2 inset-x-0 bottom-indicator group-hover:opacity-100 opacity-0 transition-opacity flex justify-center pointer-events-none">
                 <div className="bg-black/60 rounded-full px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1 backdrop-blur-sm">
                   <Info size={10} /> Info
                 </div>
@@ -301,7 +264,7 @@ export function Home({ setView }: { setView: (view: string) => void }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
-        {newGames.map((game) => (
+        {newGames.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase())).map((game) => (
           <div
             key={game.name}
             className="flex flex-col group cursor-pointer"
@@ -313,7 +276,23 @@ export function Home({ setView }: { setView: (view: string) => void }) {
                 alt={game.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
+              {calculateIsNew(game.releaseDate) && (
+                <div className="absolute top-2 right-2 bg-[#1475e1] text-white text-[10px] font-black px-1.5 rounded uppercase tracking-tighter shadow-md z-10 w-fit">
+                  Nouveau
+                </div>
+              )}
+              {/* Like Button */}
+              <div 
+                className="absolute top-2 left-2 z-20 cursor-pointer p-1"
+                onClick={(e) => toggleLike(e, game.name)}
+              >
+                <Heart 
+                  size={16} 
+                  className={cn("transition-colors", likedGames.includes(game.name) ? "fill-[#ed4163] text-[#ed4163]" : "text-white/50 hover:text-white")} 
+                />
+              </div>
+
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors pointer-events-none"></div>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[11px] font-bold text-text-secondary group-hover:text-white transition-colors truncate">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useAnimation, useMotionValue } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { Coins } from "lucide-react";
 import { WinPopup } from "./WinPopup";
@@ -85,9 +85,7 @@ export function Slide() {
               <span>€{betAmount.toFixed(2)}</span>
             </div>
             <div className="relative bg-bg-inner border border-border-medium rounded-md flex items-center hover:border-text-secondary transition-colors focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
-              <span className="pl-3 text-emerald-500">
-                <Coins size={16} />
-              </span>
+              <span className="pl-3 text-emerald-500 flex items-center justify-center">{renderCryptoIcon(activeCrypto, "w-5 h-5")}</span>
               <input
                 type="number"
                 value={betAmount || ""}

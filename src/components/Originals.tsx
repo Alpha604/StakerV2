@@ -50,11 +50,18 @@ export function Originals({ setView }: { setView: (view: any) => void }) {
       img: "https://mediumrare.imgix.net/102cf3d7c840018b939cd787bf013e080b996d80e604f3008f21dddf1f1aa201?w=180&h=236&fit=min&auto=format",
     },
     {
-      name: "CHICKEN / MOLES",
+      name: "CHICKEN",
       players: "920",
       bg: "from-[#f4511e] to-[#bf360c]",
       action: () => setView("chicken"),
       img: "https://mediumrare.imgix.net/a91aa468f459264d55fb9e2706c3684782cc5ecf716892c187122c611acf2773?w=180&h=236&fit=min&auto=format",
+    },
+    {
+      name: "MOLES",
+      players: "856",
+      bg: "from-[#2094f3] to-[#0c439c]",
+      action: () => setView("moles"),
+      img: "https://mediumrare.imgix.net/5e6f7bb02df67a02a9182aab05d0976a9abbac7f45997975eed765332a8b7d73?w=180&h=236&fit=min&auto=format",
     },
     {
       name: "CRASH",

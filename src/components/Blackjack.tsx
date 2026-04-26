@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
 import { motion } from "motion/react";
 import { Coins } from "lucide-react";
@@ -11,7 +11,7 @@ import { WinPopup } from "./WinPopup";
 const STAKECASINO_CHIP = <Coins size={20} className="text-emerald-500" />;
 
 export function Blackjack() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [gameStage, setGameStage] = useState<
     "IDLE" | "PLAYING" | "DEALER_TURN" | "ENDED"

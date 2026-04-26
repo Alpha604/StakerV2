@@ -23,6 +23,7 @@ import { Stats } from "./components/Stats";
 import { LiveSessionWidget } from "./components/LiveSessionWidget";
 import { Blackjack } from "./components/Blackjack";
 import { Chicken } from "./components/Chicken";
+import { Moles } from "./components/Moles";
 
 import { Slots } from "./components/Slots";
 
@@ -47,6 +48,7 @@ export type ViewType =
   | "stats"
   | "blackjack"
   | "chicken"
+  | "moles"
   | "slots";
 
 export default function App() {
@@ -83,6 +85,7 @@ export default function App() {
             {view === "slots" && <Slots />}
             {view === "blackjack" && <Blackjack />}
             {view === "chicken" && <Chicken />}
+            {view === "moles" && <Moles />}
             {view === "stats" && <Stats />}
           </main>
         </div>

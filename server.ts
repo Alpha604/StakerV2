@@ -1,16 +1,14 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs/promises";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
 
-const JSONBIN_ID = "69eb9c5436566621a8e9f358";
-const JSONBIN_KEY = "$2a$10$IwjzylKTtK7iiXGJPWGTNesdMO8SzFxTZKMlJLu0/3sbpUtGr6kM.";
-const JSONBIN_URL_GET = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
-const JSONBIN_URL_PUT = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+const DB_FILE = path.join(process.cwd(), "db.json");
 
 let cachedBinData: { users: any[], globalBets: any[] } = { users: [], globalBets: [] };
 let isBinFetched = false;
@@ -18,19 +16,13 @@ let flushTimeout: any = null;
 
 async function fetchBinInitial() {
   try {
-    const response = await fetch(`${JSONBIN_URL_GET}/latest`, {
-      headers: { "X-Master-Key": JSONBIN_KEY },
-      cache: "no-store"
-    });
-    if (response.ok) {
-      const data = await response.json();
-      if (data.record && data.record.users) {
-        cachedBinData = data.record;
-      }
-    }
+    const data = await fs.readFile(DB_FILE, "utf-8");
+    cachedBinData = JSON.parse(data);
     isBinFetched = true;
-  } catch (error) {
-    console.error("Initial bin fetch error", error);
+  } catch (error: any) {
+    if (error.code !== "ENOENT") {
+      console.error("Initial bin fetch error", error);
+    }
     isBinFetched = true;
   }
 }
@@ -39,20 +31,13 @@ function scheduleFlush() {
   if (flushTimeout) return;
   flushTimeout = setTimeout(async () => {
     try {
-      await fetch(JSONBIN_URL_PUT, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": JSONBIN_KEY
-        },
-        body: JSON.stringify(cachedBinData)
-      });
+      await fs.writeFile(DB_FILE, JSON.stringify(cachedBinData, null, 2), "utf-8");
     } catch (error) {
       console.error("Bin update error", error);
     } finally {
       flushTimeout = null;
     }
-  }, 5000);
+  }, 1000); // lower wait for better reliability
 }
 
 app.use(async (req, res, next) => {

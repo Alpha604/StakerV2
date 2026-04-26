@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { Coins, AlertCircle } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 import { motion, AnimatePresence } from "motion/react";
+import { cn } from "../lib/utils";
 
 export function Slots() {
   const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
@@ -108,9 +109,7 @@ export function Slots() {
             <span>€{betAmount.toFixed(2)}</span>
           </div>
           <div className="relative bg-bg-inner border border-border-medium rounded flex items-center hover:border-text-secondary transition-colors focus-within:border-accent">
-            <span className="pl-3 text-emerald-500">
-              <Coins size={20} />
-            </span>
+            <span className="pl-3 text-emerald-500 flex items-center justify-center">{renderCryptoIcon(activeCrypto, "w-5 h-5")}</span>
             <input
               type="number"
               value={betAmount || ""}
