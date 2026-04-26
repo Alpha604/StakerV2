@@ -1,65 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { useUser } from "../context/UserContext";
+import React, { useState } from "react";
+import { useUser, renderCryptoIcon } from "../context/UserContext";
 import { cn } from "../lib/utils";
 import { WinPopup } from "./WinPopup";
 import { motion, AnimatePresence } from "motion/react";
+import { useSound } from "../lib/useSound";
 
 type Difficulty = "Classique" | "Faible" | "Moyen" | "Élevé";
-
-const playSound = (type: "draw" | "hit" | "miss") => {
-  try {
-    const audioCtx = new (
-      window.AudioContext || (window as any).webkitAudioContext
-    )();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    if (type === "hit") {
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(261.63, audioCtx.currentTime); // C4
-      osc.frequency.exponentialRampToValueAtTime(
-        329.63,
-        audioCtx.currentTime + 0.05,
-      ); // E4
-      gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.2);
-    } else if (type === "miss") {
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(
-        60,
-        audioCtx.currentTime + 0.1,
-      );
-      gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        audioCtx.currentTime + 0.15,
-      );
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.15);
-    } else if (type === "draw") {
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.01);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        audioCtx.currentTime + 0.05,
-      );
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.1);
-    }
-  } catch (e) {
-    console.warn("Audio play restricted", e);
-  }
-};
 
 const PAYOUTS: Record<Difficulty, Record<number, number[]>> = {
   Classique: {
@@ -113,8 +59,9 @@ const PAYOUTS: Record<Difficulty, Record<number, number[]>> = {
 };
 
 export function Keno() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
-  const [betAmount, setBetAmount] = useState<number>(0.00000001);
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
+  const { playTick, playWin, playLoss, playHit, playMiss } = useSound();
+  const [betAmount, setBetAmount] = useState<number>(10);
   const [difficulty, setDifficulty] = useState<Difficulty>("Classique");
   const [selected, setSelected] = useState<number[]>([]);
   const [drawn, setDrawn] = useState<number[]>([]);
@@ -126,10 +73,7 @@ export function Keno() {
 
   const toggleNumber = (num: number) => {
     if (isDrawing) return;
-
-    // Add small click sound
-    playSound("draw");
-
+    playTick();
     if (selected.includes(num)) {
       setSelected(selected.filter((n) => n !== num));
     } else {
@@ -141,6 +85,7 @@ export function Keno() {
 
   const randomSelect = () => {
     if (isDrawing) return;
+    playTick();
     const newSelected: number[] = [];
     while (newSelected.length < 10) {
       const p = Math.floor(Math.random() * 40) + 1;
@@ -156,23 +101,12 @@ export function Keno() {
     setWinInfo(null);
   };
 
-  const currentPayouts =
-    selected.length > 0 ? PAYOUTS[difficulty][selected.length] : [];
+  const currentPayouts = selected.length > 0 ? PAYOUTS[difficulty][selected.length] : [];
 
   const handleBet = async () => {
-    if (!user) {
-      alert("Veuillez vous connecter !");
-      return;
-    }
-    if (
-      selected.length === 0 ||
-      betAmount <= 0 ||
-      betAmount > balance ||
-      isDrawing
-    )
-      return;
+    if (!user || selected.length === 0 || isDrawing || balance < betAmount) return;
 
-    const success = await subtractBalance(betAmount);
+    const success = subtractBalance(betAmount);
     if (!success) return;
 
     setWinInfo(null);
@@ -193,13 +127,12 @@ export function Keno() {
       setDrawn((prev) => [...prev, currentDraw]);
 
       if (selected.includes(currentDraw)) {
-        playSound("hit");
+        playHit();
       } else {
-        playSound("miss");
+        playMiss();
       }
     }
 
-    // Wait a bit before showing result
     await new Promise((r) => setTimeout(r, 400));
 
     // Calculate hits
@@ -212,254 +145,197 @@ export function Keno() {
     const payout = betAmount * multiplier;
 
     if (payout > 0) {
-      await addBalance(payout);
+      addBalance(payout);
       setWinInfo({ multiplier, payout });
+      playWin();
+    } else {
+      playLoss();
     }
 
-    await recordBet("Keno", betAmount, multiplier, payout - betAmount);
+    recordBet("Keno", betAmount, multiplier, payout - betAmount);
     setIsDrawing(false);
   };
 
   return (
-    <div className="flex flex-col md:flex-row max-w-[1200px] mx-auto p-4 md:p-8 gap-4 min-h-[calc(100vh-80px)]">
-      {/* Sidebar Controls */}
-      <div className="w-full md:w-[320px] bg-bg-panel border border-border-subtle rounded-t-xl md:rounded-l-xl md:rounded-tr-none flex flex-col h-fit order-2 md:order-1 overflow-hidden z-10 p-4 gap-4">
-        <div className="bg-bg-inner flex w-full p-1 rounded-full border border-border-medium shadow-inner">
-          <button className="flex-1 py-1.5 bg-border-medium rounded-full text-white text-sm font-bold shadow text-center">
-            Manuel
-          </button>
-          <button className="flex-1 py-1.5 text-text-secondary hover:text-white text-sm font-bold transition-colors text-center cursor-not-allowed">
-            Auto
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-1 mt-2">
-          <div className="flex justify-between items-center text-xs font-semibold opacity-80">
-            <span className="text-text-secondary">Montant du Pari</span>
-            <span className="text-white font-mono">0.00 $US</span>
+    <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-[320px_1fr] bg-bg-panel rounded-lg overflow-hidden shadow-2xl min-h-[600px]">
+        {/* Left Side: Controls */}
+        <div className="bg-bg-panel lg:bg-[#213743] p-4 flex flex-col gap-5 border-b lg:border-b-0 lg:border-r border-border-medium z-10">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-sm font-bold text-white bg-[#2f4553] rounded-full py-2 transition-colors">Manuel</button>
+            <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded-full py-2 transition-colors">Auto</button>
           </div>
-          <div className="flex items-center bg-bg-inner border border-border-medium rounded shadow-inner h-11">
-            <input
-              type="number"
-              value={betAmount}
-              onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0)}
-              className="w-full bg-transparent p-3 text-white font-mono outline-none text-sm font-bold"
-            />
-            <span className="pr-3 flex items-center">
-              <span className="text-emerald-500 font-bold font-mono text-[10px] leading-none bg-emerald-500/20 w-4 h-4 flex items-center justify-center rounded-full shrink-0">
-                T
-              </span>
-            </span>
-            <div className="flex h-full border-l border-border-medium divide-x divide-border-medium shrink-0">
-              <button
-                onClick={() => setBetAmount((prev) => prev / 2)}
-                className="px-3 hover:bg-border-subtle text-xs font-semibold text-text-secondary transition-colors"
-              >
-                ½
-              </button>
-              <button
-                onClick={() => setBetAmount((prev) => prev * 2)}
-                className="px-3 hover:bg-border-subtle text-xs font-semibold text-text-secondary transition-colors"
-              >
-                2×
-              </button>
+
+          <div className="flex flex-col gap-4">
+            {/* Bet Amount */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-text-secondary text-xs font-bold"> Montant de la mise </label>
+                <span className="text-text-secondary text-xs font-bold flex items-center gap-1"> $ {(balance || 0).toFixed(2)} </span>
+              </div>
+              <div className="relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] p-1 transition-colors focus-within:border-border-hover">
+                <div className="pl-2 pr-1 flex items-center justify-center"> {renderCryptoIcon(activeCrypto, "w-4 h-4")} </div>
+                <input
+                  type="number"
+                  value={betAmount === 0 ? "" : betAmount}
+                  onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent text-white font-bold outline-none tabular-nums text-sm px-1 py-1"
+                  min="0"
+                  step="0.01"
+                  disabled={isDrawing}
+                />
+                <div className="flex items-center gap-1 pr-1 border-l border-[#2f4553] pl-2">
+                  <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> ½ </button>
+                  <div className="w-px h-3 bg-[#2f4553]"></div>
+                  <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> 2× </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="flex flex-col gap-1 mt-2">
-          <label className="text-xs font-semibold text-text-secondary opacity-80">
-            Difficulté
-          </label>
-          <div className="relative">
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-              disabled={isDrawing}
-              className="w-full bg-bg-inner border border-border-medium rounded px-3 py-2.5 text-white font-bold text-sm outline-none focus:ring-1 focus:ring-accent appearance-none disabled:opacity-50"
-            >
-              {(["Classique", "Faible", "Moyen", "Élevé"] as Difficulty[]).map(
-                (d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ),
-              )}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary opacity-50">
-              ▼
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 mt-4">
-          <button
-            onClick={randomSelect}
-            disabled={isDrawing}
-            className="w-full py-2.5 rounded bg-[#2a3f4c] hover:bg-[#344d5c] text-white text-sm font-bold shadow transition-colors"
-          >
-            Sélection aléatoire
-          </button>
-          <button
-            onClick={clearTable}
-            disabled={isDrawing}
-            className="w-full py-2.5 rounded bg-[#2a3f4c] hover:bg-[#344d5c] text-white text-sm font-bold shadow transition-colors"
-          >
-            Vider la Table
-          </button>
-        </div>
-
-        <button
-          onClick={handleBet}
-          disabled={
-            isDrawing ||
-            selected.length === 0 ||
-            betAmount <= 0 ||
-            betAmount > balance
-          }
-          className="w-full py-3.5 mt-2 rounded text-white font-bold text-lg bg-[#1475e1] hover:bg-[#1b80f0] transition-colors shadow disabled:opacity-30 disabled:bg-bg-inner disabled:text-text-secondary"
-        >
-          Pari
-        </button>
-      </div>
-
-      {/* Game Area */}
-      <div className="flex-1 bg-bg-panel/40 rounded-b-xl md:rounded-r-xl md:rounded-bl-none flex flex-col items-center md:order-2 p-4 md:p-8 relative overflow-hidden">
-        {winInfo && (
-          <WinPopup
-            multiplier={winInfo.multiplier}
-            payout={winInfo.payout}
-            onClose={() => setWinInfo(null)}
-          />
-        )}
-
-        <div className="w-full max-w-[800px] flex flex-col gap-6 relative">
-          {/* Grid 8x5 */}
-          <div className="grid grid-cols-8 gap-1.5 md:gap-2">
-            {Array.from({ length: 40 }, (_, i) => i + 1).map((n) => {
-              const isSelected = selected.includes(n);
-              const isDrawn = drawn.includes(n);
-              const isHit = isSelected && isDrawn;
-              const isMiss = !isSelected && isDrawn;
-
-              return (
-                <button
-                  key={n}
-                  onClick={() => toggleNumber(n)}
-                  className={cn(
-                    "aspect-square rounded-md font-bold text-sm md:text-lg flex items-center justify-center transition-all relative overflow-hidden",
-                    !isSelected &&
-                      !isDrawn &&
-                      "bg-[#213743] hover:bg-[#2c4755] text-white/80 hover:-translate-y-0.5 border-b-[3px] border-[#1a2c38]",
-                    isSelected &&
-                      !isDrawn &&
-                      "bg-[#8b5cf6] text-white border-b-[3px] border-[#7c3aed]", // Purple selection, no gem
-                    isHit &&
-                      "bg-[#8b5cf6] text-transparent border-b-[3px] border-[#7c3aed]", // Hit: purple bg + gem (text hidden)
-                    isMiss &&
-                      "bg-[#213743] text-red-500 border-b-[3px] border-[#1a2c38]", // Miss: red text
-                  )}
+            {/* Difficulty Selection */}
+            <div className="flex flex-col gap-1.5">
+                <label className="text-text-secondary text-xs font-bold px-1"> Risque / Difficulté </label>
+                <select 
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                    disabled={isDrawing}
+                    className="w-full bg-[#0f212e] text-white font-bold text-sm rounded border border-[#2f4553] p-2.5 focus:border-border-hover outline-none transition-colors appearance-none cursor-pointer disabled:opacity-50"
+                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1bad3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right .7rem top 50%', backgroundSize: '.65rem auto' }}
                 >
-                  {n}
-                  {(isSelected || isHit) && (
-                    <div className="absolute inset-x-0 bottom-0 h-full w-full pointer-events-none rounded-md ring-2 ring-inset ring-white/10"></div>
-                  )}
-                  {/* Gem SVG ONLY shown if it's a hit */}
-                  <AnimatePresence>
-                    {isHit && (
-                      <motion.div
-                        initial={{ scale: 0, rotate: -45 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 15,
-                        }}
-                        className="absolute inset-2 flex items-center justify-center"
-                      >
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0 }}
-                          animate={{ opacity: [0, 0.5, 0], scale: [1, 2, 3] }}
-                          transition={{ duration: 0.5, ease: "easeOut" }}
-                          className="absolute inset-0 bg-[#00E701] rounded-full blur-[20px] pointer-events-none"
-                        />
-                        <svg
-                          viewBox="0 0 100 100"
-                          className="w-full h-full drop-shadow-md relative z-10"
-                        >
-                          <polygon
-                            points="50,10 90,30 90,70 50,90 10,70 10,30"
-                            fill="#00e676"
-                            stroke="#000"
-                            strokeWidth="2"
-                            strokeOpacity="0.2"
-                          />
-                          <polygon
-                            points="50,15 80,35 50,45 20,35"
-                            fill="#69f0ae"
-                            opacity="0.8"
-                          />
-                          <polygon
-                            points="20,35 50,45 50,85 10,70"
-                            fill="#00e676"
-                            opacity="0.5"
-                          />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  {isHit && (
-                    <div className="absolute inset-0 border-2 border-[#00e676] rounded-md animate-pulse pointer-events-none"></div>
-                  )}
-                </button>
-              );
-            })}
+                    {(["Classique", "Faible", "Moyen", "Élevé"] as Difficulty[]).map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+            </div>
           </div>
 
-          {/* Payouts Bar */}
-          {selected.length > 0 && (
-            <div className="flex flex-col w-full bg-bg-inner rounded-md p-1 mt-4 gap-1 overflow-x-auto scroller-hide">
-              {/* Multipliers */}
-              <div className="flex w-full gap-1">
-                {currentPayouts.map((mult, i) => {
-                  const hits = drawn.filter((n) => selected.includes(n)).length;
-                  const isCurrentHit =
-                    !isDrawing && drawn.length === 10 && hits === i;
+          <div className="flex flex-col gap-2 mt-2">
+              <button onClick={randomSelect} disabled={isDrawing} className="w-full py-2.5 rounded bg-[#2f4553] hover:bg-[#3d5a6c] text-white text-sm font-bold transition-colors disabled:opacity-50">
+                  Sélection aléatoire
+              </button>
+              <button onClick={clearTable} disabled={isDrawing} className="w-full py-2.5 rounded bg-[#2f4553] hover:bg-[#3d5a6c] text-white text-sm font-bold transition-colors disabled:opacity-50">
+                  Vider la Table
+              </button>
+          </div>
 
-                  return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "flex-1 min-w[40px] py-1.5 flex flex-col items-center justify-center rounded-sm text-xs font-bold transition-colors",
-                        isCurrentHit
-                          ? "bg-[#00e676] text-[#0f1116]"
-                          : "bg-[#213743] text-white",
-                      )}
-                    >
-                      {mult.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                      ×
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Match Numbers */}
-              <div className="flex w-full gap-1">
-                {currentPayouts.map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 min-w[40px] py-1 flex items-center justify-center text-[10px] text-text-secondary font-bold font-mono"
-                  >
-                    {i}×
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="flex-1"></div>
+
+          <button
+            onClick={handleBet}
+            disabled={isDrawing || selected.length === 0 || balance < betAmount}
+            className={cn(
+              "w-full py-3.5 rounded font-bold text-sm transition-all bg-[#00e676] hover:bg-[#1bc86a] text-[#0f1116]",
+              (isDrawing || selected.length === 0 || balance < betAmount) && "opacity-50 cursor-not-allowed",
+            )}
+          >
+            Pari
+          </button>
+        </div>
+
+        {/* Right Side: Game Canvas */}
+        <div className="bg-[#0f212e] relative p-4 lg:p-8 flex flex-col items-center justify-center min-h-[400px]">
+          {winInfo && (
+            <WinPopup
+              multiplier={winInfo.multiplier}
+              payout={winInfo.payout}
+              onClose={() => setWinInfo(null)}
+            />
           )}
+
+          <div className="w-full max-w-[800px] flex flex-col gap-6 relative">
+            {/* Grid 8x5 */}
+            <div className="grid grid-cols-8 gap-1.5 md:gap-2 lg:gap-3">
+              {Array.from({ length: 40 }, (_, i) => i + 1).map((n) => {
+                const isSelected = selected.includes(n);
+                const isDrawn = drawn.includes(n);
+                const isHit = isSelected && isDrawn;
+                const isMiss = !isSelected && isDrawn;
+
+                return (
+                  <button
+                    key={n}
+                    onClick={() => toggleNumber(n)}
+                    className={cn(
+                      "aspect-square rounded shadow-[0_4px_0_rgba(0,0,0,0.2)] font-bold text-xs sm:text-sm md:text-lg flex items-center justify-center transition-all relative overflow-hidden",
+                      !isSelected && !isDrawn && "bg-[#2f4553] hover:bg-[#3d5a6c] text-white/80 active:translate-y-1 active:shadow-[0_0px_0_rgba(0,0,0,0)]",
+                      isSelected && !isDrawn && "bg-[#8b5cf6] text-white translate-y-1 shadow-[0_0px_0_rgba(0,0,0,0)]",
+                      isHit && "bg-[#8b5cf6] text-transparent translate-y-1 shadow-[0_0px_0_rgba(0,0,0,0)]",
+                      isMiss && "bg-[#2f4553] text-[#e53935] translate-y-1 shadow-[0_0px_0_rgba(0,0,0,0)]",
+                    )}
+                  >
+                    {n}
+                    {/* Gem SVG for Hit */}
+                    <AnimatePresence>
+                      {isHit && (
+                        <motion.div
+                          initial={{ scale: 0, rotate: -45 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                          className="absolute inset-1 sm:inset-1.5 md:inset-2 flex items-center justify-center"
+                        >
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: [0, 0.5, 0], scale: [1, 2, 3] }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
+                            className="absolute inset-0 bg-[#00E701] rounded-full blur-[20px] pointer-events-none"
+                          />
+                          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md relative z-10">
+                            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="#00e676" stroke="#000" strokeWidth="2" strokeOpacity="0.2" />
+                            <polygon points="50,15 80,35 50,45 20,35" fill="#69f0ae" opacity="0.8" />
+                            <polygon points="20,35 50,45 50,85 10,70" fill="#00e676" opacity="0.5" />
+                          </svg>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {isHit && (
+                      <div className="absolute inset-0 border-2 border-[#00e676] rounded animate-pulse pointer-events-none"></div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Payouts Bar */}
+            <div className="min-h-[50px] mt-4 flex items-center justify-center">
+                <AnimatePresence>
+                    {selected.length > 0 && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            className="flex flex-col w-full bg-[#0b161f] rounded-lg p-2 gap-1 overflow-x-auto scrollbar-hide border border-[#2f4553]"
+                        >
+                        {/* Multipliers */}
+                        <div className="flex w-full gap-1">
+                            {currentPayouts.map((mult, i) => {
+                            const hits = drawn.filter((n) => selected.includes(n)).length;
+                            const isCurrentHit = !isDrawing && drawn.length === 10 && hits === i;
+
+                            return (
+                                <div
+                                    key={i}
+                                    className={cn(
+                                        "flex-1 min-w-[30px] sm:min-w-[40px] py-2 flex flex-col items-center justify-center rounded text-[10px] sm:text-xs font-bold transition-all duration-300",
+                                        isCurrentHit ? "bg-[#00e676] text-[#0f1116] scale-110 shadow-[0_0_15px_rgba(0,230,118,0.5)] z-10" : mult === 0 ? "bg-[#2f4553] text-white/50" : "bg-[#2f4553] text-white"
+                                    )}
+                                >
+                                    {mult.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×
+                                </div>
+                            );
+                            })}
+                        </div>
+                        {/* Match Numbers */}
+                        <div className="flex w-full gap-1">
+                            {currentPayouts.map((_, i) => (
+                                <div key={i} className="flex-1 min-w-[30px] sm:min-w-[40px] py-1 flex items-center justify-center text-[9px] sm:text-[10px] text-text-secondary font-bold">
+                                    {i}x
+                                </div>
+                            ))}
+                        </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
