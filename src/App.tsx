@@ -76,27 +76,62 @@ export default function App() {
   );
 }
 
+function HamsterLoader() {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#191a1a]/80 backdrop-blur-sm">
+      <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
+        <div className="wheel"></div>
+        <div className="hamster">
+          <div className="hamster__body">
+            <div className="hamster__head">
+              <div className="hamster__ear"></div>
+              <div className="hamster__eye"></div>
+              <div className="hamster__nose"></div>
+            </div>
+            <div className="hamster__limb hamster__limb--fr"></div>
+            <div className="hamster__limb hamster__limb--fl"></div>
+            <div className="hamster__limb hamster__limb--br"></div>
+            <div className="hamster__limb hamster__limb--bl"></div>
+            <div className="hamster__tail"></div>
+          </div>
+        </div>
+        <div className="spoke"></div>
+      </div>
+    </div>
+  );
+}
+
 function InnerApp() {
-
-
   const [view, setView] = useState<ViewType>("home");
   const [sidebarOpen, setSidebarOpen] = useState(true); // Default open
+  const [isChangingView, setIsChangingView] = useState(false);
+
+  const handleSetView = (newView: ViewType) => {
+    if (newView === view) return;
+    setIsChangingView(true);
+    setTimeout(() => {
+      setView(newView);
+      setIsChangingView(false);
+    }, 1000);
+  };
 
   return (
     <UserProvider>
       <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
         <Header
-          setView={setView as any}
+          setView={handleSetView as any}
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
         <div className="flex flex-1 relative">
-          <Sidebar view={view} setView={setView as any} isOpen={sidebarOpen} />
+          <div className={`bg-bg-panel border-border-subtle overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "w-[60px] min-w-[60px] border-r" : "w-0 min-w-0 border-r-0"}`}>
+            <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
+          </div>
           <main className="flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col">
             <div className="flex-1">
-              {(view === "home" || view === "favorites" || view === "originals" || view === "slots") && <Home view={view} setView={setView as any} />}
+              {(view === "home" || view === "favorites" || view === "originals" || view === "slots") && <Home view={view} setView={handleSetView as any} />}
               {view === "leaderboard" && (
                   <div className="p-4 md:p-8 relative min-h-full">
-                      <Leaderboard onClose={() => setView("home")} isPage={true} />
+                      <Leaderboard onClose={() => handleSetView("home")} isPage={true} />
                   </div>
               )}
               {view === "mines" && <Mines />}
@@ -132,6 +167,7 @@ function InnerApp() {
           </main>
         </div>
         <LiveSessionWidget />
+        {isChangingView && <HamsterLoader />}
       </div>
     </UserProvider>
   );

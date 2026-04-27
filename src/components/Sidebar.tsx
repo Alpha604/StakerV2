@@ -31,8 +31,8 @@ export function Sidebar({
   return (
     <aside 
       className={cn(
-        "flex flex-col bg-bg-panel border-r border-border-subtle sticky top-16 md:top-20 left-0 overflow-y-auto overflow-x-hidden z-40 items-center py-4 gap-4 transition-all duration-300 ease-in-out h-[calc(100vh-64px)] md:h-[calc(100vh-80px)]",
-        isOpen ? "w-[60px] min-w-[60px] opacity-100 flex" : "w-0 min-w-0 opacity-0 overflow-hidden border-none px-0 py-0"
+        "flex flex-col sticky top-16 md:top-20 left-0 overflow-y-auto overflow-x-hidden z-40 items-center py-4 gap-4 transition-all duration-300 ease-in-out h-[calc(100vh-64px)] md:h-[calc(100vh-80px)]",
+        isOpen ? "w-full opacity-100 flex" : "w-0 min-w-0 opacity-0 overflow-hidden px-0 py-0"
       )}
     >
       {/* Active green item */}

@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useUser } from "../context/UserContext";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const calculateIsNew = (releaseDate?: string) => {
@@ -81,7 +82,7 @@ const ALL_GAMES = [
   {
     name: "Classic Slots", players: "1 245", category: "slots", link: "slots-game",
     releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    img: "https://mediumrare.imgix.net/5292ebbf1d5d1c251d17cf3607736dbdf1da3e3bb5140bf6f168019a3eb6ea9f?w=180&h=236&fit=min&auto=format",
+    img: "https://mediumrare.imgix.net/3a6fa5d49d31f11ce131acb64d8cbbe6cc5d8f916bd0afacaeb1fc5976aa4fdf?w=180&h=236&fit=min&auto=format",
   }
 ];
 
@@ -93,7 +94,6 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     } catch { return []; }
   });
   
-  // Create stable random "total bets" memory for each game for realism
   const [totalBets] = React.useState<Record<string, number>>(() => {
     const bets: Record<string, number> = {};
     ALL_GAMES.forEach(g => {
@@ -101,6 +101,14 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     });
     return bets;
   });
+
+  const { sessionBets } = useUser();
+
+  const getGameBetsCount = (gameName: string) => {
+    const fakeCount = totalBets[gameName] || 0;
+    const realCount = sessionBets.filter(b => b.game.toLowerCase() === gameName.toLowerCase()).length;
+    return fakeCount + realCount;
+  };
 
   const toggleLike = (e: React.MouseEvent, gameName: string) => {
     e.stopPropagation();
@@ -203,7 +211,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
                       <div className="border-b border-[#2f4553] mx-2 my-2"></div>
                       <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-200 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0">
                         <span className="text-gray-400 mt-1">Mises totales</span>
-                        <span className="text-gray-100 mt-1">{totalBets[game.name]?.toLocaleString('fr-FR') || 0}</span>
+                        <span className="text-gray-100 mt-1">{getGameBetsCount(game.name).toLocaleString('fr-FR')}</span>
                       </div>
                       <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-300 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
                         <span className="text-gray-400">Gain Max.</span>
