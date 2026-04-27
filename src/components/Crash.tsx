@@ -36,7 +36,10 @@ export function Crash() {
   };
 
   const handleBet = () => {
-    if (!user || balance < betAmount) return;
+    if (!user || balance < betAmount) {
+      alert("Connectez-vous et créditez votre compte pour jouer.");
+      return;
+    }
     subtractBalance(betAmount);
     setHasBet(true);
     setCashedOut(false);

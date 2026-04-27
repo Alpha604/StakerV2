@@ -110,8 +110,12 @@ export function Wheel() {
   const anglePerSegment = 360 / numSegments;
 
   const handleSpin = async () => {
-    if (!user || balance < betAmount || isSpinning) return;
-
+    if (isSpinning) return;
+    if (!user || balance < betAmount) {
+      alert("Connectez-vous et créditez votre compte pour jouer.");
+      return;
+    }
+    
     subtractBalance(betAmount);
     setIsSpinning(true);
     setWinInfo(null);

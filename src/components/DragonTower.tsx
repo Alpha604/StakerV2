@@ -61,7 +61,10 @@ export function DragonTower() {
   const [currentRow, setCurrentRow] = useState(0); // 0 is bottom, 8 is top
 
   const startGame = () => {
-    if (!user || balance < betAmount) return;
+    if (!user || balance < betAmount) {
+      alert("Connectez-vous et créditez votre compte pour jouer.");
+      return;
+    }
     subtractBalance(betAmount);
     setIsPlaying(true);
     setWinInfo(null);
