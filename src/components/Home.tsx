@@ -92,6 +92,15 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
       return JSON.parse(localStorage.getItem('liked_games') || '[]');
     } catch { return []; }
   });
+  
+  // Create stable random "total bets" memory for each game for realism
+  const [totalBets] = React.useState<Record<string, number>>(() => {
+    const bets: Record<string, number> = {};
+    ALL_GAMES.forEach(g => {
+       bets[g.name] = Math.floor(Math.random() * 500000) + 10000;
+    });
+    return bets;
+  });
 
   const toggleLike = (e: React.MouseEvent, gameName: string) => {
     e.stopPropagation();
@@ -167,11 +176,44 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
 
               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors pointer-events-none"></div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#00e676]"></div>
-              <span className="text-[11px] font-bold text-text-secondary group-hover:text-white transition-colors truncate">
-                {game.name} <span className="opacity-60">({game.players})</span>
-              </span>
+            <div className="flex flex-col gap-2 relative">
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00e676]"></div>
+                <span className="text-[11px] font-bold text-text-secondary group-hover:text-white transition-colors truncate">
+                  {game.name} <span className="opacity-60">({game.players})</span>
+                </span>
+              </div>
+              <div className="group/info relative block w-full cursor-pointer text-center">
+                <span className="block bg-gradient-to-tr from-[#1475e1]/80 via-[#1b80f0] to-[#1475e1] text-gray-100 rounded-md px-2 py-1.5 text-xs font-bold z-20 drop-shadow-md hover:from-[#1b80f0] hover:to-[#1475e1]">
+                  Infos
+                </span>
+                <div className="absolute pointer-events-none block w-[180%] -top-32 left-1/2 -translate-x-1/2 z-[100]">
+                  <div className="flex flex-col items-center opacity-0 transition-all ease-in duration-300 translate-y-1/2 group-hover/info:opacity-100 group-hover/info:-translate-y-1/4">
+                    <div className="flex flex-col justify-start text-left w-full bg-[#0f212e] border border-[#2f4553] rounded-md p-3 drop-shadow-xl shadow-xl">
+                      <span className="text-xs font-normal text-gray-400 leading-3">Joueurs en ligne</span>
+                      <div className="inline-flex justify-between items-center opacity-0 translate-y-1 transition-all ease-in delay-100 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-1">
+                        <span className="text-lg font-bold tracking-wide text-white">{game.players}</span>
+                        <div className="inline-flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 fill-[#00e701]">
+                            <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm.53 5.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.72-1.72v5.69a.75.75 0 0 0 1.5 0v-5.69l1.72 1.72a.75.75 0 1 0 1.06-1.06l-3-3Z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-xs font-normal text-white ml-1">Stat.</span>
+                        </div>
+                      </div>
+                      <div className="border-b border-[#2f4553] mx-2 my-2"></div>
+                      <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-200 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0">
+                        <span className="text-gray-400 mt-1">Mises totales</span>
+                        <span className="text-gray-100 mt-1">{totalBets[game.name]?.toLocaleString('fr-FR') || 0}</span>
+                      </div>
+                      <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-300 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
+                        <span className="text-gray-400">Gain Max.</span>
+                        <span className="text-gray-100">{game.badge || "100×"}</span>
+                      </div>
+                    </div>
+                    <div className="h-0 w-fit border-x-[8px] border-t-[8px] border-transparent border-t-[#2f4553] -mt-[0.5px]"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ))}

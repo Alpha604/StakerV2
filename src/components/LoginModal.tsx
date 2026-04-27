@@ -116,43 +116,38 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2 relative">
-              <label className="text-sm font-bold text-text-secondary flex items-center gap-2">
-                Nom d'utilisateur
-              </label>
-              <div className="relative flex items-center bg-bg-inner rounded-lg border border-border-medium hover:border-text-secondary focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all">
-                <span className="pl-4 text-text-secondary">
-                  <User size={18} />
-                </span>
+            <div className="flex flex-col gap-6">
+              <div className="form-control">
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-transparent text-white font-medium p-3 outline-none"
-                  placeholder="Votre pseudo"
                   required
                 />
+                <label>
+                  {"Nom d'utilisateur".split("").map((char, index) => (
+                    <span key={index} style={{ transitionDelay: `${index * 30}ms` }}>
+                      {char === " " ? "\u00A0" : char}
+                    </span>
+                  ))}
+                </label>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-2 relative">
-              <label className="text-sm font-bold text-text-secondary flex items-center gap-2">
-                Mot de passe
-              </label>
-              <div className="relative flex items-center bg-bg-inner rounded-lg border border-border-medium hover:border-text-secondary focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all">
-                <span className="pl-4 text-text-secondary">
-                  <Lock size={18} />
-                </span>
+              <div className="form-control">
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-transparent text-white font-medium p-3 outline-none"
-                  placeholder="••••••••"
                   required
                   minLength={6}
                 />
+                <label>
+                  {"Mot de passe".split("").map((char, index) => (
+                    <span key={index} style={{ transitionDelay: `${index * 30}ms` }}>
+                      {char === " " ? "\u00A0" : char}
+                    </span>
+                  ))}
+                </label>
               </div>
               {!isRegister && (
                 <button
@@ -162,22 +157,21 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
                   Mot de passe oublié ?
                 </button>
               )}
-            </div>
 
-            {isRegister && (
-              <div className="flex items-start gap-2 bg-accent/10 border border-accent/20 p-3 rounded-lg">
-                <ShieldCheck
-                  size={18}
-                  className="text-accent shrink-0 mt-0.5"
-                />
-                <p className="text-xs text-text-secondary">
-                  En créant un compte, vous acceptez nos conditions
-                  d'utilisations. Votre progression sera sauvegardée via votre
-                  navigateur.
-                </p>
-              </div>
-            )}
-          </div>
+              {isRegister && (
+                <div className="flex items-start gap-2 bg-accent/10 border border-accent/20 p-3 rounded-lg">
+                  <ShieldCheck
+                    size={18}
+                    className="text-accent shrink-0 mt-0.5"
+                  />
+                  <p className="text-xs text-text-secondary">
+                    En créant un compte, vous acceptez nos conditions
+                    d'utilisations. Votre progression sera sauvegardée via votre
+                    navigateur.
+                  </p>
+                </div>
+              )}
+            </div>
 
           <button
             type="submit"
