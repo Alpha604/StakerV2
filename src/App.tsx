@@ -122,8 +122,8 @@ function InnerApp() {
           setView={handleSetView as any}
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
-        <div className="flex flex-1 relative">
-          <div className={`bg-bg-panel border-border-subtle overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? "w-[60px] min-w-[60px] border-r" : "w-0 min-w-0 border-r-0"}`}>
+        <div className="flex flex-1 relative items-stretch">
+          <div className={`bg-bg-panel border-border-subtle overflow-hidden transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[60px] min-w-[60px] border-r" : "w-0 min-w-0 border-r-0"}`}>
             <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
           </div>
           <main className="flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col">

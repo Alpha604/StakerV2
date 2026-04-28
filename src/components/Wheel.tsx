@@ -198,101 +198,100 @@ export function Wheel() {
   };
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-2 sm:p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-64px)]">
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
+    <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
+      <div className="w-full flex md:flex-row flex-col max-w-5xl rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Side: Controls */}
-        <div className="md:col-span-3 bg-[#213743] p-4 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-border-medium z-10 relative">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <label className="text-text-secondary text-sm font-semibold">
-                Montant
+        <div className="w-full md:w-80 bg-[#162734] border border-[#233845] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col p-6 z-10 relative">
+           <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+           <div className="flex flex-col gap-6 relative z-10 w-full h-full">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between">
+                <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1">
+                  Montant du Pari
+                </label>
+                <span className="text-white text-xs flex items-center gap-1 font-semibold pr-1">
+                  {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                </span>
+              </div>
+              <div className="flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] focus-within:border-accent transition-colors shadow-inner h-12 overflow-hidden ring-1 ring-black/20">
+                <span className="pl-3 absolute flex items-center justify-center">
+                  {renderCryptoIcon(activeCrypto, "w-5 h-5")}
+                </span>
+                <input
+                  type="number"
+                  value={betAmount || ""}
+                  onChange={(e) => setBetAmount(Number(e.target.value))}
+                  disabled={isSpinning}
+                  className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-sm"
+                  step="0.00000001"
+                  min="0"
+                  max={balance}
+                />
+                <div className="flex h-full border-l border-[#233845] divide-x divide-[#233845]">
+                  <button
+                    onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
+                    disabled={isSpinning}
+                    className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                  >
+                    ½
+                  </button>
+                  <button
+                    onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
+                    disabled={isSpinning}
+                    className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                  >
+                    2×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1">
+                Risque
               </label>
-              <span className="text-text-secondary text-sm">
-                €{(balance || 0).toFixed(2)}
-              </span>
-            </div>
-            <div className="relative flex items-center bg-bg-inner rounded-md border border-border-medium p-1 transition-colors focus-within:border-border-hover">
-              <div className="pl-3 pr-2 flex items-center justify-center">
-                <Coins size={16} className="text-text-secondary" />
-              </div>
-              <input
-                type="number"
-                value={betAmount}
-                onChange={(e) =>
-                  setBetAmount(Math.max(0, Number(e.target.value)))
-                }
-                className="w-full bg-transparent text-white font-bold outline-none tabular-nums"
-                min="0"
-                step="0.01"
-                disabled={isSpinning}
-              />
-              <div className="flex items-center gap-1 pr-1">
+              <div className="flex bg-[#0d1b24] p-1 rounded-lg border border-[#233845]">
                 <button
-                  onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(2))}
-                  className="bg-[#2c4755] hover:bg-[#345464] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                  onClick={() => setRisk("low")}
+                  disabled={isSpinning}
+                  className={cn(
+                    "flex-1 py-2 rounded font-bold text-sm transition-colors",
+                    risk === "low"
+                      ? "bg-[#233845] text-white shadow"
+                      : "bg-transparent text-text-secondary hover:text-white hover:bg-[#162734]",
+                  )}
                 >
-                  ½
+                  Faible
                 </button>
                 <button
-                  onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(2))}
-                  className="bg-[#2c4755] hover:bg-[#345464] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                  onClick={() => setRisk("high")}
+                  disabled={isSpinning}
+                  className={cn(
+                    "flex-1 py-2 rounded font-bold text-sm transition-colors",
+                    risk === "high"
+                       ? "bg-[#233845] text-white shadow"
+                      : "bg-transparent text-text-secondary hover:text-white hover:bg-[#162734]",
+                  )}
                 >
-                  2×
+                  Élevé
                 </button>
               </div>
             </div>
+
+            <div className="flex-1"></div>
+
+            <button
+              onClick={handleSpin}
+              disabled={isSpinning || balance < betAmount || betAmount <= 0}
+              className="w-full py-4 rounded-lg text-[#000] font-extrabold uppercase tracking-wider bg-accent hover:bg-accent-hover disabled:bg-[#233845] disabled:text-text-secondary disabled:shadow-none transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] hover:shadow-[0_0_25px_rgba(0,231,1,0.4)] text-sm"
+            >
+              Jouer
+            </button>
           </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-text-secondary text-sm font-semibold">
-              Risque
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setRisk("low")}
-                disabled={isSpinning}
-                className={cn(
-                  "flex-1 py-2 rounded font-bold text-sm",
-                  risk === "low"
-                    ? "bg-bg-inner text-white border border-border-medium"
-                    : "bg-transparent text-text-secondary",
-                )}
-              >
-                Faible
-              </button>
-              <button
-                onClick={() => setRisk("high")}
-                disabled={isSpinning}
-                className={cn(
-                  "flex-1 py-2 rounded font-bold text-sm",
-                  risk === "high"
-                    ? "bg-bg-inner text-white border border-border-medium"
-                    : "bg-transparent text-text-secondary",
-                )}
-              >
-                Élevé
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1"></div>
-
-          <button
-            onClick={handleSpin}
-            disabled={isSpinning || balance < betAmount}
-            className={cn(
-              "w-full py-4 rounded-md font-extrabold text-base transition-all bg-[#00e676] hover:bg-[#00c853] text-[#0f1116] shadow-[0_4px_0_#00a84b]",
-              "active:translate-y-1 active:shadow-[0_0px_0_#00a84b]",
-              (isSpinning || balance < betAmount) &&
-                "opacity-50 cursor-not-allowed active:translate-y-0 active:shadow-[0_4px_0_#00a84b]",
-            )}
-          >
-            Tourner
-          </button>
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="md:col-span-9 bg-[#0f172a] relative flex flex-col items-center justify-center overflow-hidden p-8">
+        <div className="flex-1 bg-[#0f212e] border border-l-0 border-[#233845] relative flex flex-col items-center justify-center p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
           {/* Win Popup */}
           {winInfo && (
             <WinPopup

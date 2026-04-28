@@ -177,94 +177,104 @@ export function Crash() {
   }, [multiplier, gameState]);
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-2 sm:p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-64px)]">
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
+    <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
+      <div className="w-full flex md:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[600px]">
         {/* Left Side: Controls */}
-        <div className="md:col-span-3 bg-[#213743] p-4 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-border-medium z-10 relative">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <label className="text-text-secondary text-sm font-semibold">
-                Montant
-              </label>
-              <span className="text-text-secondary text-sm">
-                €{(balance || 0).toFixed(2)}
-              </span>
+        <div className="w-full md:w-80 bg-[#162734] border border-[#233845] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col p-6 z-10 relative order-2 md:order-1">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+          <div className="flex flex-col gap-6 relative z-10 w-full h-full">
+            <div className="bg-[#0d1b24] rounded-lg p-1 flex border border-[#233845]">
+              <button className="flex-1 text-sm font-bold text-white bg-[#233845] rounded shadow py-2 transition-colors">Manuel</button>
+              <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded py-2 transition-colors">Auto</button>
             </div>
-            <div className="relative flex items-center bg-bg-inner rounded-md border border-border-medium p-1 transition-colors focus-within:border-border-hover">
-              <div className="pl-3 pr-2 flex items-center justify-center">
-                <Coins size={16} className="text-text-secondary" />
+
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
+                  <span>Montant du Pari</span>
+                  <span className="text-white text-xs flex items-center gap-1 font-semibold pr-1">
+                    {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                  </span>
+                </div>
+                <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
+                  <span className="pl-3 absolute flex items-center justify-center">
+                    {renderCryptoIcon(activeCrypto, "w-5 h-5")}
+                  </span>
+                  <input
+                    type="number"
+                    value={betAmount === 0 ? "" : betAmount}
+                    onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 text-sm"
+                    min="0"
+                    step="0.00000001"
+                    disabled={gameState !== "idle" && hasBet}
+                  />
+                  <div className="flex items-center h-full border-l border-[#233845] divide-x divide-[#233845]">
+                    <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))} className="px-4 hover:bg-[#233845] text-xs font-bold transition-colors text-slate-300 h-full" disabled={gameState !== "idle" && hasBet}> ½ </button>
+                    <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))} className="px-4 hover:bg-[#233845] text-xs font-bold transition-colors text-slate-300 h-full" disabled={gameState !== "idle" && hasBet}> 2× </button>
+                  </div>
+                </div>
               </div>
-              <input
-                type="number"
-                value={betAmount}
-                onChange={(e) =>
-                  setBetAmount(Math.max(0, Number(e.target.value)))
-                }
-                className="w-full bg-transparent text-white font-bold outline-none tabular-nums"
-                min="0"
-                step="0.01"
-                disabled={gameState !== "idle" && hasBet}
-              />
+
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
+                  <label>Auto Cashout</label>
+                </div>
+                <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
+                  <input
+                    type="number"
+                    value={autoCashout}
+                    onChange={(e) =>
+                      setAutoCashout(Math.max(1.01, Number(e.target.value)))
+                    }
+                    className="w-full bg-transparent p-2 pl-4 text-white font-bold outline-none focus:ring-0 text-sm"
+                    min="1.01"
+                    step="0.01"
+                    disabled={gameState !== "idle" && hasBet}
+                  />
+                  <div className="pr-4 text-text-secondary font-bold text-sm pointer-events-none">×</div>
+                </div>
+              </div>
             </div>
+
+            <div className="flex-1"></div>
+
+            {gameState === "idle" || !hasBet ? (
+              <button
+                onClick={handleBet}
+                disabled={gameState === "playing" || balance < betAmount || betAmount <= 0}
+                className={cn(
+                  "w-full py-4 rounded-lg text-[#000] font-extrabold uppercase tracking-wider bg-accent hover:bg-accent-hover disabled:bg-[#233845] disabled:text-text-secondary disabled:shadow-none transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] hover:shadow-[0_0_25px_rgba(0,231,1,0.4)] text-sm",
+                )}
+              >
+                {gameState === "playing" ? "En cours..." : "Jouer"}
+              </button>
+            ) : (
+              <button
+                onClick={handleCashout}
+                disabled={cashedOut || gameState === "crashed"}
+                className={cn(
+                  "w-full py-4 rounded-lg font-extrabold uppercase tracking-wider transition-all text-sm",
+                  cashedOut || gameState === "crashed"
+                    ? "bg-[#233845] text-text-secondary shadow-none cursor-not-allowed"
+                    : "bg-[#00e701] text-[#000] hover:bg-[#1fff20] shadow-[0_0_20px_rgba(0,231,1,0.4)]"
+                )}
+              >
+                {cashedOut
+                  ? "Retiré !"
+                  : `Retrait`}
+                {!cashedOut && (
+                  <span className="ml-2 bg-black/10 px-2 py-0.5 rounded backdrop-blur-sm">
+                    {(betAmount * multiplier).toFixed(8)}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <label className="text-text-secondary text-sm font-semibold">
-                Auto Cashout
-              </label>
-            </div>
-            <div className="relative flex items-center bg-bg-inner rounded-md border border-border-medium p-1 transition-colors focus-within:border-border-hover">
-              <input
-                type="number"
-                value={autoCashout}
-                onChange={(e) =>
-                  setAutoCashout(Math.max(1.01, Number(e.target.value)))
-                }
-                className="w-full bg-transparent text-white font-bold outline-none tabular-nums pl-3"
-                min="1.01"
-                step="0.01"
-                disabled={gameState !== "idle" && hasBet}
-              />
-              <div className="pr-3 text-text-secondary font-bold">×</div>
-            </div>
-          </div>
-
-          <div className="flex-1"></div>
-
-          {gameState === "idle" || !hasBet ? (
-            <button
-              onClick={handleBet}
-              disabled={gameState === "playing" || balance < betAmount}
-              className={cn(
-                "w-full py-4 rounded-md font-extrabold text-base transition-all bg-[#00e676] hover:bg-[#00c853] text-[#0f1116] shadow-[0_4px_0_#00a84b]",
-                "active:translate-y-1 active:shadow-[0_0px_0_#00a84b]",
-                (gameState === "playing" || balance < betAmount) &&
-                  "opacity-50 cursor-not-allowed active:translate-y-0 active:shadow-[0_4px_0_#00a84b]",
-              )}
-            >
-              {gameState === "playing" ? "En cours..." : "Miser"}
-            </button>
-          ) : (
-            <button
-              onClick={handleCashout}
-              disabled={cashedOut || gameState === "crashed"}
-              className={cn(
-                "w-full py-4 rounded-md font-extrabold text-base transition-all bg-[#ff9800] hover:bg-[#f57c00] text-[#0f1116] shadow-[0_4px_0_#e65100]",
-                "active:translate-y-1 active:shadow-[0_0px_0_#e65100]",
-                (cashedOut || gameState === "crashed") &&
-                  "opacity-50 cursor-not-allowed active:translate-y-0",
-              )}
-            >
-              {cashedOut
-                ? "Retiré !"
-                : `Retirer (€${(betAmount * multiplier).toFixed(2)})`}
-            </button>
-          )}
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="md:col-span-9 bg-[#0f172a] relative flex flex-col overflow-hidden">
+        <div className="flex-1 bg-[#0f212e] md:rounded-r-2xl md:rounded-bl-none rounded-b-2xl relative flex flex-col overflow-hidden border border-l-0 border-[#233845] order-1 md:order-2 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
           <canvas
             ref={canvasRef}
             width={800}

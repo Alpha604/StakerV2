@@ -136,7 +136,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const vault = user?.vault || 0;
 
   useEffect(() => {
-    const initializeSession = async () => {
+      const initializeSession = async () => {
+      // Add an artificial delay to show loader for at least 1s on startup
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const savedUser = localStorage.getItem("stake_user_session");
       const savedBets = localStorage.getItem("stake_session_bets");
 
@@ -208,6 +211,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     if (username.length < 3) return false;
 
+    // Simulate network delay to make the connection feel real as requested
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     // Always create a generic user first via local
     const localUser: CustomUser = {
       id: username,
@@ -256,26 +262,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       console.warn("API Error, utilizing local storage user base");
       const allUsersStr = localStorage.getItem("stake_all_users") || "{}";
       const allUsers = JSON.parse(allUsersStr);
+      
+      const sessionToken = btoa(`${username}:${password || ""}`);
 
       if (isRegister) {
         if (allUsers[username]) {
           return false; // user exists
         }
-        allUsers[username] = { ...localUser, password }; // storing pw just locally for simple match
+        allUsers[username] = { ...localUser, sessionToken };
+        delete allUsers[username].password; // Clean up old plaintext if any
         localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
       } else {
         const found = allUsers[username];
         if (!found) {
           // Auto register the user if they don't exist in local storage to make demo smooth
-          allUsers[username] = { ...localUser, password };
+          allUsers[username] = { ...localUser, sessionToken };
           localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
-        } else if (found.password !== password && password !== "") {
-          return false;
         } else {
-          localUser.balance = found.balance;
-          localUser.vault = found.vault;
-          localUser.totalWagered = found.totalWagered;
-          localUser.totalWon = found.totalWon;
+          // Support migration from plaintext to simple token
+          const isValidOldPassword = found.password === password;
+          const isValidToken = found.sessionToken === sessionToken;
+          
+          if (!isValidOldPassword && !isValidToken && password !== "") {
+            return false;
+          }
+          
+          // Secure it now
+          if (isValidOldPassword) {
+            delete found.password;
+            found.sessionToken = sessionToken;
+            allUsers[username] = found;
+            localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
+          }
+
+          localUser.balance = found.balance ?? 0;
+          localUser.vault = found.vault ?? 1000;
+          localUser.totalWagered = found.totalWagered ?? 0;
+          localUser.totalWon = found.totalWon ?? 0;
         }
       }
     }

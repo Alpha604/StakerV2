@@ -104,65 +104,73 @@ export function Plinko() {
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-[320px_1fr] bg-bg-panel rounded-lg overflow-hidden shadow-2xl min-h-[600px]">
-        
+    <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
+      <div className="w-full flex md:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-2xl min-h-[600px]">
         {/* Left Side: Controls */}
-        <div className="bg-bg-panel lg:bg-[#213743] p-4 flex flex-col gap-5 border-b lg:border-b-0 lg:border-r border-border-medium z-10">
-          <div className="bg-[#0f212e] rounded-full p-1 flex">
-            <button className="flex-1 text-sm font-bold text-white bg-[#2f4553] rounded-full py-2 transition-colors">Manuel</button>
-            <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded-full py-2 transition-colors">Auto</button>
+        <div className="w-full md:w-80 bg-[#162734] border border-[#233845] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col p-6 z-10 relative order-2 md:order-1">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+          <div className="flex flex-col gap-6 relative z-10 w-full h-full">
+          <div className="bg-[#0d1b24] rounded-lg p-1 flex border border-[#233845]">
+            <button className="flex-1 text-sm font-bold text-white bg-[#233845] rounded shadow py-2 transition-colors">Manuel</button>
+            <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded py-2 transition-colors">Auto</button>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             {/* Bet Amount */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-text-secondary text-xs font-bold"> Montant de la mise </label>
-                <span className="text-text-secondary text-xs font-bold flex items-center gap-1"> $ {(balance || 0).toFixed(2)} </span>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
+                <span>Montant du Pari</span>
+                <span className="text-white text-xs flex items-center gap-1 font-semibold pr-1">
+                  {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                </span>
               </div>
-              <div className="relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] p-1 transition-colors focus-within:border-border-hover">
-                <div className="pl-2 pr-1 flex items-center justify-center"> {renderCryptoIcon(activeCrypto, "w-4 h-4")} </div>
+              <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
+                <span className="pl-3 absolute flex items-center justify-center">
+                  {renderCryptoIcon(activeCrypto, "w-5 h-5")}
+                </span>
                 <input
                   type="number"
                   value={betAmount === 0 ? "" : betAmount}
                   onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
-                  className="w-full bg-transparent text-white font-bold outline-none tabular-nums text-sm px-1 py-1"
+                  className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 text-sm"
                   min="0"
-                  step="0.01"
+                  step="0.00000001"
                 />
-                <div className="flex items-center gap-1 pr-1 border-l border-[#2f4553] pl-2">
-                  <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> ½ </button>
-                  <div className="w-px h-3 bg-[#2f4553]"></div>
-                  <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> 2× </button>
+                <div className="flex items-center h-full border-l border-[#233845] divide-x divide-[#233845]">
+                  <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))} className="px-4 hover:bg-[#233845] text-xs font-bold transition-colors text-slate-300 h-full"> ½ </button>
+                  <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))} className="px-4 hover:bg-[#233845] text-xs font-bold transition-colors text-slate-300 h-full"> 2× </button>
                 </div>
               </div>
             </div>
             
             {/* Risk Selection */}
-            <div className="flex flex-col gap-1.5">
-                <label className="text-text-secondary text-xs font-bold px-1"> Risque </label>
-                <select 
-                    value={risk}
-                    onChange={(e) => setRisk(e.target.value)}
-                    className="w-full bg-[#0f212e] text-white font-bold text-sm rounded border border-[#2f4553] p-2.5 focus:border-border-hover outline-none transition-colors appearance-none cursor-pointer"
-                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1bad3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right .7rem top 50%', backgroundSize: '.65rem auto' }}
-                >
-                    {RISK_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
+            <div className="flex flex-col gap-2">
+                <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1"> Risque </label>
+                <div className="relative">
+                  <select 
+                      value={risk}
+                      onChange={(e) => setRisk(e.target.value)}
+                      className="w-full h-12 bg-[#0d1b24] text-white font-bold text-sm rounded-lg border border-[#233845] px-4 ring-1 ring-black/20 hover:border-[#334b5c] focus:border-accent outline-none transition-colors appearance-none cursor-pointer shadow-inner"
+                  >
+                      {RISK_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">▼</div>
+                </div>
             </div>
 
             {/* Rows Selection */}
-            <div className="flex flex-col gap-1.5">
-                <label className="text-text-secondary text-xs font-bold px-1"> Lignes </label>
-                <select 
-                    value={rows}
-                    onChange={(e) => setRows(Number(e.target.value))}
-                    className="w-full bg-[#0f212e] text-white font-bold text-sm rounded border border-[#2f4553] p-2.5 focus:border-border-hover outline-none transition-colors appearance-none cursor-pointer"
-                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1bad3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right .7rem top 50%', backgroundSize: '.65rem auto' }}
-                >
-                    {ROWS_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
+            <div className="flex flex-col gap-2">
+                <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1"> Lignes </label>
+                <div className="relative">
+                  <select 
+                      value={rows}
+                      onChange={(e) => setRows(Number(e.target.value))}
+                      className="w-full h-12 bg-[#0d1b24] text-white font-bold text-sm rounded-lg border border-[#233845] px-4 ring-1 ring-black/20 hover:border-[#334b5c] focus:border-accent outline-none transition-colors appearance-none cursor-pointer shadow-inner"
+                  >
+                      {ROWS_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">▼</div>
+                </div>
             </div>
           </div>
 
@@ -170,18 +178,16 @@ export function Plinko() {
 
           <button
             onClick={handleDrop}
-            disabled={balance < betAmount}
-            className={cn(
-              "w-full py-3.5 rounded font-bold text-sm transition-all bg-[#00e676] hover:bg-[#1bc86a] text-[#0f1116]",
-              balance < betAmount && "opacity-50 cursor-not-allowed",
-            )}
+            disabled={balance < betAmount || betAmount <= 0}
+            className="w-full py-4 rounded-lg text-[#000] font-extrabold uppercase tracking-wider bg-accent hover:bg-accent-hover disabled:bg-[#233845] disabled:text-text-secondary disabled:shadow-none transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] hover:shadow-[0_0_25px_rgba(0,231,1,0.4)] text-sm"
           >
             Jouer
           </button>
+          </div>
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="bg-[#0f212e] relative p-4 lg:p-8 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="flex-1 bg-[#0f212e] md:rounded-r-2xl md:rounded-bl-none rounded-b-2xl flex flex-col items-center justify-center order-1 md:order-2 border border-l-0 border-[#233845] p-4 lg:p-12 relative overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}

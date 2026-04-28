@@ -176,10 +176,11 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={isLoading || username.length < 3 || password.length < 6}
-            className="w-full bg-accent hover:bg-accent-hover text-white font-extrabold py-4 rounded-lg mt-2 flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-accent/20 disabled:opacity-50 disabled:hover:shadow-none"
+            className="connexion-btn w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ width: '100%', height: '3.5em' }}
           >
             {isLoading ? (
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
                 {isRegister ? "S'inscrire & Jouer" : "Se Connecter"}

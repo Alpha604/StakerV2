@@ -102,59 +102,65 @@ export function Slots() {
   return (
     <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
       {/* Controls Sidebar */}
-      <div className="w-full md:w-80 bg-bg-panel border border-border-medium rounded-t-xl md:rounded-l-xl md:rounded-tr-none flex flex-col h-fit order-2 md:order-1 z-10 p-4 gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-center text-sm font-bold text-text-secondary uppercase tracking-wider">
-            <span>Pari</span>
-            <span>€{betAmount.toFixed(2)}</span>
-          </div>
-          <div className="relative bg-bg-inner border border-border-medium rounded flex items-center hover:border-text-secondary transition-colors focus-within:border-accent">
-            <span className="pl-3 text-emerald-500 flex items-center justify-center">{renderCryptoIcon(activeCrypto, "w-5 h-5")}</span>
-            <input
-              type="number"
-              value={betAmount || ""}
-              onChange={(e) => setBetAmount(Number(e.target.value))}
-              disabled={isSpinning}
-              className="w-full bg-transparent text-white font-mono p-3 outline-none"
-            />
-            <div className="pr-1 flex gap-1">
-              <button
-                onClick={() => setBetAmount((b) => b / 2)}
-                className="bg-bg-panel hover:bg-border-subtle p-1.5 rounded font-bold text-xs"
+      <div className="w-full md:w-80 bg-[#162734] border border-[#233845] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col h-fit order-2 md:order-1 z-10 p-6 relative">
+         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+         <div className="flex flex-col gap-6 relative z-10">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
+              <span>Montant du Pari</span>
+              <span className="text-white text-xs flex items-center gap-1">
+                {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+              </span>
+            </div>
+            <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
+               <span className="pl-3 absolute flex items-center justify-center">
+                 {renderCryptoIcon(activeCrypto, "w-5 h-5")}
+               </span>
+              <input
+                type="number"
+                value={betAmount || ""}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
                 disabled={isSpinning}
-              >
-                1/2
-              </button>
-              <button
-                onClick={() => setBetAmount((b) => b * 2)}
-                className="bg-bg-panel hover:bg-border-subtle p-1.5 rounded font-bold text-xs"
-                disabled={isSpinning}
-              >
-                2x
-              </button>
+                className="w-full bg-transparent text-white font-bold p-2 pl-10 outline-none focus:ring-0 disabled:opacity-50 text-sm"
+              />
+              <div className="flex h-full border-l border-[#233845] divide-x divide-[#233845]">
+                <button
+                  onClick={() => setBetAmount((b) => b / 2)}
+                  className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                  disabled={isSpinning}
+                >
+                  ½
+                </button>
+                <button
+                  onClick={() => setBetAmount((b) => b * 2)}
+                  className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                  disabled={isSpinning}
+                >
+                  2×
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <button
-          onClick={spin}
-          disabled={!user || balance < betAmount || isSpinning}
-          className="w-full py-3.5 mt-2 rounded text-[#0f172a] font-black text-lg uppercase tracking-wider bg-accent hover:bg-accent-hover transition-colors shadow disabled:opacity-30 disabled:bg-bg-inner disabled:text-text-secondary"
-        >
-          {isSpinning ? "En cours..." : "Spin"}
-        </button>
+          <button
+            onClick={spin}
+            disabled={!user || balance < betAmount || isSpinning || betAmount <= 0}
+            className="w-full py-4 mt-2 rounded-lg text-[#000] font-extrabold text-sm uppercase tracking-wider bg-accent hover:bg-accent-hover transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] disabled:opacity-30 disabled:shadow-none disabled:bg-[#233845] disabled:text-text-secondary disabled:cursor-not-allowed"
+          >
+            {isSpinning ? "En cours..." : "Jouer"}
+          </button>
 
-        <div className="mt-4 bg-bg-inner p-4 border border-border-medium rounded-lg text-xs text-text-secondary flex gap-2">
-          <AlertCircle size={16} className="shrink-0" />
-          <p>
-            Jeu de machine à sous générique pour "Uniquement sur Stake". Tentez
-            d'aligner 3 symboles sur la ligne centrale.
-          </p>
+          <div className="mt-4 bg-[#0d1b24] p-4 border border-[#233845] rounded-lg text-xs text-text-secondary flex gap-3 shadow-inner">
+            <AlertCircle size={18} className="shrink-0 text-accent/80" />
+            <p className="leading-relaxed">
+              Jeu de machine à sous exclusif. Tentez d'aligner 3 symboles identiques sur la ligne du centre.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Game Area */}
-      <div className="flex-1 bg-[#1a2c38] rounded-b-xl md:rounded-r-xl border border-border-medium relative overflow-hidden order-1 md:order-2 p-8 flex flex-col items-center justify-center min-h-[500px]">
+      <div className="flex-1 bg-[#0f212e] rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none border border-l-0 border-[#233845] relative overflow-hidden order-1 md:order-2 p-8 flex flex-col items-center justify-center min-h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
         {winInfo && (
           <WinPopup
             multiplier={winInfo.multiplier}
@@ -163,27 +169,31 @@ export function Slots() {
           />
         )}
 
-        <div className="bg-[#0f172a] p-8 rounded-2xl border-4 border-[#2f4553] shadow-2xl relative">
+        <div className="bg-[#162734] p-8 rounded-2xl border border-[#233845] shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative">
           {/* Payline indicator */}
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-accent/50 -translate-y-1/2 z-0 pointer-events-none"></div>
+          <div className="absolute top-1/2 left-4 right-4 h-1 bg-accent/30 shadow-[0_0_15px_rgba(0,231,1,0.5)] -translate-y-1/2 z-0 pointer-events-none rounded-full"></div>
 
-          <div className="flex gap-4 relative z-10">
+          <div className="flex gap-4 md:gap-6 relative z-10">
             {reels.map((col, colIdx) => (
               <div
                 key={colIdx}
-                className="bg-[#1a2c38] border-2 border-[#304554] rounded-xl flex flex-col items-center p-4 gap-4 overflow-hidden w-24 h-64 relative"
+                className="bg-[#0f212e] border border-[#233845] rounded-xl flex flex-col items-center p-4 gap-4 overflow-hidden w-24 md:w-32 h-64 md:h-72 relative shadow-inner"
               >
+                {/* Gradient fades for top and bottom of reels */}
+                <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0f212e] to-transparent z-10 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#0f212e] to-transparent z-10 pointer-events-none" />
+                
                 <AnimatePresence mode="popLayout">
                   {col.map((sym, rowIdx) => (
                     <motion.div
                       key={`${colIdx}-${rowIdx}-${sym}-${isSpinning}`}
-                      initial={{ y: isSpinning ? -50 : 0, opacity: 0 }}
+                      initial={{ y: isSpinning ? -80 : 0, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: 50, opacity: 0 }}
-                      transition={{ duration: 0.1 }}
+                      exit={{ y: 80, opacity: 0 }}
+                      transition={{ duration: 0.15, ease: "linear" }}
                       className={cn(
-                        "text-4xl filter drop-shadow-md",
-                        rowIdx === 1 ? "scale-125 my-4" : "opacity-50",
+                        "text-5xl md:text-6xl filter drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center h-1/3",
+                        rowIdx === 1 ? "scale-110 md:scale-125 z-0" : "opacity-40 scale-75",
                       )}
                     >
                       {sym}
@@ -195,20 +205,20 @@ export function Slots() {
           </div>
         </div>
 
-        <div className="mt-8 text-center text-text-secondary font-bold">
-          <p className="text-xl mb-2">Tableau des gains (Ligne du centre) :</p>
-          <div className="flex gap-4 justify-center text-sm">
-            <span className="bg-bg-panel px-3 py-1 rounded border border-border-medium">
-              🎰 50x
+        <div className="mt-12 text-center text-text-secondary font-bold">
+          <p className="text-xs uppercase tracking-widest text-[#334b5c] mb-4">Tableau des gains (Ligne du Centre)</p>
+          <div className="flex flex-wrap gap-3 justify-center text-xs md:text-sm">
+            <span className="bg-[#162734] px-4 py-2 rounded-lg border border-[#233845] flex items-center gap-2 shadow-sm">
+              <span className="text-xl drop-shadow">🎰</span> <span className="text-[#00e701] font-black">50x</span>
             </span>
-            <span className="bg-bg-panel px-3 py-1 rounded border border-border-medium">
-              7️⃣ 20x
+            <span className="bg-[#162734] px-4 py-2 rounded-lg border border-[#233845] flex items-center gap-2 shadow-sm">
+              <span className="text-xl drop-shadow">7️⃣</span> <span className="text-white font-black">20x</span>
             </span>
-            <span className="bg-bg-panel px-3 py-1 rounded border border-border-medium">
-              💎 10x
+            <span className="bg-[#162734] px-4 py-2 rounded-lg border border-[#233845] flex items-center gap-2 shadow-sm">
+              <span className="text-xl drop-shadow">💎</span> <span className="text-white font-black">10x</span>
             </span>
-            <span className="bg-bg-panel px-3 py-1 rounded border border-border-medium">
-              🍒 5x
+            <span className="bg-[#162734] px-4 py-2 rounded-lg border border-[#233845] flex items-center gap-2 shadow-sm">
+              <span className="text-xl drop-shadow">🍒</span> <span className="text-white font-black">5x</span>
             </span>
           </div>
         </div>
