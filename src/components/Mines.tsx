@@ -193,44 +193,48 @@ export function Mines() {
   return (
     <>
       <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
-        <div className="w-full md:w-80 bg-[#162734] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col h-fit order-2 md:order-1 overflow-hidden z-10 shadow-2xl relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-          <div className="p-5 flex flex-col gap-6 relative z-10">
-            <div className="flex flex-col gap-2 relative z-10">
-              <div className="flex justify-between items-center">
-                <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1">
-                  Montant du Pari
+        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+          <div className="flex flex-col gap-4 relative w-full h-full">
+            <div className="bg-[#0f212e] rounded-full p-1 flex">
+              <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+              <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[#8b9ba5] text-[13px] font-bold">
+                  Montant de la mise
                 </label>
-                <span className="text-white text-xs flex items-center gap-1 font-semibold pr-1">
-                  {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                  {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
                 </span>
               </div>
-              <div className="flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] focus-within:border-accent transition-colors shadow-inner h-12 overflow-hidden ring-1 ring-black/20">
+              <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
                 <span className="pl-3 absolute flex items-center justify-center">
-                  {renderCryptoIcon(activeCrypto, "w-5 h-5")}
+                  {renderCryptoIcon(activeCrypto, "w-4 h-4")}
                 </span>
                 <input
                   type="number"
                   value={betAmount || ""}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
                   disabled={isPlaying}
-                  className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-sm"
+                  className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
                   step="0.00000001"
-                  min="0.00000001"
+                  min="0"
                   max={balance}
                 />
-                <div className="flex h-full border-l border-[#233845] divide-x divide-[#233845]">
+                <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
                   <button
                     onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
                     disabled={isPlaying}
-                    className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                   >
                     ½
                   </button>
                   <button
                     onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
                     disabled={isPlaying}
-                    className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                   >
                     2×
                   </button>
@@ -238,61 +242,69 @@ export function Mines() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 relative z-10">
-              <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1">
+            <div className="flex flex-col gap-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
                 Mines
               </label>
-              <div className="relative">
+              <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
                 <select
                   value={minesCount}
                   onChange={(e) => setMinesCount(Number(e.target.value))}
                   disabled={isPlaying}
-                  className="w-full h-12 bg-[#0d1b24] border border-[#233845] ring-1 ring-black/20 px-4 text-white font-bold outline-none hover:border-[#334b5c] focus:border-accent rounded-lg disabled:opacity-50 appearance-none shadow-inner text-sm transition-colors cursor-pointer"
+                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 24].map((n) => (
-                    <option key={n} value={n}>
+                    <option key={n} value={n} className="text-black">
                       {n}
                     </option>
                   ))}
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
                   ▼
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 flex flex-col gap-3 relative z-10 w-full mt-2">
-              {isPlaying ? (
-                <>
-                  <button
-                    onClick={pickRandom}
-                    className="w-full py-3.5 rounded-lg text-text-secondary bg-[#233845] hover:bg-[#2c4554] border-none font-bold text-sm transition-colors cursor-pointer"
-                  >
-                    Sélection Aléatoire
-                  </button>
-                  <button
-                    onClick={cashout}
-                    disabled={revealedCount === 0}
-                    className="w-full py-4 rounded-lg text-[#000] bg-accent hover:bg-accent-hover disabled:bg-[#00e701]/20 disabled:text-text-secondary disabled:cursor-not-allowed transition-colors shadow-[0_0_15px_rgba(0,231,1,0.2)] hover:shadow-[0_0_20px_rgba(0,231,1,0.4)] flex items-center justify-between px-5"
-                  >
-                    <span className="font-extrabold text-sm uppercase tracking-wider">Retrait</span>
-                    {revealedCount > 0 && (
-                      <span className="font-extrabold text-sm flex items-center gap-1.5 bg-black/10 px-2 py-0.5 rounded backdrop-blur-sm">
-                        {potentialWin.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-4 h-4")}
-                      </span>
-                    )}
-                  </button>
-                </>
-              ) : (
+            <div className="flex-1"></div>
+
+            {isPlaying ? (
+              <div className="flex flex-col gap-3">
                 <button
-                  onClick={startGame}
-                  disabled={isPlaying || betAmount > balance || betAmount <= 0}
-                  className="w-full py-4 rounded-lg text-[#000] font-extrabold uppercase tracking-wider bg-accent hover:bg-accent-hover disabled:bg-[#233845] disabled:text-text-secondary disabled:shadow-none transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] hover:shadow-[0_0_25px_rgba(0,231,1,0.4)] text-sm"
+                  onClick={pickRandom}
+                  className="w-full py-3 rounded text-white bg-[#2f4553] hover:bg-[#3d5a6a] font-bold text-[13px] transition-colors"
                 >
-                  Parier
+                  Sélection aléatoire
                 </button>
-              )}
-            </div>
+                <button
+                  onClick={cashout}
+                  disabled={revealedCount === 0}
+                  className={cn(
+                    "w-full py-3.5 rounded font-bold transition-all text-sm flex justify-center items-center gap-2",
+                    revealedCount === 0 
+                      ? "bg-[#1bc86a]/40 text-black/50 cursor-not-allowed" 
+                      : "bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black"
+                  )}
+                >
+                  <span>Retrait</span>
+                  {revealedCount > 0 && (
+                    <span className="flex items-center gap-1">
+                      {potentialWin.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                    </span>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={startGame}
+                disabled={isPlaying || betAmount > balance || betAmount <= 0}
+                className={cn(
+                  "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                  (isPlaying || betAmount > balance || betAmount <= 0) && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                Pari
+              </button>
+            )}
           </div>
         </div>
 

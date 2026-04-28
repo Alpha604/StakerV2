@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
-import { Coins } from "lucide-react";
+import { Coins, ChevronDown } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
 const SUITS = ["hearts", "diamonds", "clubs", "spades"];
@@ -131,55 +131,85 @@ export function Baccarat() {
   return (
     <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
       {/* Controls Sidebar */}
-      <div className="w-full md:w-80 bg-bg-panel border border-border-subtle rounded-t-xl md:rounded-l-xl md:rounded-tr-none flex flex-col h-fit order-2 md:order-1 z-10 shadow-2xl overflow-hidden">
-        <div className="p-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center text-sm font-bold text-text-secondary uppercase tracking-wider">
-              <span>Pari</span>
+      <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="flex flex-col gap-4 relative w-full h-full">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+            <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold">
+                Montant de la mise
+              </label>
+              <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+              </span>
             </div>
-            <div className="relative bg-bg-inner border border-border-medium rounded-md flex items-center focus-within:border-accent">
-              <span className="pl-3 text-emerald-500 flex items-center justify-center">{renderCryptoIcon(activeCrypto, "w-5 h-5")}</span>
+            <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+              <span className="pl-3 absolute flex items-center justify-center">
+                {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+              </span>
               <input
                 type="number"
                 value={betAmount || ""}
                 onChange={(e) => setBetAmount(Number(e.target.value))}
-                className="w-full bg-transparent text-white font-mono p-3 outline-none"
+                disabled={isPlaying}
+                className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
+                step="0.00000001"
+                min="0"
+                max={balance}
               />
+              <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
+                <button
+                  onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
+                  disabled={isPlaying}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                >
+                  ½
+                </button>
+                <button
+                  onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
+                  disabled={isPlaying}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                >
+                  2×
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-bold text-text-secondary uppercase tracking-wider">
-              Choix
-            </span>
-            <div className="flex flex-col gap-2">
-              {(["player", "banker", "tie"] as const).map((choice) => (
-                <button
-                  key={choice}
-                  onClick={() => setBetChoice(choice)}
-                  className={cn(
-                    "py-3 rounded text-sm font-bold uppercase transition-all border",
-                    betChoice === choice
-                      ? "bg-accent/20 border-accent text-accent shadow-[0_0_15px_rgba(20,117,225,0.2)]"
-                      : "bg-bg-inner border-border-medium text-text-secondary hover:text-white",
-                  )}
-                >
-                  {choice === "player"
-                    ? "Player (2.00x)"
-                    : choice === "banker"
-                      ? "Banker (1.95x)"
-                      : "Tie (9.00x)"}
-                </button>
-              ))}
+          <div className="flex flex-col gap-1">
+            <label className="text-[#8b9ba5] text-[13px] font-bold px-1">Choix</label>
+            <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+              <select
+                value={betChoice}
+                onChange={(e) => setBetChoice(e.target.value as "player" | "banker" | "tie")}
+                disabled={isPlaying}
+                className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
+              >
+                <option value="player" className="text-black">Player (2.00x)</option>
+                <option value="banker" className="text-black">Banker (1.95x)</option>
+                <option value="tie" className="text-black">Tie (9.00x)</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
+                <ChevronDown size={14} />
+              </div>
             </div>
           </div>
+
+          <div className="flex-1"></div>
 
           <button
-            disabled={isPlaying || !user}
             onClick={startGame}
-            className="mt-2 w-full py-4 rounded-md font-extrabold text-lg uppercase tracking-wider transition-all bg-[#00e676] hover:bg-[#00c853] text-[#0f172a] disabled:opacity-50"
+            disabled={isPlaying || !user || balance < betAmount || betAmount <= 0}
+            className={cn(
+              "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+              (isPlaying || !user || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed"
+            )}
           >
-            Parier
+            Pari
           </button>
         </div>
       </div>

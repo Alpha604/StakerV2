@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { motion, useAnimation } from "motion/react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn } from "../lib/utils";
-import { Coins } from "lucide-react";
+import { Coins, ChevronDown } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
 const SEGMENTS = {
@@ -201,44 +201,48 @@ export function Wheel() {
     <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
       <div className="w-full flex md:flex-row flex-col max-w-5xl rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Side: Controls */}
-        <div className="w-full md:w-80 bg-[#162734] border border-[#233845] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col p-6 z-10 relative">
-           <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-           <div className="flex flex-col gap-6 relative z-10 w-full h-full">
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between">
-                <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1">
-                  Montant du Pari
+        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+          <div className="flex flex-col gap-4 relative w-full h-full">
+            <div className="bg-[#0f212e] rounded-full p-1 flex">
+              <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+              <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[#8b9ba5] text-[13px] font-bold">
+                  Montant de la mise
                 </label>
-                <span className="text-white text-xs flex items-center gap-1 font-semibold pr-1">
-                  {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                  {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
                 </span>
               </div>
-              <div className="flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] focus-within:border-accent transition-colors shadow-inner h-12 overflow-hidden ring-1 ring-black/20">
+              <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
                 <span className="pl-3 absolute flex items-center justify-center">
-                  {renderCryptoIcon(activeCrypto, "w-5 h-5")}
+                  {renderCryptoIcon(activeCrypto, "w-4 h-4")}
                 </span>
                 <input
                   type="number"
                   value={betAmount || ""}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
                   disabled={isSpinning}
-                  className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-sm"
+                  className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
                   step="0.00000001"
                   min="0"
                   max={balance}
                 />
-                <div className="flex h-full border-l border-[#233845] divide-x divide-[#233845]">
+                <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
                   <button
                     onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
                     disabled={isSpinning}
-                    className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                   >
                     ½
                   </button>
                   <button
                     onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
                     disabled={isSpinning}
-                    className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                   >
                     2×
                   </button>
@@ -246,35 +250,23 @@ export function Wheel() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-text-secondary text-[11px] uppercase font-bold tracking-widest pl-1">
-                Risque
+            <div className="flex flex-col gap-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                Risque / Difficulté
               </label>
-              <div className="flex bg-[#0d1b24] p-1 rounded-lg border border-[#233845]">
-                <button
-                  onClick={() => setRisk("low")}
+              <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+                <select
+                  value={risk}
+                  onChange={(e) => setRisk(e.target.value as "low" | "high")}
                   disabled={isSpinning}
-                  className={cn(
-                    "flex-1 py-2 rounded font-bold text-sm transition-colors",
-                    risk === "low"
-                      ? "bg-[#233845] text-white shadow"
-                      : "bg-transparent text-text-secondary hover:text-white hover:bg-[#162734]",
-                  )}
+                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative"
                 >
-                  Faible
-                </button>
-                <button
-                  onClick={() => setRisk("high")}
-                  disabled={isSpinning}
-                  className={cn(
-                    "flex-1 py-2 rounded font-bold text-sm transition-colors",
-                    risk === "high"
-                       ? "bg-[#233845] text-white shadow"
-                      : "bg-transparent text-text-secondary hover:text-white hover:bg-[#162734]",
-                  )}
-                >
-                  Élevé
-                </button>
+                  <option value="low" className="text-black">Classique</option>
+                  <option value="high" className="text-black">Élevé</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
+                  <ChevronDown size={14} />
+                </div>
               </div>
             </div>
 
@@ -283,9 +275,12 @@ export function Wheel() {
             <button
               onClick={handleSpin}
               disabled={isSpinning || balance < betAmount || betAmount <= 0}
-              className="w-full py-4 rounded-lg text-[#000] font-extrabold uppercase tracking-wider bg-accent hover:bg-accent-hover disabled:bg-[#233845] disabled:text-text-secondary disabled:shadow-none transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] hover:shadow-[0_0_25px_rgba(0,231,1,0.4)] text-sm"
+              className={cn(
+                "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                (isSpinning || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed",
+              )}
             >
-              Jouer
+              Pari
             </button>
           </div>
         </div>

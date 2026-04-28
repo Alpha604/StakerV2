@@ -77,70 +77,69 @@ export function Dice() {
       <div className="w-full flex lg:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[600px]">
         
         {/* Left Side: Controls */}
-        <div className="w-full lg:w-80 bg-[#162734] border border-[#233845] lg:rounded-l-2xl lg:rounded-r-none rounded-t-2xl flex flex-col p-6 z-10 relative order-2 lg:order-1">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-          <div className="flex flex-col gap-6 relative z-10 w-full h-full">
-            <div className="bg-[#0d1b24] rounded-lg p-1 flex border border-[#233845]">
-              <button className="flex-1 text-sm font-bold text-white bg-[#233845] rounded shadow py-2 transition-colors">Manuel</button>
-              <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded py-2 transition-colors">Auto</button>
+        <div className="w-full lg:w-[320px] bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
+          <div className="flex flex-col gap-4 relative w-full h-full">
+            <div className="bg-[#0f212e] rounded-full p-1 flex">
+              <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+              <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
             </div>
 
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
-                  <span>Montant du pari</span>
-                  <span className="text-white text-xs flex items-center gap-1 font-semibold pr-1">
-                    {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
-                  </span>
-                </div>
-                <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
-                  <span className="pl-3 absolute flex items-center justify-center">
-                     {renderCryptoIcon(activeCrypto, "w-5 h-5")}
-                  </span>
-                  <input
-                    type="number"
-                    value={betAmount === 0 ? "" : betAmount}
-                    onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 text-sm"
-                    min="0"
-                    step="0.00000001"
-                    disabled={isRolling}
-                  />
-                  <div className="flex items-center h-full border-l border-[#233845] divide-x divide-[#233845]">
-                    <button
-                      onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
-                      className="px-4 hover:bg-[#233845] text-xs font-bold transition-colors text-slate-300 h-full" disabled={isRolling}
-                    >
-                      ½
-                    </button>
-                    <button
-                      onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
-                      className="px-4 hover:bg-[#233845] text-xs font-bold transition-colors text-slate-300 h-full" disabled={isRolling}
-                    >
-                      2×
-                    </button>
-                  </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[#8b9ba5] text-[13px] font-bold">
+                  Montant de la mise
+                </label>
+                <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                  {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                </span>
+              </div>
+              <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+                <span className="pl-3 absolute flex items-center justify-center">
+                   {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+                </span>
+                <input
+                  type="number"
+                  value={betAmount === 0 ? "" : betAmount}
+                  onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 text-[13px]"
+                  min="0"
+                  step="0.00000001"
+                  disabled={isRolling}
+                />
+                <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
+                  <button
+                    onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white" disabled={isRolling}
+                  >
+                    ½
+                  </button>
+                  <button
+                    onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white" disabled={isRolling}
+                  >
+                    2×
+                  </button>
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
-                  <label>Bénéfice (Gain)</label>
-                </div>
-                <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
-                  <span className="pl-3 absolute flex items-center justify-center">
-                    {renderCryptoIcon(activeCrypto, "w-5 h-5")}
-                  </span>
-                  <input
-                    type="number"
-                    value={profitOnWin === 0 ? "" : profitOnWin.toFixed(8)}
-                    onChange={(e) => handleProfitChange(e.target.value)}
-                    className="w-full bg-transparent p-2 pl-10 text-white font-bold outline-none focus:ring-0 text-sm"
-                    min="0"
-                    step="0.00000001"
-                    disabled={isRolling}
-                  />
-                </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[#8b9ba5] text-[13px] font-bold">Bénéfice (Gain)</label>
+              </div>
+              <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+                <span className="pl-3 absolute flex items-center justify-center">
+                  {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+                </span>
+                <input
+                  type="number"
+                  value={profitOnWin === 0 ? "" : profitOnWin.toFixed(8)}
+                  onChange={(e) => handleProfitChange(e.target.value)}
+                  className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 text-[13px]"
+                  min="0"
+                  step="0.00000001"
+                  disabled={isRolling}
+                />
               </div>
             </div>
 
@@ -150,10 +149,11 @@ export function Dice() {
               onClick={handleRoll}
               disabled={isRolling || balance < betAmount || betAmount <= 0}
               className={cn(
-                "w-full py-4 rounded-lg text-[#000] font-extrabold uppercase tracking-wider bg-accent hover:bg-accent-hover disabled:bg-[#233845] disabled:text-text-secondary disabled:shadow-none transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] hover:shadow-[0_0_25px_rgba(0,231,1,0.4)] text-sm",
+                "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                (isRolling || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed",
               )}
             >
-              Miser
+              Pari
             </button>
           </div>
         </div>

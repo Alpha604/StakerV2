@@ -102,38 +102,46 @@ export function Slots() {
   return (
     <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
       {/* Controls Sidebar */}
-      <div className="w-full md:w-80 bg-[#162734] border border-[#233845] md:rounded-l-2xl md:rounded-r-none rounded-t-2xl flex flex-col h-fit order-2 md:order-1 z-10 p-6 relative">
-         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-         <div className="flex flex-col gap-6 relative z-10">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center text-[11px] font-bold text-text-secondary uppercase tracking-widest pl-1">
-              <span>Montant du Pari</span>
-              <span className="text-white text-xs flex items-center gap-1">
-                {balance.toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+      <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="flex flex-col gap-4 relative w-full h-full">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+            <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold">
+                Montant de la mise
+              </label>
+              <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
               </span>
             </div>
-            <div className="relative flex items-center bg-[#0d1b24] border border-[#233845] rounded-lg hover:border-[#334b5c] transition-colors focus-within:border-accent ring-1 ring-black/20 h-12 overflow-hidden">
-               <span className="pl-3 absolute flex items-center justify-center">
-                 {renderCryptoIcon(activeCrypto, "w-5 h-5")}
-               </span>
+            <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+              <span className="pl-3 absolute flex items-center justify-center">
+                {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+              </span>
               <input
                 type="number"
                 value={betAmount || ""}
                 onChange={(e) => setBetAmount(Number(e.target.value))}
                 disabled={isSpinning}
-                className="w-full bg-transparent text-white font-bold p-2 pl-10 outline-none focus:ring-0 disabled:opacity-50 text-sm"
+                className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
+                step="0.00000001"
+                min="0"
               />
-              <div className="flex h-full border-l border-[#233845] divide-x divide-[#233845]">
+              <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
                 <button
-                  onClick={() => setBetAmount((b) => b / 2)}
-                  className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                  onClick={() => setBetAmount((b) => +(b / 2).toFixed(8))}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                   disabled={isSpinning}
                 >
                   ½
                 </button>
                 <button
-                  onClick={() => setBetAmount((b) => b * 2)}
-                  className="px-4 hover:bg-[#233845] text-xs font-bold disabled:opacity-50 transition-colors text-slate-300"
+                  onClick={() => setBetAmount((b) => +(b * 2).toFixed(8))}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                   disabled={isSpinning}
                 >
                   2×
@@ -142,18 +150,23 @@ export function Slots() {
             </div>
           </div>
 
+          <div className="flex-1"></div>
+
           <button
             onClick={spin}
             disabled={!user || balance < betAmount || isSpinning || betAmount <= 0}
-            className="w-full py-4 mt-2 rounded-lg text-[#000] font-extrabold text-sm uppercase tracking-wider bg-accent hover:bg-accent-hover transition-all shadow-[0_0_20px_rgba(0,231,1,0.2)] disabled:opacity-30 disabled:shadow-none disabled:bg-[#233845] disabled:text-text-secondary disabled:cursor-not-allowed"
+            className={cn(
+              "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+              (!user || balance < betAmount || isSpinning || betAmount <= 0) && "opacity-50 cursor-not-allowed"
+            )}
           >
-            {isSpinning ? "En cours..." : "Jouer"}
+            {isSpinning ? "En cours..." : "Pari"}
           </button>
 
-          <div className="mt-4 bg-[#0d1b24] p-4 border border-[#233845] rounded-lg text-xs text-text-secondary flex gap-3 shadow-inner">
-            <AlertCircle size={18} className="shrink-0 text-accent/80" />
+          <div className="mt-4 bg-[#0f212e] p-3 rounded text-[11px] text-[#8b9ba5] flex gap-2">
+            <AlertCircle size={14} className="shrink-0 text-[#8b9ba5] mt-0.5" />
             <p className="leading-relaxed">
-              Jeu de machine à sous exclusif. Tentez d'aligner 3 symboles identiques sur la ligne du centre.
+              Jeu de machine à sous. Tentez d'aligner 3 symboles identiques sur la ligne du centre.
             </p>
           </div>
         </div>

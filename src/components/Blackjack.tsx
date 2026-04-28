@@ -133,62 +133,85 @@ export function Blackjack() {
   return (
     <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
       {/* Controls Sidebar */}
-      <div className="w-full md:w-80 bg-bg-panel border border-border-subtle rounded-t-xl md:rounded-l-xl md:rounded-tr-none flex flex-col h-fit order-2 md:order-1 z-10 p-4 gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-center text-sm font-bold text-text-secondary uppercase tracking-wider">
-            <span>Pari</span>
-            <span>€{betAmount.toFixed(2)}</span>
+      <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="flex flex-col gap-4 relative w-full h-full">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+            <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
           </div>
-          <div className="relative bg-bg-inner border border-border-medium rounded flex items-center hover:border-text-secondary transition-colors focus-within:border-accent">
-            <span className="pl-3">{STAKECASINO_CHIP}</span>
-            <input
-              type="number"
-              value={betAmount || ""}
-              onChange={(e) => setBetAmount(Number(e.target.value))}
-              disabled={gameStage !== "IDLE" && gameStage !== "ENDED"}
-              className="w-full bg-transparent text-white font-mono p-3 outline-none"
-            />
-            <div className="pr-1 flex gap-1">
-              <button
-                onClick={() => setBetAmount((b) => b / 2)}
-                className="bg-bg-panel hover:bg-border-subtle p-1.5 rounded font-bold text-xs"
-              >
-                1/2
-              </button>
-              <button
-                onClick={() => setBetAmount((b) => b * 2)}
-                className="bg-bg-panel hover:bg-border-subtle p-1.5 rounded font-bold text-xs"
-              >
-                2x
-              </button>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold">
+                Montant de la mise
+              </label>
+              <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+              </span>
+            </div>
+            <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+              <span className="pl-3 absolute flex items-center justify-center">
+                {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+              </span>
+              <input
+                type="number"
+                value={betAmount || ""}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
+                disabled={gameStage !== "IDLE" && gameStage !== "ENDED"}
+                className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
+                step="0.00000001"
+                min="0"
+                max={balance}
+              />
+              <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
+                <button
+                  onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
+                  disabled={gameStage !== "IDLE" && gameStage !== "ENDED"}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                >
+                  ½
+                </button>
+                <button
+                  onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
+                  disabled={gameStage !== "IDLE" && gameStage !== "ENDED"}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                >
+                  2×
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {gameStage === "IDLE" || gameStage === "ENDED" ? (
-          <button
-            onClick={startGame}
-            disabled={!user || balance < betAmount}
-            className="w-full py-3.5 mt-2 rounded text-[#0f172a] font-bold text-lg bg-[#00e676] hover:bg-[#00c853] transition-colors shadow disabled:opacity-30 disabled:bg-bg-inner disabled:text-text-secondary"
-          >
-            Jouer
-          </button>
-        ) : (
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          <div className="flex-1"></div>
+
+          {gameStage === "IDLE" || gameStage === "ENDED" ? (
             <button
-              onClick={hit}
-              className="w-full bg-[#1475e1] hover:bg-[#1b80f0] text-white py-3 font-bold rounded transition-colors shadow"
+              onClick={startGame}
+              disabled={!user || balance < betAmount || betAmount <= 0}
+              className={cn(
+                "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                (!user || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed"
+              )}
             >
-              Tirer
+              Pari
             </button>
-            <button
-              onClick={() => stand()}
-              className="w-full bg-[#ed4163] hover:bg-[#f05273] text-white py-3 font-bold rounded transition-colors shadow"
-            >
-              Rester
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={hit}
+                className="w-full bg-[#3d5a6a] hover:bg-[#557086] text-white py-3 font-bold rounded transition-colors text-sm"
+              >
+                Tirer
+              </button>
+              <button
+                onClick={() => stand()}
+                className="w-full bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black py-3 font-bold rounded transition-colors text-sm"
+              >
+                Rester
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Game Stage */}
