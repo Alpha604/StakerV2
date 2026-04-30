@@ -54,24 +54,10 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
           {/* Active Tab Indicator */}
           <div className="absolute bottom-0 left-6 right-16 flex gap-4">
             <div className="w-1/2 flex justify-center pb-2 relative">
-              {isRegister ? (
-                <div className="absolute -bottom-px w-full h-0.5 bg-transparent" />
-              ) : (
-                <motion.div
-                  layoutId="login-tab"
-                  className="absolute -bottom-px w-full h-0.5 bg-accent"
-                />
-              )}
+               <div className={`absolute -bottom-px w-full h-0.5 transition-colors duration-300 ${!isRegister ? 'bg-accent' : 'bg-transparent'}`} />
             </div>
             <div className="w-1/2 flex justify-center pb-2 relative">
-              {!isRegister ? (
-                <div className="absolute -bottom-px w-full h-0.5 bg-transparent" />
-              ) : (
-                <motion.div
-                  layoutId="login-tab"
-                  className="absolute -bottom-px w-full h-0.5 bg-accent"
-                />
-              )}
+               <div className={`absolute -bottom-px w-full h-0.5 transition-colors duration-300 ${isRegister ? 'bg-accent' : 'bg-transparent'}`} />
             </div>
           </div>
           <div className="flex gap-4 w-full">
@@ -106,6 +92,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
           <AnimatePresence>
             {error && (
               <motion.div
+                key="error-message"
                 initial={{ opacity: 0, height: 0, marginTop: -10 }}
                 animate={{ opacity: 1, height: "auto", marginTop: 0 }}
                 exit={{ opacity: 0, height: 0 }}

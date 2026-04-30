@@ -5,6 +5,7 @@ import {
   Menu,
   ChevronDown
 } from "lucide-react";
+import { AnimatePresence } from "motion/react";
 import { Leaderboard } from "./Leaderboard";
 import { WalletModal } from "./WalletModal";
 import { LoginModal } from "./LoginModal";
@@ -113,11 +114,13 @@ export function Header({
       </header>
 
       {/* Modals */}
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-      {showWallet && <WalletModal onClose={() => setShowWallet(false)} />}
-      {showLeaderboard && user && (
-        <Leaderboard onClose={() => setShowLeaderboard(false)} />
-      )}
+      <AnimatePresence>
+        {showLogin && <LoginModal key="login-modal" onClose={() => setShowLogin(false)} />}
+        {showWallet && <WalletModal key="wallet-modal" onClose={() => setShowWallet(false)} />}
+        {showLeaderboard && user && (
+          <Leaderboard key="leaderboard" onClose={() => setShowLeaderboard(false)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }

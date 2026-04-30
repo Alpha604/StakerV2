@@ -242,6 +242,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           body: JSON.stringify({ username, password }),
         });
         if (res.ok) {
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("API fallback");
+          }
           const data = await res.json();
           localUser.balance = data.user?.balance ?? 100;
           localUser.vault = data.user?.vault ?? 1000;
@@ -257,6 +261,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           body: JSON.stringify({ username, password }),
         });
         if (res.ok) {
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("API fallback");
+          }
           const data = await res.json();
           localUser.balance = data.user?.balance ?? 0;
           localUser.vault = data.user?.vault ?? 1000;
