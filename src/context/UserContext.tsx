@@ -136,10 +136,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const vault = user?.vault || 0;
 
   useEffect(() => {
-      const initializeSession = async () => {
+    const initializeSession = async () => {
       // Add an artificial delay to show loader for at least 1s on startup
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const savedUser = localStorage.getItem("stake_user_session");
       const savedBets = localStorage.getItem("stake_session_bets");
 
@@ -153,19 +153,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const parsedUser = JSON.parse(savedUser) as CustomUser;
           // Refresh user data from bin
-          let binUser = null;
-          try {
-             const data = await getBinData();
-             binUser = data.users?.find(
-               (u) => u.username === parsedUser.username,
-             );
-          } catch (e) {}
-          
-          if (!binUser) {
-            const allUsersStr = localStorage.getItem("stake_all_users") || "{}";
-            const allUsers = JSON.parse(allUsersStr);
-            binUser = allUsers[parsedUser.username];
-          }
+          const data = await getBinData();
+          const binUser = data.users?.find(
+            (u) => u.username === parsedUser.username,
+          );
 
           if (binUser) {
             const updatedUser = {
@@ -196,21 +187,33 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const syncUserToBin = async (updatedUser: CustomUser) => {
-    fetch("/api/user/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedUser),
-    }).catch(console.error);
-
-    // Also sync to our robust local fallback
-    const allUsersStr = localStorage.getItem("stake_all_users") || "{}";
-    const allUsers = JSON.parse(allUsersStr);
-    if (allUsers[updatedUser.username]) {
-      allUsers[updatedUser.username] = {
-        ...allUsers[updatedUser.username],
-        ...updatedUser,
-      };
-      localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
+    try {
+      const data = await getBinData();
+      let users = data.users || [];
+      const userIndex = users.findIndex((u) => u.username === updatedUser.username);
+      
+      if (userIndex >= 0) {
+        users[userIndex] = {
+          ...users[userIndex],
+          balance: updatedUser.balance,
+          vault: updatedUser.vault,
+          totalWagered: updatedUser.totalWagered || users[userIndex].totalWagered || 0,
+          totalWon: updatedUser.totalWon || users[userIndex].totalWon || 0,
+        };
+      } else {
+         users.push({
+            username: updatedUser.username,
+            balance: updatedUser.balance,
+            vault: updatedUser.vault,
+            totalWagered: updatedUser.totalWagered || 0,
+            totalWon: updatedUser.totalWon || 0,
+         });
+      }
+      
+      data.users = users;
+      await putBinData(data);
+    } catch (e) {
+      console.error("Error syncing to bin", e);
     }
   };
 
@@ -224,106 +227,55 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     // Simulate network delay to make the connection feel real as requested
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Always create a generic user first via local
-    const localUser: CustomUser = {
-      id: username,
-      username: username,
-      balance: isRegister ? 100 : 0, // give some initial balance
-      vault: 1000,
-      totalWagered: 0,
-      totalWon: 0,
-    };
-
     try {
+      const data = await getBinData();
+      let users = data.users || [];
+      const existingUser = users.find((u) => u.username === username);
+
+      let localUser: CustomUser;
+
       if (isRegister) {
-        const res = await fetch("/api/user/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
+        if (existingUser) return false; // Username already taken
+        
+        localUser = {
+          id: username,
+          username: username,
+          balance: 100, // starting balance
+          vault: 0,
+          totalWagered: 0,
+          totalWon: 0,
+        };
+        
+        users.push({
+           username,
+           password,
+           balance: 100,
+           vault: 0,
+           totalWagered: 0,
+           totalWon: 0
         });
-        if (res.ok) {
-          const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("API fallback");
-          }
-          const data = await res.json();
-          localUser.balance = data.user?.balance ?? 100;
-          localUser.vault = data.user?.vault ?? 1000;
-        } else if (res.status === 400 || res.status === 401) {
-          return false;
-        } else {
-          throw new Error("API not ok");
-        }
+        await putBinData({ ...data, users });
       } else {
-        const res = await fetch("/api/user/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
-        if (res.ok) {
-          const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("API fallback");
-          }
-          const data = await res.json();
-          localUser.balance = data.user?.balance ?? 0;
-          localUser.vault = data.user?.vault ?? 1000;
-          localUser.totalWagered = data.user?.totalWagered ?? 0;
-          localUser.totalWon = data.user?.totalWon ?? 0;
-        } else if (res.status === 400 || res.status === 401) {
-          return false;
-        } else {
-          throw new Error("API not ok");
-        }
+        if (!existingUser) return false; // Invalid username
+        if (existingUser.password && existingUser.password !== password) return false; // Invalid password
+        
+        localUser = {
+          id: username,
+          username: username,
+          balance: existingUser.balance,
+          vault: existingUser.vault || 0,
+          totalWagered: existingUser.totalWagered || 0,
+          totalWon: existingUser.totalWon || 0,
+        };
       }
+
+      setUser(localUser);
+      localStorage.setItem("stake_user_session", JSON.stringify(localUser));
+      return true;
     } catch (e) {
-      console.warn("API Error, utilizing local storage user base");
-      const allUsersStr = localStorage.getItem("stake_all_users") || "{}";
-      const allUsers = JSON.parse(allUsersStr);
-      
-      const sessionToken = btoa(`${username}:${password || ""}`);
-
-      if (isRegister) {
-        if (allUsers[username]) {
-          return false; // user exists
-        }
-        allUsers[username] = { ...localUser, sessionToken };
-        delete allUsers[username].password; // Clean up old plaintext if any
-        localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
-      } else {
-        const found = allUsers[username];
-        if (!found) {
-          // Auto register the user if they don't exist in local storage to make demo smooth
-          allUsers[username] = { ...localUser, sessionToken };
-          localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
-        } else {
-          // Support migration from plaintext to simple token
-          const isValidOldPassword = found.password === password;
-          const isValidToken = found.sessionToken === sessionToken;
-          
-          if (!isValidOldPassword && !isValidToken && password !== "") {
-            return false;
-          }
-          
-          // Secure it now
-          if (isValidOldPassword) {
-            delete found.password;
-            found.sessionToken = sessionToken;
-            allUsers[username] = found;
-            localStorage.setItem("stake_all_users", JSON.stringify(allUsers));
-          }
-
-          localUser.balance = found.balance ?? 0;
-          localUser.vault = found.vault ?? 1000;
-          localUser.totalWagered = found.totalWagered ?? 0;
-          localUser.totalWon = found.totalWon ?? 0;
-        }
-      }
+      console.error("Login verification failed", e);
+      return false;
     }
-
-    setUser(localUser);
-    localStorage.setItem("stake_user_session", JSON.stringify(localUser));
-    return true;
   };
 
   const logoutUser = async () => {

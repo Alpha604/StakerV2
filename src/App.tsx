@@ -163,6 +163,7 @@ function InnerApp() {
                 className="h-6 opacity-30 brightness-[100] invert transition-opacity hover:opacity-80"
               />
               <p className="text-text-secondary text-xs">© 2026 Stake Casino. Tous droits réservés.</p>
+              <p className="text-[#2f4553] text-[10px] uppercase font-bold tracking-widest mt-2 hover:text-[#557086] transition-colors cursor-default">v2.0.0</p>
             </footer>
           </main>
         </div>

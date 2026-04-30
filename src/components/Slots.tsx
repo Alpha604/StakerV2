@@ -196,7 +196,7 @@ export function Slots() {
                 <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0f212e] to-transparent z-10 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#0f212e] to-transparent z-10 pointer-events-none" />
                 
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence>
                   {col.map((sym, rowIdx) => (
                     <motion.div
                       key={`${colIdx}-${rowIdx}-${sym}-${isSpinning}`}

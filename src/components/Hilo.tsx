@@ -280,7 +280,7 @@ export function Hilo() {
             </button>
 
             {/* Current Card */}
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
               <div className="relative z-20 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                 {renderCard(currentCard, isPlaying)}
               </div>

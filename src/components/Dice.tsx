@@ -172,7 +172,7 @@ export function Dice() {
             
             {/* The Big Number Display */}
             <div className="h-28 flex items-center justify-center mb-8 w-full relative">
-               <AnimatePresence mode="popLayout">
+               <AnimatePresence>
                   {isRolling ? (
                     <motion.div
                       key="rolling-dice"

@@ -1,5 +1,7 @@
-export const JSONBIN_URL_GET = `/api/bin`;
-export const JSONBIN_URL_PUT = `/api/bin`;
+const BIN_ID = "69eb9c5436566621a8e9f358";
+const MASTER_KEY = "$2a$10$IwjzylKTtK7iiXGJPWGTNesdMO8SzFxTZKMlJLu0/3sbpUtGr6kM.";
+export const JSONBIN_URL_GET = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
+export const JSONBIN_URL_PUT = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 export interface BinUser {
   username: string;
@@ -19,7 +21,10 @@ export const getBinData = async (): Promise<BinData> => {
   try {
     const res = await fetch(JSONBIN_URL_GET, {
       cache: "no-store",
-      headers: { Accept: "application/json" },
+      headers: { 
+        Accept: "application/json",
+        "X-Master-Key": MASTER_KEY 
+      },
     });
     if (!res.ok) {
       console.warn("Could not fetch bin, returning empty");
@@ -39,6 +44,7 @@ export const putBinData = async (data: BinData): Promise<void> => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "X-Master-Key": MASTER_KEY
       },
       body: JSON.stringify(data),
     });
