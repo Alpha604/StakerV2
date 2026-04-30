@@ -126,7 +126,6 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
                 />
                 <label>
                   {"Mot de passe".split("").map((char, index) => (
@@ -162,7 +161,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
 
           <button
             type="submit"
-            disabled={isLoading || username.length < 3 || password.length < 6}
+            disabled={isLoading || username.length < 1}
             className="connexion-btn w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ width: '100%', height: '3.5em' }}
           >

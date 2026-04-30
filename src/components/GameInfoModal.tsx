@@ -88,59 +88,60 @@ interface GameInfoModalProps {
 }
 
 export function GameInfoModal({ isOpen, onClose, gameId }: GameInfoModalProps) {
-  if (!isOpen || !gameId) return null;
-
-  const info = GAME_INFO[gameId];
-  if (!info) return null;
+  const info = gameId ? GAME_INFO[gameId] : null;
 
   return (
     <AnimatePresence>
-      <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-          onClick={(e) => e.stopPropagation()}
-          className="bg-bg-panel border border-border-medium rounded-xl w-full max-w-lg shadow-2xl overflow-hidden"
+      {isOpen && info && (
+        <div
+          key="modal-backdrop"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={onClose}
         >
-          <div className="flex items-center justify-between p-4 border-b border-border-medium bg-bg-inner/50">
-            <div className="flex items-center gap-2 text-white font-bold text-lg">
-              <Search size={20} className="text-accent" />
-              <span>Informations du jeu</span>
+          <motion.div
+            key="modal-content"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-bg-panel border border-border-medium rounded-xl w-full max-w-lg shadow-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-border-medium bg-bg-inner/50">
+              <div className="flex items-center gap-2 text-white font-bold text-lg">
+                <Search size={20} className="text-accent" />
+                <span>Informations du jeu</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-text-secondary hover:text-white transition-colors bg-bg-base p-1.5 rounded-md hover:bg-bg-inner"
+              >
+                <X size={20} />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="text-text-secondary hover:text-white transition-colors bg-bg-base p-1.5 rounded-md hover:bg-bg-inner"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          <div className="p-6 flex flex-col gap-6">
-            <div>
-              <h3 className="text-white font-black text-2xl mb-2">
-                {info.name}
-              </h3>
-              <p className="text-text-secondary text-sm leading-relaxed">
-                {info.desc}
-              </p>
-            </div>
-            <div className="flex bg-bg-inner rounded-lg p-4 gap-8 border border-border-medium">
+            <div className="p-6 flex flex-col gap-6">
               <div>
-                <span className="block text-xs uppercase text-text-secondary font-bold mb-1">
-                  Avantage Maison (RTP)
-                </span>
-                <span className="text-[#00e676] font-mono font-bold text-lg">
-                  {info.edge}
-                </span>
+                <h3 className="text-white font-black text-2xl mb-2">
+                  {info.name}
+                </h3>
+                <p className="text-text-secondary text-sm leading-relaxed">
+                  {info.desc}
+                </p>
+              </div>
+              <div className="flex bg-bg-inner rounded-lg p-4 gap-8 border border-border-medium">
+                <div>
+                  <span className="block text-xs uppercase text-text-secondary font-bold mb-1">
+                    Avantage Maison (RTP)
+                  </span>
+                  <span className="text-[#00e676] font-mono font-bold text-lg">
+                    {info.edge}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 }

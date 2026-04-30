@@ -222,7 +222,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     password?: string,
     isRegister?: boolean,
   ) => {
-    if (username.length < 3) return false;
+    if (!username) return false;
 
     // Simulate network delay to make the connection feel real as requested
     await new Promise((resolve) => setTimeout(resolve, 1500));
