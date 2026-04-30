@@ -154,7 +154,7 @@ export function DragonTower() {
     <div className="w-full max-w-[1400px] mx-auto p-2 sm:p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-64px)] flex-col gap-8">
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Side */}
-        <div className="md:col-span-3 bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
             <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
@@ -251,7 +251,7 @@ export function DragonTower() {
         </div>
 
         {/* Game Canvas */}
-        <div className="md:col-span-9 bg-[#0f172a] relative p-4 flex flex-col items-center justify-center overflow-auto">
+        <div className="flex-1 bg-[#0f172a] rounded-b-2xl lg:rounded-r-2xl border border-l-0 border-[#233845] relative overflow-hidden order-1 lg:order-2 p-4 flex flex-col items-center justify-center min-h-[500px]">
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}
@@ -260,7 +260,12 @@ export function DragonTower() {
             />
           )}
 
-          <div className="flex flex-col gap-2 w-full max-w-md my-4">
+          {/* Crypto Logo Background */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+             {renderCryptoIcon("stake", "w-64 h-64")}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full max-w-md my-4 z-10 relative">
             {Array.from({ length: ROWS }).map((_, uiRowIndex) => {
               const logicalRow = ROWS - 1 - uiRowIndex;
               const isActive = isPlaying && currentRow === logicalRow;
@@ -308,8 +313,10 @@ export function DragonTower() {
                             <motion.div key="egg"
                               initial={{ scale: 0, rotate: -45 }}
                               animate={{ scale: 1, rotate: 0 }}
-                              className="w-4 h-6 bg-yellow-100 rounded-[50%] shadow-sm"
-                            />
+                              className="text-white drop-shadow-md text-2xl flex items-center justify-center"
+                            >
+                              🐉
+                            </motion.div>
                           )}
                           {state === "dragon" && (
                             <motion.div

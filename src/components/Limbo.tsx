@@ -111,9 +111,9 @@ export function Limbo() {
 
   return (
     <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-[320px_1fr] bg-bg-panel rounded-lg overflow-hidden shadow-2xl min-h-[600px]">
+      <div className="w-full flex flex-col lg:flex-row bg-bg-panel rounded-lg overflow-hidden shadow-2xl min-h-[600px]">
         {/* Left Side: Controls */}
-        <div className="bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e] w-full md:w-[320px]">
+        <div className="bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e] w-full lg:w-[320px] shrink-0">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-sm font-bold text-white bg-[#2f4553] rounded-full py-2 transition-colors">Manuel</button>
             <button className="flex-1 text-sm font-bold text-[#8b9ba5] hover:text-white rounded-full py-2 transition-colors">Auto</button>
@@ -234,7 +234,7 @@ export function Limbo() {
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="bg-[#0f212e] relative p-4 lg:p-12 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="flex-1 order-1 lg:order-2 bg-[#0f212e] relative p-4 lg:p-12 flex flex-col items-center justify-center min-h-[400px]">
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}

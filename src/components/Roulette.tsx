@@ -24,6 +24,7 @@ export function Roulette() {
 
   // Bets
   const [bets, setBets] = useState<Record<string, number>>({});
+  const [betHistory, setBetHistory] = useState<{target: string, amount: number}[]>([]);
   const totalBet: number = Object.values(bets)
     .map((x) => Number(x))
     .reduce((a, b) => a + b, 0);
@@ -42,11 +43,29 @@ export function Roulette() {
       ...prev,
       [target]: (prev[target] || 0) + betAmount,
     }));
+    setBetHistory((prev) => [...prev, { target, amount: betAmount }]);
   };
 
   const clearBets = () => {
     if (isSpinning) return;
     setBets({});
+    setBetHistory([]);
+  };
+
+  const undoBet = () => {
+    if (isSpinning || betHistory.length === 0) return;
+    const lastBet = betHistory[betHistory.length - 1];
+    setBetHistory((prev) => prev.slice(0, -1));
+    setBets((prev) => {
+      const newBets = { ...prev };
+      if (newBets[lastBet.target]) {
+        newBets[lastBet.target] -= lastBet.amount;
+        if (newBets[lastBet.target] <= 0) {
+          delete newBets[lastBet.target];
+        }
+      }
+      return newBets;
+    });
   };
 
   const spin = async () => {
@@ -146,7 +165,7 @@ export function Roulette() {
     <>
       <div className="flex flex-col md:flex-row max-w-[1200px] mx-auto p-4 md:p-8 gap-4 min-h-[calc(100vh-80px)]">
         {/* Sidebar Controls (Exact Match) */}
-        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
             <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
@@ -253,7 +272,7 @@ export function Roulette() {
         </div>
 
         {/* Game Area (Exact Match) */}
-        <div className="flex-1 bg-bg-panel/40 rounded-b-xl md:rounded-r-xl md:rounded-bl-none flex flex-col items-center justify-start md:order-2 p-4 md:p-8 relative overflow-hidden">
+        <div className="flex-1 bg-bg-panel/40 rounded-b-xl lg:rounded-r-xl lg:rounded-bl-none flex flex-col items-center justify-start md:order-2 p-4 md:p-8 relative overflow-hidden">
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}
@@ -518,9 +537,9 @@ export function Roulette() {
           {/* Toolbar below board */}
           <div className="w-full max-w-[700px] flex justify-between items-center mt-3 text-[#8b9ba5] text-sm font-semibold">
             <button
-              onClick={clearBets}
+              onClick={undoBet}
               className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
-              disabled={isSpinning || totalBet === 0}
+              disabled={isSpinning || betHistory.length === 0}
             >
               <RotateCcw size={16} className="-scale-x-100" /> Annuler
             </button>

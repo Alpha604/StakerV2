@@ -162,16 +162,18 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={isLoading || username.length < 1}
-            className="connexion-btn w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="connexion-btn w-full mt-2 relative disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ width: '100%', height: '3.5em' }}
           >
             {isLoading ? (
-              <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : (
-              <>
+              <span className="absolute inset-0 flex items-center justify-center gap-2">
                 {isRegister ? "S'inscrire & Jouer" : "Se Connecter"}
-                <ArrowRight size={20} />
-              </>
+                <ArrowRight size={20} className="relative top-[1px]" />
+              </span>
             )}
           </button>
         </form>

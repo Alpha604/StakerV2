@@ -201,7 +201,7 @@ export function Wheel() {
     <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
       <div className="w-full flex md:flex-row flex-col max-w-5xl rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Side: Controls */}
-        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
               <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
@@ -286,7 +286,7 @@ export function Wheel() {
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="flex-1 bg-[#0f212e] border border-l-0 border-[#233845] relative flex flex-col items-center justify-center p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
+        <div className="flex-1 order-1 lg:order-2 flex-1 bg-[#0f212e] border border-l-0 border-[#233845] relative flex flex-col items-center justify-center p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
           {/* Win Popup */}
           {winInfo && (
             <WinPopup
@@ -297,15 +297,16 @@ export function Wheel() {
           )}
 
           <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
-            {/* Pointer */}
-            <div className="absolute -top-4 z-20">
-              <div className="w-8 h-12 bg-white rounded-b-full shadow-lg flex items-end justify-center pb-2">
-                <div className="w-2 h-2 bg-[#0f172a] rounded-full"></div>
-              </div>
+            {/* Pointer (Arrow) */}
+            <div className="absolute -top-6 z-20 flex flex-col items-center drop-shadow-xl">
+              <div className="w-6 h-8 bg-white rounded-t-sm" style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}></div>
+              <div className="w-3 h-3 bg-white rounded-full -mt-2 shadow-inner"></div>
             </div>
 
-            {/* Wheel Center */}
-            <div className="absolute inset-0 z-10 m-auto w-12 h-12 bg-[#213743] rounded-full ring-4 ring-[#0f172a] shadow-inner"></div>
+            {/* Wheel Center (Hole) */}
+            <div className="absolute inset-0 z-10 m-auto w-24 h-24 bg-[#213743] rounded-full ring-8 ring-[#0f172a] shadow-inner flex items-center justify-center">
+               <div className="w-12 h-12 bg-[#0f172a] rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"></div>
+            </div>
 
             {/* Wheel SVG */}
             <motion.div

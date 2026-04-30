@@ -108,7 +108,7 @@ export function Plinko() {
     <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
       <div className="w-full flex md:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-2xl min-h-[600px]">
         {/* Left Side: Controls */}
-        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
               <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
@@ -191,7 +191,7 @@ export function Plinko() {
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="flex-1 bg-[#0f212e] md:rounded-r-2xl md:rounded-bl-none rounded-b-2xl flex flex-col items-center justify-center order-1 md:order-2 border border-l-0 border-[#233845] p-4 lg:p-12 relative overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
+        <div className="flex-1 bg-[#0f212e] lg:rounded-r-2xl lg:rounded-bl-none rounded-b-2xl flex flex-col items-center justify-center order-1 lg:order-2 border border-l-0 border-[#233845] p-4 lg:p-12 relative overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}

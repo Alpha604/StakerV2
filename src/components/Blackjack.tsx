@@ -75,7 +75,24 @@ export function Blackjack() {
     }
   };
 
-  const stand = (pHand = playerHand, dHand = dealerHand) => {
+  const doubleDown = async () => {
+    if (gameStage !== "PLAYING") return;
+    if (balance < betAmount) return; // not enough balance
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
+    
+    // hit one card
+    const newHand = [...playerHand, drawCard()];
+    setPlayerHand(newHand);
+    
+    if (getHandTotal(newHand) > 21) {
+      handleEnd(newHand, dealerHand, false, betAmount * 2); // Bust
+    } else {
+      stand(newHand, dealerHand, betAmount * 2);
+    }
+  };
+
+  const stand = (pHand = playerHand, dHand = dealerHand, finalBet = betAmount) => {
     if (gameStage !== "PLAYING") return;
     setGameStage("DEALER_TURN");
     // Dealer logic directly
@@ -84,13 +101,14 @@ export function Blackjack() {
       currentDealer.push(drawCard());
     }
     setDealerHand(currentDealer);
-    handleEnd(pHand, currentDealer);
+    handleEnd(pHand, currentDealer, false, finalBet);
   };
 
   const handleEnd = (
     finalPlayerHand: number[],
     finalDealerHand: number[],
     isBlackjack = false,
+    finalBet = betAmount
   ) => {
     setGameStage("ENDED");
     const pTotal = getHandTotal(finalPlayerHand);
@@ -117,7 +135,7 @@ export function Blackjack() {
     }
 
     setMessage(`${resultMsg} (${pTotal} vs ${dTotal})`);
-    const payout = betAmount * multiplier;
+    const payout = finalBet * multiplier;
 
     if (payout > 0) {
       addBalance(payout);
@@ -127,13 +145,13 @@ export function Blackjack() {
       setWinInfo({ multiplier, payout });
     }
 
-    recordBet("Blackjack", betAmount, multiplier, payout - betAmount);
+    recordBet("Blackjack", finalBet, multiplier, payout - finalBet);
   };
 
   return (
     <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
       {/* Controls Sidebar */}
-      <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+      <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
         <div className="flex flex-col gap-4 relative w-full h-full">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
@@ -199,15 +217,28 @@ export function Blackjack() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={hit}
-                className="w-full bg-[#3d5a6a] hover:bg-[#557086] text-white py-3 font-bold rounded transition-colors text-sm"
+                className="col-span-1 bg-[#3d5a6a] hover:bg-[#557086] text-white py-3 font-bold rounded transition-colors text-sm"
               >
                 Tirer
               </button>
               <button
                 onClick={() => stand()}
-                className="w-full bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black py-3 font-bold rounded transition-colors text-sm"
+                className="col-span-1 bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black py-3 font-bold rounded transition-colors text-sm"
               >
                 Rester
+              </button>
+              <button
+                onClick={doubleDown}
+                disabled={playerHand.length > 2 || balance < betAmount}
+                className="col-span-1 bg-[#3d5a6a] hover:bg-[#557086] text-white py-3 font-bold rounded transition-colors text-sm disabled:opacity-50"
+              >
+                Doubler
+              </button>
+              <button
+                disabled={true}
+                className="col-span-1 bg-[#3d5a6a] hover:bg-[#557086] text-white py-3 font-bold rounded transition-colors text-sm disabled:opacity-50"
+              >
+                Diviser
               </button>
             </div>
           )}
@@ -215,7 +246,7 @@ export function Blackjack() {
       </div>
 
       {/* Game Stage */}
-      <div className="flex-1 bg-[#1a2c38] rounded-b-xl md:rounded-r-xl border border-border-subtle relative overflow-hidden order-1 md:order-2 p-8 flex flex-col justify-between min-h-[500px]">
+      <div className="flex-1 bg-[#1a2c38] rounded-b-xl lg:rounded-r-xl border border-border-subtle relative overflow-hidden order-1 lg:order-2 p-8 flex flex-col justify-between min-h-[500px]">
         {winInfo && (
           <WinPopup
             multiplier={winInfo.multiplier}

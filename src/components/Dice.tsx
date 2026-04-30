@@ -77,7 +77,7 @@ export function Dice() {
       <div className="w-full flex lg:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[600px]">
         
         {/* Left Side: Controls */}
-        <div className="w-full lg:w-[320px] bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
+        <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
               <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>

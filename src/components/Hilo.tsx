@@ -99,8 +99,8 @@ export function Hilo() {
       return;
     }
 
-    if (guess === "higher" && nextCard.value > currentCard.value) isWin = true;
-    if (guess === "lower" && nextCard.value < currentCard.value) isWin = true;
+    if (guess === "higher" && nextCard.value >= currentCard.value) isWin = true;
+    if (guess === "lower" && nextCard.value <= currentCard.value) isWin = true;
 
     setCurrentCard(nextCard);
     setHistory((prev) => [...prev, nextCard]);
@@ -167,7 +167,7 @@ export function Hilo() {
     <div className="w-full max-w-[1400px] mx-auto p-2 sm:p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-64px)] flex-col gap-8">
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Controls */}
-        <div className="md:col-span-3 bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
             <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
@@ -254,7 +254,7 @@ export function Hilo() {
         </div>
 
         {/* Game Stage */}
-        <div className="md:col-span-9 bg-[#0f172a] relative p-8 flex flex-col items-center justify-center">
+        <div className="flex-1 order-1 lg:order-2 md:col-span-9 bg-[#0f172a] relative p-8 flex flex-col items-center justify-center">
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}
@@ -276,7 +276,8 @@ export function Hilo() {
                 </span>
               </div>
               <div className="w-16 h-16 rounded-full bg-bg-panel shadow-lg flex flex-col items-center justify-center border border-[#00e676]/30 text-[#00e676] transition-transform group-hover:scale-105 group-active:scale-95 group-active:bg-[#00e676] group-active:text-[#0f172a]">
-                <ChevronUp size={32} />
+                <ChevronUp size={24} className="mb-[-4px]" />
+                <span className="text-[10px] font-bold">Plus ou =</span>
               </div>
             </button>
 
@@ -299,7 +300,8 @@ export function Hilo() {
                 </span>
               </div>
               <div className="w-16 h-16 rounded-full bg-bg-panel shadow-lg flex flex-col items-center justify-center border border-[#ed4163]/30 text-[#ed4163] transition-transform group-hover:scale-105 group-active:scale-95 group-active:bg-[#ed4163] group-active:text-[#0f172a]">
-                <ChevronDown size={32} />
+                <ChevronDown size={24} className="mb-[-4px]" />
+                <span className="text-[10px] font-bold">Moins ou =</span>
               </div>
             </button>
           </div>

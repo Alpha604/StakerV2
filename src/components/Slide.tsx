@@ -77,7 +77,7 @@ export function Slide() {
   return (
     <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
       {/* Controls Sidebar */}
-      <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+      <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
         <div className="flex flex-col gap-4 relative w-full h-full">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
@@ -160,7 +160,7 @@ export function Slide() {
       </div>
 
       {/* Game Stage */}
-      <div className="flex-1 rounded-b-xl md:rounded-r-xl border border-t-0 md:border-t md:border-l-0 border-border-subtle overflow-hidden order-1 md:order-2">
+      <div className="flex-1 rounded-b-xl lg:rounded-r-xl border border-t-0 md:border-t md:border-l-0 border-border-subtle overflow-hidden order-1 lg:order-2">
         <div className="h-full bg-[#0f172a] relative p-8 flex flex-col items-center justify-center min-h-[400px]">
           {winInfo && (
             <WinPopup

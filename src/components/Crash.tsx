@@ -27,6 +27,8 @@ export function Crash() {
   // multiplier = e^(rt)
   const growthRate = 0.06;
 
+  const [isAutoCashoutEnabled, setIsAutoCashoutEnabled] = useState(false);
+
   const generateCrashPoint = () => {
     const e = 100;
     const h = 4; // 4% house edge
@@ -48,13 +50,14 @@ export function Crash() {
     startSequence();
   };
 
-  const handleCashout = () => {
+  const handleCashout = (forcedMultiplier?: number) => {
     if (gameState === "playing" && hasBet && !cashedOut) {
       setCashedOut(true);
-      const payout = betAmount * multiplier;
+      const m = forcedMultiplier || multiplier;
+      const payout = betAmount * m;
       setWinAmount(payout);
       addBalance(payout);
-      recordBet("Crash", betAmount, multiplier, payout - betAmount);
+      recordBet("Crash", betAmount, m, payout - betAmount);
     }
   };
 
@@ -68,6 +71,13 @@ export function Crash() {
     const tick = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       const currentMulti = Math.pow(Math.E, growthRate * elapsed);
+
+      // Handle Auto Cashout AT exact multiplier
+      if (isAutoCashoutEnabled && hasBet && !cashedOut && currentMulti >= autoCashout) {
+        if (autoCashout <= point) {
+           handleCashout(autoCashout);
+        }
+      }
 
       if (currentMulti >= point) {
         // Crash!
@@ -89,12 +99,6 @@ export function Crash() {
       }
 
       setMultiplier(currentMulti);
-
-      // Handle Auto Cashout
-      if (hasBet && !cashedOut && currentMulti >= autoCashout) {
-        handleCashout();
-      }
-
       animationRef.current = requestAnimationFrame(tick);
     };
 
@@ -161,6 +165,22 @@ export function Crash() {
     ctx.lineWidth = 4;
     ctx.stroke();
 
+    // Draw ball at the end
+    if (multiplier >= 1) {
+      const targetYScaleLast = multiplier > 2 ? multiplier : 2;
+      const lastX = width * 0.8;
+      const lastY = height - ((multiplier - 1) / (targetYScaleLast - 1)) * (height * 0.8);
+      
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = gameState === "crashed" ? "#ed4163" : "#00e676";
+      ctx.fill();
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.fill();
+      ctx.shadowBlur = 0; // reset
+    }
+
     // Fill under curve
     ctx.lineTo(width * 0.8, height);
     ctx.lineTo(0, height);
@@ -180,7 +200,7 @@ export function Crash() {
     <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
       <div className="w-full flex md:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[600px]">
         {/* Left Side: Controls */}
-        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+        <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
               <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
@@ -219,8 +239,23 @@ export function Crash() {
             <div className="flex flex-col gap-1">
               <div className="flex justify-between items-center px-1">
                 <label className="text-[#8b9ba5] text-[13px] font-bold">Auto Cashout</label>
+                <button 
+                  onClick={() => setIsAutoCashoutEnabled(!isAutoCashoutEnabled)}
+                  className={cn(
+                    "w-8 h-4 rounded-full relative transition-colors",
+                    isAutoCashoutEnabled ? "bg-[#00e676]" : "bg-[#2f4553]"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-[2px] left-[2px] w-3 h-3 bg-white rounded-full transition-all",
+                    isAutoCashoutEnabled && "transform translate-x-4"
+                  )} />
+                </button>
               </div>
-              <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+              <div className={cn(
+                  "relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] h-[40px] overflow-hidden transition-colors",
+                  isAutoCashoutEnabled ? "hover:border-[#334b5c] focus-within:border-[#557086]" : "opacity-50"
+              )}>
                 <input
                   type="number"
                   value={autoCashout}
@@ -230,7 +265,7 @@ export function Crash() {
                   className="w-full bg-transparent p-2 pl-4 text-white font-bold outline-none focus:ring-0 text-[13px]"
                   min="1.01"
                   step="0.01"
-                  disabled={gameState !== "idle" && hasBet}
+                  disabled={!isAutoCashoutEnabled || (gameState !== "idle" && hasBet)}
                 />
                 <div className="pr-4 text-[#8b9ba5] font-bold pointer-events-none">×</div>
               </div>
@@ -272,7 +307,7 @@ export function Crash() {
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="flex-1 bg-[#0f212e] md:rounded-r-2xl md:rounded-bl-none rounded-b-2xl relative flex flex-col overflow-hidden border border-l-0 border-[#233845] order-1 md:order-2 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
+        <div className="flex-1 bg-[#0f212e] lg:rounded-r-2xl lg:rounded-bl-none rounded-b-2xl relative flex flex-col overflow-hidden border border-l-0 border-[#233845] order-1 lg:order-2 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
           <canvas
             ref={canvasRef}
             width={800}
