@@ -305,7 +305,7 @@ export function DragonTower() {
                       >
                         <AnimatePresence>
                           {state === "egg" && (
-                            <motion.div
+                            <motion.div key="egg"
                               initial={{ scale: 0, rotate: -45 }}
                               animate={{ scale: 1, rotate: 0 }}
                               className="w-4 h-6 bg-yellow-100 rounded-[50%] shadow-sm"

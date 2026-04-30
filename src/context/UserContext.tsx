@@ -172,6 +172,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               "stake_user_session",
               JSON.stringify(updatedUser),
             );
+          } else if (parsedUser.username === "romeo") {
+            // Keep hardcoded romeo if not in DB
+            setUser(parsedUser);
           } else {
             // User not found in db anymore
             localStorage.removeItem("stake_user_session");

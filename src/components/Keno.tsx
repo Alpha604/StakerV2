@@ -265,7 +265,7 @@ export function Keno() {
                     {/* Gem SVG for Hit */}
                     <AnimatePresence>
                       {isHit && (
-                        <motion.div
+                        <motion.div key="hit"
                           initial={{ scale: 0, rotate: -45 }}
                           animate={{ scale: 1, rotate: 0 }}
                           transition={{ type: "spring", stiffness: 400, damping: 15 }}
@@ -297,7 +297,7 @@ export function Keno() {
             <div className="min-h-[50px] mt-4 flex items-center justify-center">
                 <AnimatePresence>
                     {selected.length > 0 && (
-                        <motion.div 
+                        <motion.div key="payouts" 
                             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                             className="flex flex-col w-full bg-[#0b161f] rounded-lg p-2 gap-1 overflow-x-auto scrollbar-hide border border-[#2f4553]"
                         >

@@ -266,7 +266,7 @@ export function Limbo() {
             {/* Target info below */}
             <AnimatePresence>
                 {!isRolling && lastWin !== null && (
-                    <motion.div 
+                    <motion.div key="lastwin" 
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         className={cn("mt-8 text-center font-bold px-6 py-2 rounded-lg text-sm tracking-wide", lastWin ? "text-[#00e676] bg-[#00e676]/10" : "text-[#e53935] bg-[#e53935]/10")}
                     >

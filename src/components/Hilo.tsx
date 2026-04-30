@@ -128,11 +128,12 @@ export function Hilo() {
 
   const renderCard = (
     card: { rank: string; suit: string },
-    animate = false,
+    animate = false, currentKey?: string
   ) => {
     const isRed = card.suit === "hearts" || card.suit === "diamonds";
     return (
       <motion.div
+        key={currentKey}
         initial={animate ? { scale: 0.8, x: 50, opacity: 0 } : false}
         animate={animate ? { scale: 1, x: 0, opacity: 1 } : false}
         className="w-32 h-44 bg-white rounded-xl shadow-2xl flex flex-col justify-between p-3 relative border-2 border-slate-200"
@@ -280,11 +281,11 @@ export function Hilo() {
             </button>
 
             {/* Current Card */}
-            <AnimatePresence>
-              <div className="relative z-20 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                {renderCard(currentCard, isPlaying)}
-              </div>
-            </AnimatePresence>
+            <div className="relative z-20 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              <AnimatePresence>
+                {renderCard(currentCard, isPlaying, currentCard.rank + currentCard.suit)}
+              </AnimatePresence>
+            </div>
 
             {/* Lower Button */}
             <button

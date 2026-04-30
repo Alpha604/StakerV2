@@ -59,7 +59,7 @@ export function WinPopup({ multiplier, payout, onClose }: WinPopupProps) {
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.div
+        <motion.div key="win-popup"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
