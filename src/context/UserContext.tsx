@@ -137,9 +137,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const initializeSession = async () => {
-      // Add an artificial delay to show loader for at least 1s on startup
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       const savedUser = localStorage.getItem("stake_user_session");
       const savedBets = localStorage.getItem("stake_session_bets");
 

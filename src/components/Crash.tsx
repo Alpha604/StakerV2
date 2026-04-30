@@ -29,6 +29,20 @@ export function Crash() {
 
   const [isAutoCashoutEnabled, setIsAutoCashoutEnabled] = useState(false);
 
+  const stateRef = useRef({
+    hasBet: false,
+    cashedOut: false,
+    autoCashout: 2.0,
+    isAutoCashoutEnabled: false,
+    betAmount: 10,
+  });
+
+  useEffect(() => {
+    stateRef.current.autoCashout = autoCashout;
+    stateRef.current.isAutoCashoutEnabled = isAutoCashoutEnabled;
+    stateRef.current.betAmount = betAmount;
+  }, [autoCashout, isAutoCashoutEnabled, betAmount]);
+
   const generateCrashPoint = () => {
     const e = 100;
     const h = 4; // 4% house edge
@@ -45,14 +59,17 @@ export function Crash() {
     subtractBalance(betAmount);
     setHasBet(true);
     setCashedOut(false);
+    stateRef.current.hasBet = true;
+    stateRef.current.cashedOut = false;
     setWinAmount(0);
     // Start sequence
     startSequence();
   };
 
   const handleCashout = (forcedMultiplier?: number) => {
-    if (gameState === "playing" && hasBet && !cashedOut) {
+    if (gameState === "playing" && stateRef.current.hasBet && !stateRef.current.cashedOut) {
       setCashedOut(true);
+      stateRef.current.cashedOut = true;
       const m = forcedMultiplier || multiplier;
       const payout = betAmount * m;
       setWinAmount(payout);
@@ -71,11 +88,17 @@ export function Crash() {
     const tick = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       const currentMulti = Math.pow(Math.E, growthRate * elapsed);
+      const { isAutoCashoutEnabled, hasBet, cashedOut, autoCashout, betAmount } = stateRef.current;
 
       // Handle Auto Cashout AT exact multiplier
       if (isAutoCashoutEnabled && hasBet && !cashedOut && currentMulti >= autoCashout) {
         if (autoCashout <= point) {
-           handleCashout(autoCashout);
+           setCashedOut(true);
+           stateRef.current.cashedOut = true;
+           const payout = betAmount * autoCashout;
+           setWinAmount(payout);
+           addBalance(payout);
+           recordBet("Crash", betAmount, autoCashout, payout - betAmount);
         }
       }
 
@@ -84,15 +107,17 @@ export function Crash() {
         setMultiplier(point);
         setGameState("crashed");
 
-        if (hasBet && !cashedOut) {
+        if (stateRef.current.hasBet && !stateRef.current.cashedOut) {
           // Lost
-          recordBet("Crash", betAmount, 0, -betAmount);
+          recordBet("Crash", stateRef.current.betAmount, 0, -stateRef.current.betAmount);
         }
 
         setTimeout(() => {
           setGameState("idle");
           setHasBet(false);
           setCashedOut(false);
+          stateRef.current.hasBet = false;
+          stateRef.current.cashedOut = false;
           setMultiplier(1.0);
         }, 3000);
         return;

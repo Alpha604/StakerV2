@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv } from "lucide-react";
+import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useUser } from "../context/UserContext";
 
@@ -139,24 +139,35 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     }
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
-        {gamesToRender.map((game) => (
+        {gamesToRender.map((game) => {
+          const isBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Samurai"].some(n => game.name.toLowerCase().includes(n.toLowerCase()));
+          return (
           <div
             key={game.name}
-            className="flex flex-col group cursor-pointer"
-            onClick={() => setView(game.link)}
+            className={cn("flex flex-col group", isBanned ? "cursor-not-allowed opacity-75" : "cursor-pointer")}
+            onClick={() => {
+              if (!isBanned) setView(game.link);
+            }}
           >
             <div className="relative rounded-lg overflow-hidden aspect-[3/4] mb-2 bg-bg-panel group-hover:-translate-y-1 transition-transform shadow-lg">
               <img
                 src={game.img}
                 alt={game.name}
-                className="w-full h-full object-cover"
+                className={cn("w-full h-full object-cover", isBanned && "grayscale blur-[2px]")}
               />
-              {calculateIsNew(game.releaseDate) && (
+              {isBanned && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                  <div className="bg-[#0f172a]/80 p-3 rounded-full backdrop-blur-sm">
+                    <Lock className="text-[#8b9ba5]" size={32} />
+                  </div>
+                </div>
+              )}
+              {calculateIsNew(game.releaseDate) && !isBanned && (
                 <div className="absolute top-2 right-2 bg-[#1475e1] text-white text-[10px] font-black px-1.5 rounded uppercase tracking-tighter shadow-md z-10 w-fit">
                   Nouveau
                 </div>
               )}
-              {game.badge && (
+              {game.badge && !isBanned && (
                 <div className="absolute top-2 right-2 bg-[#ffb300] text-[#0f172a] text-[10px] font-black px-1.5 rounded uppercase tracking-tighter z-10">
                   {game.badge}
                 </div>
@@ -203,7 +214,8 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
               </div>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
     );
   };

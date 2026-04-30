@@ -152,7 +152,7 @@ export function DragonTower() {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-2 sm:p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-64px)] flex-col gap-8">
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
+      <div className="w-full max-w-5xl flex flex-col lg:flex-row bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Side */}
         <div className="lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
@@ -313,9 +313,30 @@ export function DragonTower() {
                             <motion.div key="egg"
                               initial={{ scale: 0, rotate: -45 }}
                               animate={{ scale: 1, rotate: 0 }}
-                              className="text-white drop-shadow-md text-2xl flex items-center justify-center"
+                              className="text-white flex items-center justify-center w-full h-full"
                             >
-                              🐉
+                              <svg viewBox="0 0 100 120" className="w-6 h-8 drop-shadow-[0_0_8px_rgba(255,100,0,0.8)]">
+                                <defs>
+                                  <radialGradient id="eggGrad" cx="30%" cy="30%" r="70%">
+                                    <stop offset="0%" stopColor="#4a5568" />
+                                    <stop offset="100%" stopColor="#1a202c" />
+                                  </radialGradient>
+                                  <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                    <feMerge>
+                                      <feMergeNode in="coloredBlur"/>
+                                      <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                  </filter>
+                                </defs>
+                                <ellipse cx="50" cy="60" rx="40" ry="55" fill="url(#eggGrad)" />
+                                {/* Glowing Cracks */}
+                                <g filter="url(#glow)">
+                                  <path d="M 40 10 Q 50 30 30 50 T 50 80 Q 60 100 40 110" fill="transparent" stroke="#ff6b00" strokeWidth="3" strokeLinecap="round" />
+                                  <path d="M 60 20 Q 70 40 50 60 T 70 90" fill="transparent" stroke="#ff4500" strokeWidth="2.5" strokeLinecap="round" />
+                                  <path d="M 50 40 Q 60 50 45 70" fill="transparent" stroke="#ffae00" strokeWidth="2" strokeLinecap="round" />
+                                </g>
+                              </svg>
                             </motion.div>
                           )}
                           {state === "dragon" && (
