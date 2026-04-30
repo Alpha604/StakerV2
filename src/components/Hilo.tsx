@@ -118,7 +118,7 @@ export function Hilo() {
   const handleCashout = () => {
     if (!isPlaying) return;
     setIsPlaying(false);
-    const payout = betAmount * multiplier;
+    const payout = Math.floor(betAmount * multiplier * 100) / 100;
     addBalance(payout);
     recordBet("Hilo", betAmount, multiplier, payout - betAmount);
     setWinInfo({ multiplier, payout });
@@ -166,40 +166,63 @@ export function Hilo() {
     <div className="w-full max-w-[1400px] mx-auto p-2 sm:p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-64px)] flex-col gap-8">
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 bg-bg-panel rounded-2xl overflow-hidden shadow-2xl min-h-[600px] md:min-h-[500px]">
         {/* Left Controls */}
-        <div className="md:col-span-3 bg-[#213743] p-4 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-border-medium z-10 relative">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <label className="text-text-secondary text-sm font-semibold">
-                Montant
+        <div className="md:col-span-3 bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+            <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+          </div>
+
+          <div className="flex flex-col gap-1 mt-4">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold">
+                Montant de la mise
               </label>
+              <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+              </span>
             </div>
-            <div className="relative flex items-center bg-bg-inner rounded-md border border-border-medium p-1 transition-colors focus-within:border-border-hover">
-              <div className="pl-3 pr-2 flex items-center justify-center">
-                <Coins size={16} className="text-text-secondary" />
-              </div>
+            <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+              <span className="pl-3 absolute flex items-center justify-center">
+                {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+              </span>
               <input
                 type="number"
-                value={betAmount}
-                onChange={(e) =>
-                  setBetAmount(Math.max(0, Number(e.target.value)))
-                }
-                className="w-full bg-transparent text-white font-bold outline-none tabular-nums"
-                min="0"
-                step="0.01"
+                value={betAmount || ""}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
                 disabled={isPlaying}
+                className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
+                step="0.01"
+                min="0"
+                max={balance}
               />
+              <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
+                <button
+                  onClick={() => setBetAmount((prev) => Math.floor(prev / 2 * 100) / 100)}
+                  disabled={isPlaying}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                >
+                  ½
+                </button>
+                <button
+                  onClick={() => setBetAmount((prev) => Math.floor(prev * 2 * 100) / 100)}
+                  disabled={isPlaying}
+                  className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                >
+                  2×
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="flex-1 border border-border-medium rounded-lg bg-bg-inner p-3 flex flex-col justify-center">
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-text-secondary">Multiplier</span>
+              <span className="text-[#8b9ba5]">Multiplier</span>
               <span className="text-white font-bold">
                 {multiplier.toFixed(2)}×
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-text-secondary">Profit</span>
+              <span className="text-[#8b9ba5]">Profit</span>
               <span className="text-[#00e676] font-bold">
                 €{(potentialWin - betAmount).toFixed(2)}
               </span>
@@ -211,7 +234,7 @@ export function Hilo() {
               onClick={startGame}
               disabled={balance < betAmount}
               className={cn(
-                "w-full py-4 rounded-md font-extrabold text-base transition-all bg-[#00e676] hover:bg-[#00c853] text-[#0f1116] shadow-[0_4px_0_#00a84b]",
+                "w-full py-4 rounded-md font-extrabold text-base transition-all bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black text-[#0f1116] shadow-[0_4px_0_#00a84b]",
                 "active:translate-y-1 active:shadow-[0_0px_0_#00a84b]",
                 balance < betAmount &&
                   "opacity-50 cursor-not-allowed active:translate-y-0",

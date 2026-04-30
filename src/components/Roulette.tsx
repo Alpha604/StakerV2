@@ -146,20 +146,25 @@ export function Roulette() {
     <>
       <div className="flex flex-col md:flex-row max-w-[1200px] mx-auto p-4 md:p-8 gap-4 min-h-[calc(100vh-80px)]">
         {/* Sidebar Controls (Exact Match) */}
-        <div className="w-full md:w-[320px] bg-bg-panel border border-border-subtle rounded-t-xl md:rounded-l-xl md:rounded-tr-none flex flex-col h-fit order-2 md:order-1 overflow-hidden z-10 p-4 gap-4">
+        <div className="w-full md:w-[320px] bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e]">
+          <div className="bg-[#0f212e] rounded-full p-1 flex">
+            <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
+            <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+          </div>
+
           {/* Toggle manuel/auto */}
           <div className="bg-bg-inner flex w-full p-1 rounded-full border border-border-medium shadow-inner">
             <button className="flex-1 py-1.5 bg-border-medium rounded-full text-white text-sm font-bold shadow text-center">
               Manuel
             </button>
-            <button className="flex-1 py-1.5 text-text-secondary hover:text-white text-sm font-bold transition-colors text-center cursor-not-allowed">
+            <button className="flex-1 py-1.5 text-[#8b9ba5] hover:text-white text-sm font-bold transition-colors text-center cursor-not-allowed">
               Auto
             </button>
           </div>
 
           {/* Valeur du Jeton */}
           <div className="flex flex-col gap-1 mt-2">
-            <div className="flex justify-between items-center text-xs font-semibold text-text-secondary opacity-80">
+            <div className="flex justify-between items-center text-xs font-semibold text-[#8b9ba5] opacity-80">
               <span>Valeur du Jeton</span>
               <span className="text-white flex items-center gap-1 font-mono">
                 {betAmount.toFixed(8)}{" "}
@@ -170,7 +175,7 @@ export function Roulette() {
             </div>
 
             <div className="w-full h-12 bg-bg-inner border border-border-medium rounded flex items-center shadow-inner mt-1 px-1">
-              <button className="w-8 h-full flex items-center justify-center text-text-secondary hover:text-white transition-colors">
+              <button className="w-8 h-full flex items-center justify-center text-[#8b9ba5] hover:text-white transition-colors">
                 &lt;
               </button>
               <div className="flex-1 flex justify-center items-center gap-1.5">
@@ -195,7 +200,7 @@ export function Roulette() {
                   </button>
                 ))}
               </div>
-              <button className="w-8 h-full flex items-center justify-center text-text-secondary hover:text-white transition-colors">
+              <button className="w-8 h-full flex items-center justify-center text-[#8b9ba5] hover:text-white transition-colors">
                 &gt;
               </button>
             </div>
@@ -204,7 +209,7 @@ export function Roulette() {
           {/* Pari Total Input */}
           <div className="flex flex-col gap-1 mt-2">
             <div className="flex justify-between items-center text-xs font-semibold opacity-80">
-              <span className="text-text-secondary">Pari Total</span>
+              <span className="text-[#8b9ba5]">Pari Total</span>
               <span className="text-white font-mono">
                 {totalBet.toFixed(2)} $US
               </span>
@@ -224,13 +229,13 @@ export function Roulette() {
               <div className="flex h-full border-l border-border-medium divide-x divide-border-medium shrink-0">
                 <button
                   onClick={() => {}}
-                  className="px-3 hover:bg-border-subtle text-xs font-semibold text-text-secondary transition-colors cursor-not-allowed"
+                  className="px-3 hover:bg-border-subtle text-xs font-semibold text-[#8b9ba5] transition-colors cursor-not-allowed"
                 >
                   ½
                 </button>
                 <button
                   onClick={() => {}}
-                  className="px-3 hover:bg-border-subtle text-xs font-semibold text-text-secondary transition-colors cursor-not-allowed"
+                  className="px-3 hover:bg-border-subtle text-xs font-semibold text-[#8b9ba5] transition-colors cursor-not-allowed"
                 >
                   2×
                 </button>
@@ -241,7 +246,7 @@ export function Roulette() {
           <button
             onClick={spin}
             disabled={isSpinning || totalBet <= 0 || totalBet > balance}
-            className="w-full py-3 mt-2 rounded text-white font-semibold bg-[#1475e1] hover:bg-[#1b80f0] transition-colors shadow disabled:opacity-30 disabled:bg-bg-inner disabled:text-text-secondary disabled:cursor-not-allowed"
+            className="w-full py-3 mt-2 rounded text-white font-semibold bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black transition-colors shadow disabled:opacity-30 disabled:bg-bg-inner disabled:text-[#8b9ba5] disabled:cursor-not-allowed"
           >
             Pari
           </button>
@@ -511,7 +516,7 @@ export function Roulette() {
           </div>
 
           {/* Toolbar below board */}
-          <div className="w-full max-w-[700px] flex justify-between items-center mt-3 text-text-secondary text-sm font-semibold">
+          <div className="w-full max-w-[700px] flex justify-between items-center mt-3 text-[#8b9ba5] text-sm font-semibold">
             <button
               onClick={clearBets}
               className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer disabled:opacity-50"

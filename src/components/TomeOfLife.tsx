@@ -125,7 +125,7 @@ export function TomeOfLife() {
                 Montant de la mise
               </label>
               <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                $ {(Math.floor(balance * 100) / 100).toFixed(2)}
               </span>
             </div>
             <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
@@ -138,20 +138,20 @@ export function TomeOfLife() {
                 onChange={(e) => setBetAmount(Number(e.target.value))}
                 disabled={isPlaying}
                 className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
-                step="0.00000001"
+                step="0.01"
                 min="0"
                 max={balance}
               />
               <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
                 <button
-                  onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))}
+                  onClick={() => setBetAmount((prev) => Math.floor(prev / 2 * 100) / 100)}
                   disabled={isPlaying}
                   className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                 >
                   ½
                 </button>
                 <button
-                  onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))}
+                  onClick={() => setBetAmount((prev) => Math.floor(prev * 2 * 100) / 100)}
                   disabled={isPlaying}
                   className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
                 >

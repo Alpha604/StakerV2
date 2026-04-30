@@ -153,10 +153,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const parsedUser = JSON.parse(savedUser) as CustomUser;
           // Refresh user data from bin
-          const data = await getBinData();
-          const binUser = data.users?.find(
-            (u) => u.username === parsedUser.username,
-          );
+          let binUser = null;
+          try {
+             const data = await getBinData();
+             binUser = data.users?.find(
+               (u) => u.username === parsedUser.username,
+             );
+          } catch (e) {}
+          
+          if (!binUser) {
+            const allUsersStr = localStorage.getItem("stake_all_users") || "{}";
+            const allUsers = JSON.parse(allUsersStr);
+            binUser = allUsers[parsedUser.username];
+          }
+
           if (binUser) {
             const updatedUser = {
               id: binUser.username,

@@ -193,7 +193,7 @@ export function Crash() {
                   Montant de la mise
                 </label>
                 <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                  {(balance).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                  $ {(Math.floor(balance * 100) / 100).toFixed(2)}
                 </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
@@ -206,12 +206,12 @@ export function Crash() {
                   onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
                   className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 text-[13px]"
                   min="0"
-                  step="0.00000001"
+                  step="0.01"
                   disabled={gameState !== "idle" && hasBet}
                 />
                 <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
-                  <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(8))} className="px-3 hover:bg-[#2f4553] text-[13px] font-bold transition-colors text-white" disabled={gameState !== "idle" && hasBet}> ½ </button>
-                  <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(8))} className="px-3 hover:bg-[#2f4553] text-[13px] font-bold transition-colors text-white" disabled={gameState !== "idle" && hasBet}> 2× </button>
+                  <button onClick={() => setBetAmount((prev) => Math.floor(prev / 2 * 100) / 100)} className="px-3 hover:bg-[#2f4553] text-[13px] font-bold transition-colors text-white" disabled={gameState !== "idle" && hasBet}> ½ </button>
+                  <button onClick={() => setBetAmount((prev) => Math.floor(prev * 2 * 100) / 100)} className="px-3 hover:bg-[#2f4553] text-[13px] font-bold transition-colors text-white" disabled={gameState !== "idle" && hasBet}> 2× </button>
                 </div>
               </div>
             </div>
@@ -263,7 +263,7 @@ export function Crash() {
                 <span>{cashedOut ? "Retiré !" : "Retrait"}</span>
                 {!cashedOut && (
                   <span className="flex items-center gap-1">
-                    {(betAmount * multiplier).toFixed(8)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                    {(Math.floor(betAmount * multiplier * 100) / 100).toFixed(2)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
                   </span>
                 )}
               </button>

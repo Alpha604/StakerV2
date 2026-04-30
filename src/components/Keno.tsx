@@ -160,18 +160,18 @@ export function Keno() {
     <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
       <div className="w-full grid grid-cols-1 lg:grid-cols-[320px_1fr] bg-bg-panel rounded-lg overflow-hidden shadow-2xl min-h-[600px]">
         {/* Left Side: Controls */}
-        <div className="bg-bg-panel lg:bg-[#213743] p-4 flex flex-col gap-5 border-b lg:border-b-0 lg:border-r border-border-medium z-10">
+        <div className="bg-[#213743] md:rounded-l-lg md:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 md:order-1 border-r border-[#0f212e] w-full md:w-[320px]">
           <div className="bg-[#0f212e] rounded-full p-1 flex">
             <button className="flex-1 text-sm font-bold text-white bg-[#2f4553] rounded-full py-2 transition-colors">Manuel</button>
-            <button className="flex-1 text-sm font-bold text-text-secondary hover:text-white rounded-full py-2 transition-colors">Auto</button>
+            <button className="flex-1 text-sm font-bold text-[#8b9ba5] hover:text-white rounded-full py-2 transition-colors">Auto</button>
           </div>
 
           <div className="flex flex-col gap-4">
             {/* Bet Amount */}
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center px-1">
-                <label className="text-text-secondary text-xs font-bold"> Montant de la mise </label>
-                <span className="text-text-secondary text-xs font-bold flex items-center gap-1"> $ {(balance || 0).toFixed(2)} </span>
+                <label className="text-[#8b9ba5] text-xs font-bold"> Montant de la mise </label>
+                <span className="text-[#8b9ba5] text-xs font-bold flex items-center gap-1"> $ {(Math.floor((balance || 0) * 100) / 100).toFixed(2)} </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] p-1 transition-colors focus-within:border-border-hover">
                 <div className="pl-2 pr-1 flex items-center justify-center"> {renderCryptoIcon(activeCrypto, "w-4 h-4")} </div>
@@ -185,16 +185,16 @@ export function Keno() {
                   disabled={isDrawing}
                 />
                 <div className="flex items-center gap-1 pr-1 border-l border-[#2f4553] pl-2">
-                  <button onClick={() => setBetAmount((prev) => +(prev / 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> ½ </button>
+                  <button onClick={() => setBetAmount((prev) => Math.floor(prev / 2 * 100) / 100)} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> ½ </button>
                   <div className="w-px h-3 bg-[#2f4553]"></div>
-                  <button onClick={() => setBetAmount((prev) => +(prev * 2).toFixed(2))} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> 2× </button>
+                  <button onClick={() => setBetAmount((prev) => Math.floor(prev * 2 * 100) / 100)} className="text-white hover:bg-[#2f4553] px-2 py-1.5 rounded text-xs font-bold transition-colors"> 2× </button>
                 </div>
               </div>
             </div>
 
             {/* Difficulty Selection */}
             <div className="flex flex-col gap-1.5">
-                <label className="text-text-secondary text-xs font-bold px-1"> Risque / Difficulté </label>
+                <label className="text-[#8b9ba5] text-xs font-bold px-1"> Risque / Difficulté </label>
                 <select 
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value as Difficulty)}
@@ -323,7 +323,7 @@ export function Keno() {
                         {/* Match Numbers */}
                         <div className="flex w-full gap-1">
                             {currentPayouts.map((_, i) => (
-                                <div key={i} className="flex-1 min-w-[30px] sm:min-w-[40px] py-1 flex items-center justify-center text-[9px] sm:text-[10px] text-text-secondary font-bold">
+                                <div key={i} className="flex-1 min-w-[30px] sm:min-w-[40px] py-1 flex items-center justify-center text-[9px] sm:text-[10px] text-[#8b9ba5] font-bold">
                                     {i}x
                                 </div>
                             ))}
