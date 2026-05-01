@@ -68,6 +68,8 @@ export function Mines() {
   const [autoBetsCount, setAutoBetsCount] = useState<number>(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
   const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
+  const [autoSpeed, setAutoSpeed] = useState<"normal" | "instant">("normal");
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [crashed, setCrashed] = useState(false);
@@ -119,8 +121,10 @@ export function Mines() {
       }
       setMineLocations(newMines);
       
-      // Delay so we see grid reset
-      await new Promise(r => setTimeout(r, 200));
+      // Delay so we see grid reset if normal
+      if (autoSpeed === "normal") {
+        await new Promise(r => setTimeout(r, 200));
+      }
       
       // 2. Pick selected spots sequentially
       let localGrid = Array(25).fill("hidden");
@@ -137,13 +141,21 @@ export function Mines() {
           setCrashed(true);
           localCrashed = true;
           
-          setTimeout(() => {
-            setGrid(prev => prev.map((c, i) => {
-              if (c !== "hidden" && c !== "picked_bomb") return c;
+          if (autoSpeed === "normal") {
+            setTimeout(() => {
+              setGrid(prev => prev.map((c, i) => {
+                if (c !== "hidden" && c !== "picked_bomb") return c;
+                if (i === index) return "picked_bomb";
+                return newMines.has(i) ? "revealed_bomb" : "revealed_gem";
+              }));
+            }, 400);
+          } else {
+            // Instant reveal
+            setGrid(localGrid.map((c, i) => {
               if (i === index) return "picked_bomb";
               return newMines.has(i) ? "revealed_bomb" : "revealed_gem";
             }));
-          }, 400);
+          }
 
           await recordBet("Mines", betAmount, 0, -betAmount);
           break; // Stop picking
@@ -155,8 +167,13 @@ export function Mines() {
           localRevealed++;
           setRevealedCount(localRevealed);
           
-          // Wait briefly between picks
-          await new Promise(r => setTimeout(r, 300));
+          // Wait briefly between picks if normal
+          if (autoSpeed === "normal") {
+            await new Promise(r => setTimeout(r, 300));
+          } else {
+            // slight tick for react to batch if needed, but 0ms keeps it instant
+            await new Promise(r => setTimeout(r, 0));
+          }
         }
       }
 
@@ -202,12 +219,12 @@ export function Mines() {
       if (autoBetsCount === 0 || autoBetsRemaining > 0) {
         timeoutId = setTimeout(() => {
           playAutoRound();
-        }, 1500); // Wait between rounds
+        }, autoSpeed === "instant" ? 10 : 1500); // Wait between rounds
       }
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isAutoPlaying, isPlaying, autoBetsRemaining, autoBetsCount, selectedSpots, minesCount, betAmount, balance]);
+  }, [isAutoPlaying, isPlaying, autoBetsRemaining, autoBetsCount, selectedSpots, minesCount, betAmount, balance, autoSpeed]);
 
   const currentMultiplier = calculateMultiplier(minesCount, revealedCount);
   const potentialWin = betAmount * currentMultiplier;
@@ -331,7 +348,7 @@ export function Mines() {
 
   return (
     <>
-      <div className="flex flex-col md:flex-row gap-4 max-w-[1200px] mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)]">
+      <div className={cn("flex flex-col md:flex-row gap-4 mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)] transition-all duration-300", isTheaterMode ? "max-w-full" : "max-w-[1200px]")}>
         <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
@@ -411,18 +428,39 @@ export function Mines() {
             </div>
 
             {mode === "auto" && (
-              <div className="flex flex-col gap-1">
-                <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
-                  Nombre de paris (0 = infini)
-                </label>
-                <input
-                  type="number"
-                  value={autoBetsCount}
-                  onChange={(e) => setAutoBetsCount(Number(e.target.value))}
-                  disabled={isAutoPlaying || isPlaying}
-                  className="w-full bg-[#0f212e] rounded border border-[#2f4553] p-2.5 text-white font-bold outline-none focus:border-[#557086] disabled:opacity-50 text-[13px]"
-                  min="0"
-                />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                    Nombre de paris (0 = infini)
+                  </label>
+                  <input
+                    type="number"
+                    value={autoBetsCount}
+                    onChange={(e) => setAutoBetsCount(Number(e.target.value))}
+                    disabled={isAutoPlaying || isPlaying}
+                    className="w-full bg-[#0f212e] rounded border border-[#2f4553] p-2.5 text-white font-bold outline-none focus:border-[#557086] disabled:opacity-50 text-[13px]"
+                    min="0"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                    Vitesse
+                  </label>
+                  <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+                    <select
+                      value={autoSpeed}
+                      onChange={(e) => setAutoSpeed(e.target.value as "normal" | "instant")}
+                      disabled={isAutoPlaying || isPlaying}
+                      className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
+                    >
+                      <option value="normal" className="text-black">Normale</option>
+                      <option value="instant" className="text-black">Instantanée</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
+                      ▼
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -458,6 +496,19 @@ export function Mines() {
                 >
                   Sélection aléatoire
                 </button>
+                {revealedCount > 0 && (
+                  <div className="flex justify-between items-center bg-[#0f212e] rounded p-2 border border-[#2f4553]">
+                    <div className="flex flex-col">
+                      <span className="text-[#8b9ba5] text-[10px] font-bold uppercase tracking-wider">M. Actuel</span>
+                      <span className="text-white font-bold text-[13px]">{currentMultiplier.toFixed(2)}×</span>
+                    </div>
+                    <div className="w-[1px] h-6 bg-[#2f4553]"></div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-[#8b9ba5] text-[10px] font-bold uppercase tracking-wider">Prochain M.</span>
+                      <span className="text-[#00e701] font-bold text-[13px]">{nextMultiplier.toFixed(2)}×</span>
+                    </div>
+                  </div>
+                )}
                 <button
                   onClick={cashout}
                   disabled={revealedCount === 0}
@@ -493,11 +544,30 @@ export function Mines() {
 
         {/* Game Area */}
         <div className="flex-1 bg-[#0f212e] lg:rounded-r-2xl lg:rounded-bl-none rounded-b-2xl flex flex-col items-center justify-center order-1 lg:order-2 border border-l-0 border-[#233845] p-4 md:p-16 relative overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent">
+          <button 
+            onClick={() => setIsTheaterMode(!isTheaterMode)}
+            className="absolute bottom-4 right-4 text-[#8b9ba5] hover:text-white transition-colors bg-[#0f212e] hover:bg-[#2f4553] border border-[#2f4553] p-2 rounded-lg z-20"
+            title={isTheaterMode ? "Quitter le mode théâtre" : "Mode théâtre"}
+          >
+            {isTheaterMode ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m13-5v3a2 2 0 0 0 2 2h3m-5 13v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h-3a2 2 0 0 0-2 2v3m5 8v3a2 2 0 0 1-2 2h-3m-8-5v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" />
+              </svg>
+            )}
+          </button>
+
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}
               payout={winInfo.payout}
-              onClose={() => setWinInfo(null)}
+              onClose={() => {
+                setWinInfo(null);
+                setGrid(Array(25).fill("hidden"));
+              }}
             />
           )}
 

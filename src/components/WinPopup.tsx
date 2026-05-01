@@ -63,9 +63,14 @@ export function WinPopup({ multiplier, payout, onClose }: WinPopupProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 z-50 flex items-center justify-center pointer-events-auto cursor-pointer"
+          onClick={() => {
+            setIsVisible(false);
+            if (onClose) onClose();
+          }}
         >
           <motion.div
+            onClick={(e) => e.stopPropagation()}
             initial={{ scale: 0.5, y: 50, rotateX: 45 }}
             animate={{
               scale: 1,
