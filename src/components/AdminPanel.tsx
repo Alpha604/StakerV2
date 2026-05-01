@@ -62,9 +62,14 @@ export function AdminPanel() {
           <tbody>
             {loading ? (
               <tr><td colSpan={5} className="p-8 text-center text-[#8b9ba5]">Chargement...</td></tr>
-            ) : users.map(u => (
+            ) : users.map(u => {
+              const isOnline = u.lastOnline && (Date.now() - u.lastOnline < 5 * 60 * 1000);
+              return (
               <tr key={u.username} className="border-t border-[#2f4553] hover:bg-[#2f4553]/20 flex flex-col md:table-row relative">
-                <td className="p-4 font-bold">{u.username}</td>
+                <td className="p-4 font-bold flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-[#1bc86a]' : 'bg-[#8b9ba5]'}`} title={isOnline ? 'En ligne' : 'Hors ligne'} />
+                  {u.username}
+                </td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider
                     ${u.status === 'approved' ? 'bg-[#1bc86a]/20 text-[#1bc86a]' : 
@@ -116,7 +121,8 @@ export function AdminPanel() {
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

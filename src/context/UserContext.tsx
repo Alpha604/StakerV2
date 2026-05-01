@@ -82,6 +82,7 @@ export interface CustomUser {
   totalWon?: number;
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
+  lastOnline?: number;
 }
 
 export interface SessionBet {
@@ -206,6 +207,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           totalWon: updatedUser.totalWon || users[userIndex].totalWon || 0,
           role: updatedUser.role || users[userIndex].role || "user",
           status: updatedUser.status || users[userIndex].status || "pending",
+          lastOnline: Date.now(),
         };
       } else {
          users.push({
@@ -216,6 +218,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             totalWon: updatedUser.totalWon || 0,
             role: updatedUser.role || "user",
             status: updatedUser.status || "pending",
+            lastOnline: Date.now(),
          });
       }
       
@@ -304,10 +307,36 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             localStorage.setItem("stake_user_session", JSON.stringify(localUser));
             return true;
           }
+          if (username === "AdminFDJS" && password === "admin123") {
+            localUser = {
+              id: "AdminFDJS",
+              username: "AdminFDJS",
+              balance: 1000000,
+              vault: 0,
+              totalWagered: 0,
+              totalWon: 0,
+              role: "admin",
+              status: "approved",
+            };
+            users.push({ ...localUser, password, lastOnline: Date.now() });
+            await putBinData({ ...data, users });
+            setUser(localUser);
+            localStorage.setItem("stake_user_session", JSON.stringify(localUser));
+            return true;
+          }
           return false; // Invalid username
         }
         if (existingUser.password && existingUser.password !== password) return false; // Invalid password
         
+        // Force upgrade AdminFDJS or Mimi if they already exist but lack permissions
+        if ((username === "AdminFDJS" && password === "admin123") || (username === "Mimi" && password === "mimi123") || (username === "romeo" && password === "romeo123")) {
+           existingUser.role = "admin";
+           existingUser.status = "approved";
+        }
+        
+        existingUser.lastOnline = Date.now();
+        await putBinData({ ...data, users });
+
         localUser = {
           id: username,
           username: username,
@@ -317,6 +346,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           totalWon: existingUser.totalWon || 0,
           role: existingUser.role || "user",
           status: existingUser.status || "pending",
+          lastOnline: existingUser.lastOnline,
         };
       }
 
