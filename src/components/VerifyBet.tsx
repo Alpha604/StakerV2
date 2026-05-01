@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Trophy, Frown, Copy, Check } from "lucide-react";
 import { useUser, SessionBet } from "../context/UserContext";
 import { cn } from "../lib/utils";
@@ -8,10 +8,27 @@ export function VerifyBet() {
   const [searchId, setSearchId] = useState("");
   const [searchedBet, setSearchedBet] = useState<SessionBet | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [recentBets, setRecentBets] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchRecentBets = () => {
+      try {
+        const globalBetsStr = localStorage.getItem("stake_global_bets_cache");
+        if (globalBetsStr) {
+          setRecentBets(JSON.parse(globalBetsStr));
+        }
+      } catch (err) {}
+    };
+
+    fetchRecentBets();
+    const interval = setInterval(fetchRecentBets, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+
     setHasSearched(true);
     
     // Check locally 
@@ -64,8 +81,8 @@ export function VerifyBet() {
   const copyToClipboard = (id: string | undefined) => {
     if (!id) return;
     navigator.clipboard.writeText(id);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   return (
@@ -158,7 +175,7 @@ export function VerifyBet() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2f4553] hover:bg-[#3d5a6c] transition-colors group"
                 >
                   <span className="font-mono text-white text-xs truncate max-w-[200px]">{searchedBet.id}</span>
-                  {copied ? <Check size={14} className="text-[#1bc86a]" /> : <Copy size={14} className="text-[#8b9ba5] group-hover:text-white" />}
+                  {copied === searchedBet.id ? <Check size={14} className="text-[#1bc86a]" /> : <Copy size={14} className="text-[#8b9ba5] group-hover:text-white" />}
                 </button>
               </div>
 
@@ -166,6 +183,57 @@ export function VerifyBet() {
           )}
         </div>
       )}
+
+      {/* Table Section */}
+      <div className="w-full max-w-5xl mx-auto mt-16 animate-in fade-in duration-500">
+        <h2 className="text-xl font-bold text-white mb-4">Derniers Paris (Global)</h2>
+        <div className="bg-[#0f212e] rounded-xl border border-[#2f4553] overflow-hidden overflow-x-auto">
+          <table className="w-full text-left font-mono text-sm min-w-[700px]">
+            <thead className="bg-[#2f4553]/50 text-[#8b9ba5]">
+              <tr>
+                <th className="p-4 font-bold">Joueur</th>
+                <th className="p-4 font-bold">Jeu</th>
+                <th className="p-4 font-bold">Mise</th>
+                <th className="p-4 font-bold">Multiplicateur</th>
+                <th className="p-4 font-bold">Profit</th>
+                <th className="p-4 font-bold">ID Seed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentBets.map((bet, i) => (
+                <tr key={i} className="border-t border-[#2f4553] hover:bg-[#2f4553]/20">
+                  <td className="p-4">{bet.user || "Anonyme"}</td>
+                  <td className="p-4">{bet.game}</td>
+                  <td className="p-4">{bet.wagered?.toFixed(2)}</td>
+                  <td className="p-4">{bet.multiplier?.toFixed(2)}x</td>
+                  <td className={cn(
+                    "p-4 font-bold",
+                    bet.profit > 0 ? "text-[#1bc86a]" : "text-[#ed4163]"
+                  )}>
+                    {bet.profit > 0 ? "+" : ""}{bet.profit?.toFixed(2)}$
+                  </td>
+                  <td className="p-4 flex items-center gap-2">
+                    <span className="truncate max-w-[120px] text-[#8b9ba5]" title={bet.id}>{bet.id}</span>
+                    <button 
+                      onClick={() => copyToClipboard(bet.id)} 
+                      className="text-[#8b9ba5] hover:text-white transition-colors"
+                      title="Copier"
+                    >
+                      {copied === bet.id ? <Check size={16} className="text-[#1bc86a]" /> : <Copy size={16} />}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {recentBets.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-[#8b9ba5]">Aucun pari récent.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 }
