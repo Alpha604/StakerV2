@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useUser, renderCryptoIcon } from "../context/UserContext";
-import { Bomb } from "lucide-react";
+import { Bomb, Maximize, Minimize } from "lucide-react";
 import { cn } from "../lib/utils";
 import { WinPopup } from "./WinPopup";
 import { motion, AnimatePresence } from "motion/react";
@@ -350,7 +350,7 @@ export function Mines() {
 
   return (
     <>
-      <div className={cn("flex flex-col md:flex-row gap-4 mx-auto p-4 md:p-8 min-h-[calc(100vh-80px)] transition-all duration-300", isTheaterMode ? "max-w-full" : "max-w-[1200px]")}>
+      <div className={cn("flex flex-col md:flex-row gap-4 mx-auto p-4 md:p-8 transition-all duration-300", isTheaterMode ? "max-w-full h-full lg:h-[calc(100vh-80px)]" : "max-w-[1200px] min-h-[calc(100vh-80px)]")}>
         <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
@@ -469,27 +469,33 @@ export function Mines() {
             <div className="flex-1"></div>
             
             {mode === "auto" ? (
-              <button
-                onClick={() => {
-                  if (isAutoPlaying) {
-                    setIsAutoPlaying(false);
-                  } else {
-                    if (selectedSpots.size === 0) {
-                      alert("Veuillez sélectionner au moins une case sur la grille d'abord.");
-                      return;
+              <div className="toggle-cont">
+                <input
+                  className="toggle-input"
+                  id="toggle"
+                  name="toggle"
+                  type="checkbox"
+                  checked={isAutoPlaying}
+                  disabled={!isAutoPlaying && (betAmount > balance || betAmount <= 0)}
+                  onChange={(e) => {
+                    if (isAutoPlaying) {
+                      setIsAutoPlaying(false);
+                    } else {
+                      if (selectedSpots.size === 0) {
+                        alert("Veuillez sélectionner au moins une case sur la grille d'abord.");
+                        return;
+                      }
+                      setIsAutoPlaying(true);
+                      setAutoBetsRemaining(autoBetsCount);
                     }
-                    setIsAutoPlaying(true);
-                    setAutoBetsRemaining(autoBetsCount);
-                  }
-                }}
-                className={cn(
-                  "w-full py-3.5 rounded font-bold transition-all text-sm",
-                  isAutoPlaying ? "bg-[#ed4163] hover:bg-[#ed4163]/80 text-white" : (betAmount > balance || betAmount <= 0) ? "bg-[#1bc86a]/40 text-black/50 cursor-not-allowed" : "bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black"
-                )}
-                disabled={!isAutoPlaying && (betAmount > balance || betAmount <= 0)}
-              >
-                {isAutoPlaying ? "Arrêter Autobet" : "Démarrer Autobet"}
-              </button>
+                  }}
+                />
+                <label className="toggle-label" htmlFor="toggle" title={isAutoPlaying ? "Arrêter Autobet" : "Démarrer Autobet"}>
+                  <div className="cont-label-play">
+                    <span className="label-play"></span>
+                  </div>
+                </label>
+              </div>
             ) : isPlaying ? (
               <div className="flex flex-col gap-3">
                 <button
@@ -552,13 +558,9 @@ export function Mines() {
             title={isTheaterMode ? "Quitter le mode théâtre" : "Mode théâtre"}
           >
             {isTheaterMode ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3v3a2 2 0 0 1-2 2H3m13-5v3a2 2 0 0 0 2 2h3m-5 13v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-              </svg>
+              <Minimize size={18} />
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h-3a2 2 0 0 0-2 2v3m5 8v3a2 2 0 0 1-2 2h-3m-8-5v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" />
-              </svg>
+              <Maximize size={18} />
             )}
           </button>
 
@@ -601,8 +603,8 @@ export function Mines() {
           </div>
 
           <div className={cn(
-            "grid grid-cols-5 gap-2 md:gap-3 w-full aspect-square mt-[80px] md:mt-10 transition-all duration-300 mx-auto",
-            isTheaterMode ? "max-w-[calc(100vh-320px)] lg:max-w-[calc(100vh-220px)]" : "max-w-[450px]"
+            "grid grid-cols-5 gap-2 md:gap-3 w-full aspect-square transition-all duration-300 mx-auto",
+            isTheaterMode ? "max-h-[calc(100vh-140px)] lg:max-h-[calc(100vh-160px)]" : "max-w-[450px] mt-[80px] md:mt-10"
           )} style={{ perspective: '1000px' }}>
             {grid.map((cell, i) => {
               return (
