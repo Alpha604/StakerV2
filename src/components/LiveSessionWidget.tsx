@@ -155,20 +155,31 @@ export function LiveSessionWidget() {
                 )}
               </div>
 
+              {/* Latest Bets List */}
+              {sessionBets.length > 0 && (
+                <div className="flex flex-col gap-1 mt-2 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
+                  {[...sessionBets].reverse().slice(0, 10).map((bet, i) => (
+                    <div key={i} className="flex items-center justify-between bg-bg-inner/30 p-1.5 rounded border border-border-subtle text-xs font-mono">
+                      <div className="flex items-center gap-2">
+                        <span className="text-text-secondary">{bet.game.substring(0, 4)}</span>
+                        <span className={bet.profit > 0 ? "text-emerald-500" : "text-rose-500"}>
+                          {bet.profit > 0 ? "+" : ""}{bet.profit.toFixed(2)}$
+                        </span>
+                      </div>
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(bet.id)}
+                        className="text-text-secondary hover:text-white transition-colors bg-bg-inner px-2 py-0.5 rounded cursor-pointer"
+                        title="Copier Seed ID"
+                      >
+                        Copier ID
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex justify-between items-center text-xs text-text-secondary font-mono border-t border-border-subtle pt-2">
                 <span>Parties: {sessionBets.length}</span>
-                {sessionBets.length > 0 && (
-                  <button 
-                    onClick={() => {
-                        const id = sessionBets[sessionBets.length - 1].id;
-                        navigator.clipboard.writeText(id);
-                    }}
-                    className="hover:text-white transition-colors"
-                    title="Copier ID du dernier pari"
-                  >
-                    ID: {sessionBets[sessionBets.length - 1].id.slice(0, 8)}...
-                  </button>
-                )}
               </div>
             </div>
           </motion.div>

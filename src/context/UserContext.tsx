@@ -226,7 +226,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
            }
          }
       } catch (e) {}
-    }, 10000); // 10 seconds
+    }, 3000); // 3 seconds
 
     return () => clearInterval(pollInterval);
   }, []);
@@ -366,6 +366,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           return false; // Invalid username
         }
         if (existingUser.password && existingUser.password !== password) return false; // Invalid password
+        
+        if (existingUser.status === "banned" || existingUser.status === "suspended") {
+            // Refuse login
+            alert(`Accès refusé. Votre compte est ${existingUser.status === "banned" ? "banni" : "suspendu"}.`);
+            return false;
+        }
         
         // Force upgrade AdminFDJS or Mimi if they already exist but lack permissions
         if ((username === "AdminFDJS" && password === "admin123") || (username === "Mimi" && password === "mimi123") || (username === "romeo" && password === "romeo123")) {

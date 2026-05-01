@@ -10,12 +10,12 @@ export function AdminPanel() {
   useEffect(() => {
     fetchUsers();
     
-    // Poll for live updates every 5 seconds
+    // Poll for live updates every 3 seconds
     const interval = setInterval(() => {
       getBinData().then(data => {
         setUsers(data.users || []);
       }).catch(() => {});
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
