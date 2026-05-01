@@ -13,6 +13,7 @@ export interface BinUser {
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
+  suspensionEndsAt?: number;
 }
 
 export interface GlobalBet {

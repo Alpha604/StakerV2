@@ -201,11 +201,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
          const data = await getBinData();
          const binUser = data.users?.find((u) => u.username === parsedSession.username);
          if (binUser) {
+           if (binUser.status === "suspended" && binUser.suspensionEndsAt && Date.now() > binUser.suspensionEndsAt) {
+             binUser.status = "approved";
+             binUser.suspensionEndsAt = undefined;
+             await putBinData(data);
+           }
+           
            const newStatus = binUser.status || "pending";
-           if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status) {
+           if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status || binUser.vault !== parsedSession.vault) {
              const updatedUser = {
                 ...parsedSession,
                 balance: binUser.balance,
+                vault: binUser.vault || 0,
                 status: newStatus,
                 role: binUser.role || "user"
              };
@@ -354,6 +361,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           return false; // Invalid username
         }
         if (existingUser.password && existingUser.password !== password) return false; // Invalid password
+        
+        if (existingUser.status === "suspended") {
+            if (existingUser.suspensionEndsAt && Date.now() > existingUser.suspensionEndsAt) {
+                existingUser.status = "approved";
+                existingUser.suspensionEndsAt = undefined;
+                // Will update BinData below
+            } else {
+                alert("Accès refusé. " + (existingUser.suspensionEndsAt ? `Votre compte est suspendu jusqu'au ${new Date(existingUser.suspensionEndsAt).toLocaleString()}.` : "Votre compte est suspendu."));
+                return false;
+            }
+        }
+        
+        if (existingUser.status === "banned") {
+            alert("Accès refusé. Votre compte est banni.");
+            return false;
+        }
         
         // Force upgrade AdminFDJS or Mimi if they already exist but lack permissions
         if ((username === "AdminFDJS" && password === "admin123") || (username === "Mimi" && password === "mimi123") || (username === "romeo" && password === "romeo123")) {

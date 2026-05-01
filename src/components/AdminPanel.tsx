@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getBinData, putBinData, BinUser, BinData } from "../lib/jsonbin";
 import { useUser } from "../context/UserContext";
-import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Key, Shield, ShieldAlert, RefreshCw, AlertTriangle } from "lucide-react";
+import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Key, Shield, ShieldAlert, RefreshCw, AlertTriangle, X, Edit3, Save } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export function AdminPanel() {
@@ -11,6 +11,12 @@ export function AdminPanel() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [globalBetsCount, setGlobalBetsCount] = useState(0);
+
+  // Edit Modal State
+  const [editingUser, setEditingUser] = useState<BinUser | null>(null);
+  const [editForm, setEditForm] = useState<Partial<BinUser>>({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [suspensionHours, setSuspensionHours] = useState<number | "">("");
 
   useEffect(() => {
     fetchUsers();
@@ -75,6 +81,48 @@ export function AdminPanel() {
     localStorage.removeItem("stake_global_bets_cache");
     setGlobalBetsCount(0);
     alert("Historique des paris purgé.");
+  };
+
+  const handleEditClick = (u: BinUser) => {
+    setEditingUser(u);
+    setEditForm({
+      balance: u.balance,
+      vault: u.vault || 0,
+      totalWagered: u.totalWagered || 0,
+      totalWon: u.totalWon || 0,
+      role: u.role || 'user',
+      status: u.status || 'pending',
+      password: u.password,
+    });
+    setSuspensionHours("");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    setEditLoading(true);
+    await new Promise(r => setTimeout(r, 800)); // fake loader for UX
+
+    const data = await getBinData();
+    const index = data.users.findIndex(u => u.username === editingUser.username);
+    
+    if (index >= 0) {
+      const finalUpdates: Partial<BinUser> = { ...editForm };
+      
+      if (finalUpdates.status === 'suspended' && suspensionHours !== "") {
+        finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionHours) * 3600 * 1000;
+      } else if (finalUpdates.status !== 'suspended') {
+        finalUpdates.suspensionEndsAt = undefined;
+      }
+      
+      data.users[index] = { ...data.users[index], ...finalUpdates };
+      await putBinData(data);
+      setUsers(data.users);
+    }
+    
+    setEditLoading(false);
+    setEditingUser(null);
   };
 
   if (user?.role !== "admin" || user?.username !== "AdminFDJS") {
@@ -258,19 +306,7 @@ export function AdminPanel() {
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between gap-2 max-w-[150px]">
-                        <span className="font-mono text-[#1bc86a] text-sm">{u.balance.toFixed(2)}$</span>
-                        <button 
-                          onClick={() => {
-                            const amount = prompt(`Nouveau solde pour ${u.username}?`, u.balance.toString());
-                            if (amount && !isNaN(Number(amount))) updateUser(u.username, { balance: Number(amount) });
-                          }}
-                          disabled={actionLoading?.startsWith(u.username)}
-                          className="bg-[#2f4553] hover:bg-[#3d5a6c] px-2 py-0.5 rounded text-[10px] uppercase font-bold disabled:opacity-50 transition-colors"
-                        >
-                          Éditer
-                        </button>
-                      </div>
+                      <div className="font-mono text-[#1bc86a] text-sm font-bold">{u.balance.toFixed(2)}$</div>
                       <div className="text-xs text-[#8b9ba5]">
                         Coffre: <span className="font-mono text-white">{(u.vault || 0).toFixed(2)}$</span>
                       </div>
@@ -279,24 +315,20 @@ export function AdminPanel() {
                   <td className="p-4">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => {
-                          const pwd = prompt(`Nouveau mot de passe pour ${u.username}?`);
-                          if (pwd) updateUser(u.username, { password: pwd });
-                        }}
+                        onClick={() => handleEditClick(u)}
                         disabled={actionLoading?.startsWith(u.username)}
-                        className="p-1.5 bg-[#2f4553] text-[#8b9ba5] hover:text-white hover:bg-[#3d5a6c] rounded transition-colors"
-                        title="Changer Mot de Passe"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-[#2f4553] text-white hover:bg-[#3d5a6c] rounded transition-colors text-xs font-bold"
                       >
-                         <Key size={16} />
+                         <Edit3 size={14} /> Éditer
                       </button>
                       {u.username !== "AdminFDJS" && (
                         <button
                           onClick={() => deleteUser(u.username)}
                           disabled={actionLoading?.startsWith(u.username)}
-                          className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded transition-colors"
+                          className="px-2 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded transition-colors"
                           title="Supprimer Utilisateur"
                         >
-                           <Trash2 size={16} />
+                           <Trash2 size={14} />
                         </button>
                       )}
                     </div>
@@ -305,7 +337,7 @@ export function AdminPanel() {
                      <div className="flex gap-1.5 flex-wrap">
                       {u.status !== 'approved' && (
                         <button 
-                          onClick={() => updateUser(u.username, { status: "approved" })} 
+                          onClick={() => updateUser(u.username, { status: "approved", suspensionEndsAt: undefined })} 
                           disabled={actionLoading === u.username + "status"}
                           className="bg-[#1bc86a]/10 text-[#1bc86a] hover:bg-[#1bc86a]/20 border border-[#1bc86a]/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
                         >
@@ -339,6 +371,147 @@ export function AdminPanel() {
           </table>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0f212e] border border-[#2f4553] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-[#2f4553] flex items-center justify-between bg-[#2f4553]/20">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Edit3 className="text-blue-500" />
+                Editer: {editingUser.username}
+              </h2>
+              <button 
+                onClick={() => setEditingUser(null)}
+                className="text-[#8b9ba5] hover:text-white p-1 rounded hover:bg-[#2f4553] transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              <form id="edit-user-form" onSubmit={handleSaveEdit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-bold text-[#8b9ba5]">Solde Courant</label>
+                    <input 
+                      type="number" step="0.01" 
+                      value={editForm.balance ?? ''} 
+                      onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})}
+                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-bold text-[#8b9ba5]">Coffre</label>
+                    <input 
+                      type="number" step="0.01" 
+                      value={editForm.vault ?? ''} 
+                      onChange={e => setEditForm({...editForm, vault: Number(e.target.value)})}
+                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-bold text-[#8b9ba5]">Rôle</label>
+                    <select 
+                      value={editForm.role}
+                      onChange={e => setEditForm({...editForm, role: e.target.value as "admin"|"user"})}
+                      disabled={editingUser.username === "AdminFDJS"}
+                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none disabled:opacity-50"
+                    >
+                      <option value="user">Utilisateur</option>
+                      <option value="admin">Administrateur</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-bold text-[#8b9ba5]">Statut</label>
+                    <select 
+                      value={editForm.status}
+                      onChange={e => setEditForm({...editForm, status: e.target.value as "pending"|"approved"|"suspended"|"banned"})}
+                      disabled={editingUser.username === "AdminFDJS"}
+                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none disabled:opacity-50"
+                    >
+                      <option value="approved">Approuvé</option>
+                      <option value="pending">En attente</option>
+                      <option value="suspended">Suspendu</option>
+                      <option value="banned">Banni</option>
+                    </select>
+                  </div>
+                </div>
+
+                {editForm.status === "suspended" && editingUser.username !== "AdminFDJS" && (
+                  <div className="flex flex-col gap-1.5 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+                    <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
+                      Durée de suspension (Heures)
+                    </label>
+                    <input 
+                      type="number" min="1" step="1"
+                      placeholder="Ex: 24 (Laisser vide pour permanent)"
+                      value={suspensionHours} 
+                      onChange={e => setSuspensionHours(e.target.value !== "" ? Number(e.target.value) : "")}
+                      className="bg-[#0f212e] text-white p-2.5 rounded border border-[#2f4553] focus:border-amber-500 outline-none"
+                    />
+                    <span className="text-xs text-[#8b9ba5]">
+                      Le compte sera réactivé automatiquement après ce délai.
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-bold text-[#8b9ba5]">Paris Totaux ($)</label>
+                    <input 
+                      type="number" step="0.01" 
+                      value={editForm.totalWagered ?? ''} 
+                      onChange={e => setEditForm({...editForm, totalWagered: Number(e.target.value)})}
+                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-bold text-[#8b9ba5]">Gains Totaux ($)</label>
+                    <input 
+                      type="number" step="0.01" 
+                      value={editForm.totalWon ?? ''} 
+                      onChange={e => setEditForm({...editForm, totalWon: Number(e.target.value)})}
+                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 pt-2 border-t border-[#2f4553]">
+                  <label className="text-sm font-bold text-[#8b9ba5]">Nouveau Mot de Passe (Optionnel)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Laisser vide pour ne pas changer"
+                    value={editForm.password ?? ''} 
+                    onChange={e => setEditForm({...editForm, password: e.target.value})}
+                    className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </form>
+            </div>
+            <div className="p-4 border-t border-[#2f4553] bg-[#2f4553]/20 flex justify-end gap-3">
+              <button 
+                type="button"
+                onClick={() => setEditingUser(null)}
+                disabled={editLoading}
+                className="px-4 py-2 bg-transparent text-white font-bold hover:bg-[#3d5a6c] rounded transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button 
+                type="submit"
+                form="edit-user-form"
+                disabled={editLoading}
+                className="px-6 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2 min-w-[140px] justify-center"
+              >
+                {editLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><Save size={18} /> Sauvegarder</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
