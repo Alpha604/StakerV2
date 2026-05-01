@@ -23,7 +23,9 @@ import { Blackjack } from "./components/Blackjack";
 import { Chicken } from "./components/Chicken";
 import { Moles } from "./components/Moles";
 import { Slots } from "./components/Slots";
-import { Leaderboard } from "./components/Leaderboard";
+import { AdminPanel } from "./components/AdminPanel";
+import { VerifyBet } from "./components/VerifyBet";
+import { ApprovalGuard } from "./components/ApprovalGuard";
 
 export type ViewType =
   | "home"
@@ -49,7 +51,9 @@ export type ViewType =
   | "blackjack"
   | "chicken"
   | "moles"
-  | "slots-game";
+  | "slots-game"
+  | "verify"
+  | "admin";
 
 class ErrorBoundary extends React.Component<any, any> {
   state = { hasError: false, error: null };
@@ -134,25 +138,27 @@ function InnerApp() {
                       <Leaderboard onClose={() => handleSetView("home")} isPage={true} />
                   </div>
               )}
-              {view === "mines" && <Mines />}
-              {view === "roulette" && <Roulette />}
-              {view === "keno" && <Keno />}
-              {view === "dice" && <Dice />}
-              {view === "plinko" && <Plinko />}
-              {view === "crash" && <Crash />}
-              {view === "limbo" && <Limbo />}
-              {view === "wheel" && <Wheel />}
-              {view === "hilo" && <Hilo />}
-              {view === "dragon-tower" && <DragonTower />}
-              {view === "flip" && <Flip />}
-              {view === "slide" && <Slide />}
-              {view === "video-poker" && <VideoPoker />}
-              {view === "baccarat" && <Baccarat />}
-              {view === "tome-of-life" && <TomeOfLife />}
-              {view === "slots-game" && <Slots />}
-              {view === "blackjack" && <Blackjack />}
-              {view === "chicken" && <Chicken />}
-              {view === "moles" && <Moles />}
+              {view === "verify" && <VerifyBet />}
+              {view === "admin" && <AdminPanel />}
+              {view === "mines" && <ApprovalGuard><Mines /></ApprovalGuard>}
+              {view === "roulette" && <ApprovalGuard><Roulette /></ApprovalGuard>}
+              {view === "keno" && <ApprovalGuard><Keno /></ApprovalGuard>}
+              {view === "dice" && <ApprovalGuard><Dice /></ApprovalGuard>}
+              {view === "plinko" && <ApprovalGuard><Plinko /></ApprovalGuard>}
+              {view === "crash" && <ApprovalGuard><Crash /></ApprovalGuard>}
+              {view === "limbo" && <ApprovalGuard><Limbo /></ApprovalGuard>}
+              {view === "wheel" && <ApprovalGuard><Wheel /></ApprovalGuard>}
+              {view === "hilo" && <ApprovalGuard><Hilo /></ApprovalGuard>}
+              {view === "dragon-tower" && <ApprovalGuard><DragonTower /></ApprovalGuard>}
+              {view === "flip" && <ApprovalGuard><Flip /></ApprovalGuard>}
+              {view === "slide" && <ApprovalGuard><Slide /></ApprovalGuard>}
+              {view === "video-poker" && <ApprovalGuard><VideoPoker /></ApprovalGuard>}
+              {view === "baccarat" && <ApprovalGuard><Baccarat /></ApprovalGuard>}
+              {view === "tome-of-life" && <ApprovalGuard><TomeOfLife /></ApprovalGuard>}
+              {view === "slots-game" && <ApprovalGuard><Slots /></ApprovalGuard>}
+              {view === "blackjack" && <ApprovalGuard><Blackjack /></ApprovalGuard>}
+              {view === "chicken" && <ApprovalGuard><Chicken /></ApprovalGuard>}
+              {view === "moles" && <ApprovalGuard><Moles /></ApprovalGuard>}
             </div>
             
             {/* Footer */}

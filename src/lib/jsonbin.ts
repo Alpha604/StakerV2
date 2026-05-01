@@ -10,11 +10,24 @@ export interface BinUser {
   vault?: number;
   totalWagered: number;
   totalWon: number;
+  role?: "admin" | "user";
+  status?: "pending" | "approved" | "suspended" | "banned";
+}
+
+export interface GlobalBet {
+  id: string;
+  user: string;
+  game: string;
+  wagered: number;
+  multiplier: number;
+  payout: number;
+  profit: number;
+  timestamp: number;
 }
 
 export interface BinData {
   users: BinUser[];
-  globalBets: any[];
+  globalBets: GlobalBet[];
 }
 
 export const getBinData = async (): Promise<BinData> => {

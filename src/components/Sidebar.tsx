@@ -14,6 +14,7 @@ import {
   CircleDollarSign,
   Headset,
   Tv,
+  ShieldAlert,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -81,6 +82,24 @@ export function Sidebar({
       >
         <Tv size={20} />
       </button>
+
+      <button
+        onClick={() => setView("verify")}
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "verify" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+        title="Statistiques de Pari"
+      >
+        <Search size={20} />
+      </button>
+
+      {useUser().user?.role === "admin" && (
+        <button
+          onClick={() => setView("admin")}
+          className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "admin" ? "bg-red-500/20 text-red-500" : "text-text-secondary hover:bg-red-500/10 hover:text-red-500")}
+          title="Administration FDJS"
+        >
+          <ShieldAlert size={20} />
+        </button>
+      )}
 
       <button
         onClick={() => setShowSessionStats(!showSessionStats)}

@@ -155,9 +155,20 @@ export function LiveSessionWidget() {
                 )}
               </div>
 
-              <div className="flex justify-between text-xs text-text-secondary font-mono">
+              <div className="flex justify-between items-center text-xs text-text-secondary font-mono border-t border-border-subtle pt-2">
                 <span>Parties: {sessionBets.length}</span>
-                <span>MAJ: Temps réel</span>
+                {sessionBets.length > 0 && (
+                  <button 
+                    onClick={() => {
+                        const id = sessionBets[sessionBets.length - 1].id;
+                        navigator.clipboard.writeText(id);
+                    }}
+                    className="hover:text-white transition-colors"
+                    title="Copier ID du dernier pari"
+                  >
+                    ID: {sessionBets[sessionBets.length - 1].id.slice(0, 8)}...
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

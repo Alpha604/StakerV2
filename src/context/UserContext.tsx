@@ -80,9 +80,12 @@ export interface CustomUser {
   vault: number;
   totalWagered?: number;
   totalWon?: number;
+  role?: "admin" | "user";
+  status?: "pending" | "approved" | "suspended" | "banned";
 }
 
-interface SessionBet {
+export interface SessionBet {
+  id: string;
   game: string;
   wagered: number;
   multiplier: number;
@@ -163,6 +166,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               vault: binUser.vault || 0,
               totalWagered: binUser.totalWagered || 0,
               totalWon: binUser.totalWon || 0,
+              role: binUser.role || "user",
+              status: binUser.status || "pending",
             };
             setUser(updatedUser);
             localStorage.setItem(
@@ -199,6 +204,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           vault: updatedUser.vault,
           totalWagered: updatedUser.totalWagered || users[userIndex].totalWagered || 0,
           totalWon: updatedUser.totalWon || users[userIndex].totalWon || 0,
+          role: updatedUser.role || users[userIndex].role || "user",
+          status: updatedUser.status || users[userIndex].status || "pending",
         };
       } else {
          users.push({
@@ -207,6 +214,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             vault: updatedUser.vault,
             totalWagered: updatedUser.totalWagered || 0,
             totalWon: updatedUser.totalWon || 0,
+            role: updatedUser.role || "user",
+            status: updatedUser.status || "pending",
          });
       }
       
@@ -244,6 +253,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           vault: 0,
           totalWagered: 0,
           totalWon: 0,
+          role: "user",
+          status: "pending",
         };
         
         users.push({
@@ -252,7 +263,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
            balance: 100,
            vault: 0,
            totalWagered: 0,
-           totalWon: 0
+           totalWon: 0,
+           role: "user",
+           status: "pending",
         });
         await putBinData({ ...data, users });
       } else {
@@ -265,7 +278,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               vault: 0,
               totalWagered: 0,
               totalWon: 0,
+              role: "admin",
+              status: "approved",
             };
+            users.push({ ...localUser, password });
+            await putBinData({ ...data, users });
+            setUser(localUser);
+            localStorage.setItem("stake_user_session", JSON.stringify(localUser));
+            return true;
+          }
+          if (username === "Mimi" && password === "mimi123") {
+            localUser = {
+              id: "Mimi",
+              username: "Mimi",
+              balance: 1000000,
+              vault: 0,
+              totalWagered: 0,
+              totalWon: 0,
+              role: "admin",
+              status: "approved",
+            };
+            users.push({ ...localUser, password });
+            await putBinData({ ...data, users });
             setUser(localUser);
             localStorage.setItem("stake_user_session", JSON.stringify(localUser));
             return true;
@@ -281,6 +315,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           vault: existingUser.vault || 0,
           totalWagered: existingUser.totalWagered || 0,
           totalWon: existingUser.totalWon || 0,
+          role: existingUser.role || "user",
+          status: existingUser.status || "pending",
         };
       }
 
@@ -387,6 +423,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         ? passedProfit
         : 0;
     const actualPayout = safeProfit + safeBetAmount;
+    
+    // Generate an ID for the bet
+    const betId = "bet_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 
     setUser((prev) => {
       if (!prev) return prev;
@@ -400,21 +439,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       return next;
     });
 
+    const newBet = {
+      id: betId,
+      game,
+      wagered: safeBetAmount,
+      multiplier: multiplier,
+      payout: actualPayout,
+      profit: safeProfit,
+      timestamp: Date.now(),
+    };
+
     setSessionBets((prev) => {
-      const newBets = [
-        ...prev,
-        {
-          game,
-          wagered: safeBetAmount,
-          multiplier: multiplier,
-          payout: actualPayout,
-          profit: safeProfit,
-          timestamp: Date.now(),
-        },
-      ];
+      const newBets = [...prev, newBet];
       localStorage.setItem("stake_session_bets", JSON.stringify(newBets));
       return newBets;
     });
+    
+    // Attempt to store in global DB asynchronously if it's a big win or always, 
+    // actually, let's just use localstorage for the verification for now 
+    // to simulate because putBinData on every bet will freeze the UI or exhaust jsonbin rate limits.
+    const allGlobalBetsStr = localStorage.getItem("stake_global_bets_cache");
+    const allGlobalBets = allGlobalBetsStr ? JSON.parse(allGlobalBetsStr) : [];
+    allGlobalBets.unshift({ ...newBet, user: user?.username || "Anonymous" });
+    if (allGlobalBets.length > 1000) allGlobalBets.length = 1000;
+    localStorage.setItem("stake_global_bets_cache", JSON.stringify(allGlobalBets));
   };
 
   const resetSession = () => {
