@@ -124,6 +124,8 @@ export function Mines() {
       // Delay so we see grid reset if normal
       if (autoSpeed === "normal") {
         await new Promise(r => setTimeout(r, 200));
+      } else {
+        await new Promise(r => setTimeout(r, 50));
       }
       
       // 2. Pick selected spots sequentially
@@ -219,7 +221,7 @@ export function Mines() {
       if (autoBetsCount === 0 || autoBetsRemaining > 0) {
         timeoutId = setTimeout(() => {
           playAutoRound();
-        }, autoSpeed === "instant" ? 10 : 1500); // Wait between rounds
+        }, autoSpeed === "instant" ? 200 : 1500); // Wait between rounds
       }
     }
 
@@ -598,7 +600,10 @@ export function Mines() {
             </div>
           </div>
 
-          <div className="grid grid-cols-5 gap-2 md:gap-3 w-full max-w-[450px] aspect-square mt-[80px] md:mt-10" style={{ perspective: '1000px' }}>
+          <div className={cn(
+            "grid grid-cols-5 gap-2 md:gap-3 w-full aspect-square mt-[80px] md:mt-10 transition-all duration-300 mx-auto",
+            isTheaterMode ? "max-w-[calc(100vh-320px)] lg:max-w-[calc(100vh-220px)]" : "max-w-[450px]"
+          )} style={{ perspective: '1000px' }}>
             {grid.map((cell, i) => {
               return (
                 <motion.button
