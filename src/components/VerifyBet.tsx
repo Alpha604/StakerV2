@@ -8,6 +8,7 @@ export function VerifyBet() {
   const [searchId, setSearchId] = useState("");
   const [searchedBet, setSearchedBet] = useState<SessionBet | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [recentBets, setRecentBets] = useState<any[]>([]);
 
@@ -28,54 +29,61 @@ export function VerifyBet() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!searchId) return;
 
-    setHasSearched(true);
+    setIsScanning(true);
+    setHasSearched(false);
     
-    // Check locally 
-    const localBet = sessionBets.find(b => b.id === searchId);
-    if (localBet) {
-      setSearchedBet(localBet);
-      return;
-    }
+    setTimeout(() => {
+      setIsScanning(false);
+      setHasSearched(true);
+      
+      // Check locally 
+      const localBet = sessionBets.find(b => b.id === searchId);
+      if (localBet) {
+        setSearchedBet(localBet);
+        return;
+      }
 
-    // Attempt to decode as base64 encoded bet payload if it starts with 'bet_'
-    if (searchId.startsWith('bet_') && searchId.length > 20) {
+      // Attempt to decode as base64 encoded bet payload if it starts with 'bet_'
+      if (searchId.startsWith('bet_') && searchId.length > 20) {
+        try {
+          const encoded = searchId.slice(4);
+          const decodedStr = atob(encoded);
+          const parsed = JSON.parse(decodedStr);
+          if (parsed && typeof parsed.w === 'number' && typeof parsed.m === 'number') {
+            // It's a valid decoded bet!
+            setSearchedBet({
+              id: searchId,
+              game: parsed.g || "Unknown",
+              wagered: parsed.w,
+              multiplier: parsed.m,
+              payout: parsed.p,
+              profit: parsed.pr,
+              timestamp: parsed.ts,
+            });
+            return;
+          }
+        } catch (err) {
+          // Not a valid encoded bet, fallback to cache
+        }
+      }
+
+      // Check global cache (simulating DB search)
       try {
-        const encoded = searchId.slice(4);
-        const decodedStr = atob(encoded);
-        const parsed = JSON.parse(decodedStr);
-        if (parsed && typeof parsed.w === 'number' && typeof parsed.m === 'number') {
-          // It's a valid decoded bet!
-          setSearchedBet({
-            id: searchId,
-            game: parsed.g || "Unknown",
-            wagered: parsed.w,
-            multiplier: parsed.m,
-            payout: parsed.p,
-            profit: parsed.pr,
-            timestamp: parsed.ts,
-          });
-          return;
+        const globalBetsStr = localStorage.getItem("stake_global_bets_cache");
+        if (globalBetsStr) {
+          const globalBets = JSON.parse(globalBetsStr);
+          const gBet = globalBets.find((b: any) => b.id === searchId);
+          if (gBet) {
+            setSearchedBet(gBet);
+            return;
+          }
         }
-      } catch (err) {
-        // Not a valid encoded bet, fallback to cache
-      }
-    }
+      } catch(err) {}
 
-    // Check global cache (simulating DB search)
-    try {
-      const globalBetsStr = localStorage.getItem("stake_global_bets_cache");
-      if (globalBetsStr) {
-        const globalBets = JSON.parse(globalBetsStr);
-        const gBet = globalBets.find((b: any) => b.id === searchId);
-        if (gBet) {
-          setSearchedBet(gBet);
-          return;
-        }
-      }
-    } catch(err) {}
-
-    setSearchedBet(null);
+      setSearchedBet(null);
+    }, 800); // 800ms fake scan delay for nice UX effect
   };
 
   const copyToClipboard = (id: string | undefined) => {
@@ -100,14 +108,16 @@ export function VerifyBet() {
               type="text" 
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
+              disabled={isScanning}
               placeholder="Ex: bet_a1b2c3d4..."
-              className="flex-1 bg-[#0f212e] border-2 border-[#2f4553] rounded-lg py-4 pl-12 pr-4 text-white font-mono focus:border-[#557086] outline-none transition-colors"
+              className="flex-1 bg-[#0f212e] border-2 border-[#2f4553] rounded-lg py-4 pl-12 pr-4 text-white font-mono focus:border-[#557086] outline-none transition-colors disabled:opacity-50"
             />
             <button 
               type="submit"
-              className="bg-[#1bc86a] text-black font-bold px-8 py-4 rounded-lg hover:bg-[#1bc86a]/80 transition-colors"
+              disabled={isScanning || !searchId}
+              className="bg-[#1bc86a] text-black font-bold px-8 py-4 rounded-lg hover:bg-[#1bc86a]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
             >
-              Scanner
+              {isScanning ? <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div> : "Scanner"}
             </button>
         </form>
       </div>

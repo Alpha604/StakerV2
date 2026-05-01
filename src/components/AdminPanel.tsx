@@ -6,6 +6,7 @@ export function AdminPanel() {
   const { user } = useUser();
   const [users, setUsers] = useState<BinUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -28,6 +29,7 @@ export function AdminPanel() {
   };
 
   const updateUser = async (username: string, updates: Partial<BinUser>) => {
+    setActionLoading(username + Object.keys(updates)[0]);
     const data = await getBinData();
     const index = data.users.findIndex(u => u.username === username);
     if (index >= 0) {
@@ -35,6 +37,7 @@ export function AdminPanel() {
       await putBinData(data);
       setUsers(data.users);
     }
+    setActionLoading(null);
   };
 
   if (user?.role !== "admin" || user?.username !== "AdminFDJS") {
@@ -70,7 +73,14 @@ export function AdminPanel() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="p-8 text-center text-[#8b9ba5]">Chargement...</td></tr>
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-[#8b9ba5]">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="w-8 h-8 border-4 border-[#2f4553] border-t-white rounded-full animate-spin"></div>
+                    <span>Chargement des données en temps réel...</span>
+                  </div>
+                </td>
+              </tr>
             ) : users.map(u => {
               const isOnline = u.lastOnline && (Date.now() - u.lastOnline < 5 * 60 * 1000);
               return (
@@ -101,7 +111,8 @@ export function AdminPanel() {
                         const amount = prompt(`Nouveau solde pour ${u.username}?`, u.balance.toString());
                         if (amount && !isNaN(Number(amount))) updateUser(u.username, { balance: Number(amount) });
                       }}
-                      className="bg-[#2f4553] hover:bg-[#3d5a6c] px-2 py-1 rounded text-xs"
+                      disabled={actionLoading?.startsWith(u.username)}
+                      className="bg-[#2f4553] hover:bg-[#3d5a6c] px-2 py-1 rounded text-xs disabled:opacity-50"
                     >
                       Modifier
                     </button>
@@ -109,18 +120,30 @@ export function AdminPanel() {
                 </td>
                 <td className="p-4 flex gap-2 flex-wrap">
                   {u.status !== 'approved' && (
-                    <button onClick={() => updateUser(u.username, { status: "approved" })} className="bg-[#1bc86a] text-black px-3 py-1 rounded text-xs font-bold hover:bg-opacity-80">
-                      Approuver
+                    <button 
+                      onClick={() => updateUser(u.username, { status: "approved" })} 
+                      disabled={actionLoading === u.username + "status"}
+                      className="bg-[#1bc86a] text-black px-3 py-1 rounded text-xs font-bold hover:bg-opacity-80 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {actionLoading === u.username + "status" && <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"/>} Approuver
                     </button>
                   )}
-                  {u.status !== 'suspended' && (
-                    <button onClick={() => updateUser(u.username, { status: "suspended" })} className="bg-[#f6c722] text-black px-3 py-1 rounded text-xs font-bold hover:bg-opacity-80">
-                      Suspendre
+                  {u.status !== 'suspended' && u.username !== "AdminFDJS" && (
+                    <button 
+                      onClick={() => updateUser(u.username, { status: "suspended" })} 
+                      disabled={actionLoading === u.username + "status"}
+                      className="bg-[#f6c722] text-black px-3 py-1 rounded text-xs font-bold hover:bg-opacity-80 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {actionLoading === u.username + "status" && <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"/>} Suspendre
                     </button>
                   )}
-                  {u.status !== 'banned' && (
-                    <button onClick={() => updateUser(u.username, { status: "banned" })} className="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-opacity-80">
-                      Bannir
+                  {u.status !== 'banned' && u.username !== "AdminFDJS" && (
+                    <button 
+                      onClick={() => updateUser(u.username, { status: "banned" })} 
+                      disabled={actionLoading === u.username + "status"}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-opacity-80 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {actionLoading === u.username + "status" && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"/>} Bannir
                     </button>
                   )}
                 </td>

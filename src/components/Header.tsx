@@ -31,7 +31,7 @@ export function Header({
             onClick={toggleSidebar}
           />
           <div
-            className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-105"
+            className="flex items-center gap-3 cursor-pointer transition-transform hover:scale-105"
             onClick={() => setView("home")}
           >
             <img 
@@ -39,6 +39,15 @@ export function Header({
               alt="Stake Logo" 
               className="h-6 md:h-7 brightness-[100] invert drop-shadow-md"
             />
+            {user && user.status !== "approved" && user.role !== "admin" && (
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  user.status === 'suspended' ? 'bg-[#f6c722]/20 text-[#f6c722]' :
+                  user.status === 'banned' ? 'bg-red-500/20 text-red-500' :
+                  'bg-gray-500/20 text-gray-400'
+                }`}>
+                  {user.status}
+                </span>
+            )}
           </div>
         </div>
 

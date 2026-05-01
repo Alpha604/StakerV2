@@ -176,12 +176,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               "stake_user_session",
               JSON.stringify(updatedUser),
             );
-            
-            // If banned or suspended during initial load, kick them out
-            if (updatedUser.status === "banned" || updatedUser.status === "suspended") {
-              setUser(null);
-              localStorage.removeItem("stake_user_session");
-            }
           } else if (parsedUser.username === "romeo") {
             // Keep hardcoded romeo if not in DB
             setUser(parsedUser);
@@ -208,12 +202,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
          const binUser = data.users?.find((u) => u.username === parsedSession.username);
          if (binUser) {
            const newStatus = binUser.status || "pending";
-           if (newStatus === "banned" || newStatus === "suspended") {
-              // Force logout immediately
-              setUser(null);
-              localStorage.removeItem("stake_user_session");
-              return;
-           }
            if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status) {
              const updatedUser = {
                 ...parsedSession,
@@ -366,12 +354,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           return false; // Invalid username
         }
         if (existingUser.password && existingUser.password !== password) return false; // Invalid password
-        
-        if (existingUser.status === "banned" || existingUser.status === "suspended") {
-            // Refuse login
-            alert(`Accès refusé. Votre compte est ${existingUser.status === "banned" ? "banni" : "suspendu"}.`);
-            return false;
-        }
         
         // Force upgrade AdminFDJS or Mimi if they already exist but lack permissions
         if ((username === "AdminFDJS" && password === "admin123") || (username === "Mimi" && password === "mimi123") || (username === "romeo" && password === "romeo123")) {
