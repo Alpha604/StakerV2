@@ -9,6 +9,15 @@ export function AdminPanel() {
 
   useEffect(() => {
     fetchUsers();
+    
+    // Poll for live updates every 5 seconds
+    const interval = setInterval(() => {
+      getBinData().then(data => {
+        setUsers(data.users || []);
+      }).catch(() => {});
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchUsers = async () => {
@@ -28,12 +37,12 @@ export function AdminPanel() {
     }
   };
 
-  if (user?.role !== "admin") {
+  if (user?.role !== "admin" || user?.username !== "AdminFDJS") {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="bg-[#0f212e] p-8 rounded-lg text-center border border-red-500/20">
           <h2 className="text-2xl font-bold text-red-500 mb-2">Accès Refusé</h2>
-          <p className="text-[#8b9ba5]">Vous n'avez pas les droits d'administration.</p>
+          <p className="text-[#8b9ba5]">Vous n'avez pas les droits d'administration. Seul <strong className="text-white">AdminFDJS</strong> peut accéder à ce panel.</p>
         </div>
       </div>
     );
@@ -80,14 +89,9 @@ export function AdminPanel() {
                   </span>
                 </td>
                 <td className="p-4">
-                  <select 
-                    value={u.role || 'user'} 
-                    onChange={(e) => updateUser(u.username, { role: e.target.value as "admin"|"user" })}
-                    className="bg-[#2f4553] text-white rounded p-1 text-sm outline-none"
-                  >
-                    <option value="user">Utilisateur</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                    {u.role || 'user'}
+                  </span>
                 </td>
                 <td className="p-4">
                   <div className="flex gap-2 items-center">

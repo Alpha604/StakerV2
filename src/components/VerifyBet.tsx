@@ -21,6 +21,30 @@ export function VerifyBet() {
       return;
     }
 
+    // Attempt to decode as base64 encoded bet payload if it starts with 'bet_'
+    if (searchId.startsWith('bet_') && searchId.length > 20) {
+      try {
+        const encoded = searchId.slice(4);
+        const decodedStr = atob(encoded);
+        const parsed = JSON.parse(decodedStr);
+        if (parsed && typeof parsed.w === 'number' && typeof parsed.m === 'number') {
+          // It's a valid decoded bet!
+          setSearchedBet({
+            id: searchId,
+            game: parsed.g || "Unknown",
+            wagered: parsed.w,
+            multiplier: parsed.m,
+            payout: parsed.p,
+            profit: parsed.pr,
+            timestamp: parsed.ts,
+          });
+          return;
+        }
+      } catch (err) {
+        // Not a valid encoded bet, fallback to cache
+      }
+    }
+
     // Check global cache (simulating DB search)
     try {
       const globalBetsStr = localStorage.getItem("stake_global_bets_cache");

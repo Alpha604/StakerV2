@@ -169,12 +169,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               totalWon: binUser.totalWon || 0,
               role: binUser.role || "user",
               status: binUser.status || "pending",
+              lastOnline: binUser.lastOnline,
             };
             setUser(updatedUser);
             localStorage.setItem(
               "stake_user_session",
               JSON.stringify(updatedUser),
             );
+            
+            // If banned or suspended during initial load, kick them out
+            if (updatedUser.status === "banned" || updatedUser.status === "suspended") {
+              setUser(null);
+              localStorage.removeItem("stake_user_session");
+            }
           } else if (parsedUser.username === "romeo") {
             // Keep hardcoded romeo if not in DB
             setUser(parsedUser);
@@ -190,6 +197,38 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(false);
     };
     initializeSession();
+    
+    // Setup polling for user status/balance sync
+    const pollInterval = window.setInterval(async () => {
+      const savedUserStr = localStorage.getItem("stake_user_session");
+      if (!savedUserStr) return;
+      try {
+         const parsedSession = JSON.parse(savedUserStr) as CustomUser;
+         const data = await getBinData();
+         const binUser = data.users?.find((u) => u.username === parsedSession.username);
+         if (binUser) {
+           const newStatus = binUser.status || "pending";
+           if (newStatus === "banned" || newStatus === "suspended") {
+              // Force logout immediately
+              setUser(null);
+              localStorage.removeItem("stake_user_session");
+              return;
+           }
+           if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status) {
+             const updatedUser = {
+                ...parsedSession,
+                balance: binUser.balance,
+                status: newStatus,
+                role: binUser.role || "user"
+             };
+             setUser(updatedUser);
+             localStorage.setItem("stake_user_session", JSON.stringify(updatedUser));
+           }
+         }
+      } catch (e) {}
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const syncUserToBin = async (updatedUser: CustomUser) => {
@@ -454,8 +493,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         : 0;
     const actualPayout = safeProfit + safeBetAmount;
     
-    // Generate an ID for the bet
-    const betId = "bet_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+    // Generate an encoded ID for the bet
+    const betData = { g: game, w: safeBetAmount, m: multiplier, p: actualPayout, pr: safeProfit, ts: Date.now() };
+    const betId = "bet_" + btoa(JSON.stringify(betData));
 
     setUser((prev) => {
       if (!prev) return prev;
@@ -491,7 +531,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     const allGlobalBetsStr = localStorage.getItem("stake_global_bets_cache");
     const allGlobalBets = allGlobalBetsStr ? JSON.parse(allGlobalBetsStr) : [];
     allGlobalBets.unshift({ ...newBet, user: user?.username || "Anonymous" });
-    if (allGlobalBets.length > 1000) allGlobalBets.length = 1000;
+    if (allGlobalBets.length > 50) allGlobalBets.length = 50;
     localStorage.setItem("stake_global_bets_cache", JSON.stringify(allGlobalBets));
   };
 
