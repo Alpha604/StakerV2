@@ -160,61 +160,79 @@ export function DragonTower() {
             <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <label className="text-[#8b9ba5] text-sm font-semibold">
-                Montant
-              </label>
-            </div>
-            <div className="relative flex items-center bg-bg-inner rounded-md border border-border-medium p-1 transition-colors focus-within:border-border-hover">
-              <div className="pl-3 pr-2 flex items-center justify-center">
-                <Coins size={16} className="text-[#8b9ba5]" />
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[#8b9ba5] text-[13px] font-bold">
+                  Montant de la mise
+                </label>
+                <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
+                  $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+                </span>
               </div>
-              <input
-                type="number"
-                value={betAmount}
-                onChange={(e) =>
-                  setBetAmount(Math.max(0, Number(e.target.value)))
-                }
-                className="w-full bg-transparent text-white font-bold outline-none tabular-nums"
-                min="0"
-                step="0.01"
-                disabled={isPlaying}
-              />
+              <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
+                <span className="pl-3 absolute flex items-center justify-center">
+                  {renderCryptoIcon(activeCrypto, "w-4 h-4")}
+                </span>
+                <input
+                  type="number"
+                  value={betAmount || ""}
+                  onChange={(e) => setBetAmount(Number(e.target.value))}
+                  disabled={isPlaying}
+                  className="w-full bg-transparent p-2 pl-9 text-white font-bold outline-none focus:ring-0 disabled:opacity-50 text-[13px]"
+                  step="0.01"
+                  min="0"
+                  max={balance}
+                />
+                <div className="flex h-full border-l border-[#2f4553] divide-x divide-[#2f4553]">
+                  <button
+                    onClick={() => setBetAmount((prev) => Math.floor(prev / 2 * 100) / 100)}
+                    disabled={isPlaying}
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                  >
+                    ½
+                  </button>
+                  <button
+                    onClick={() => setBetAmount((prev) => Math.floor(prev * 2 * 100) / 100)}
+                    disabled={isPlaying}
+                    className="px-3 hover:bg-[#2f4553] text-[13px] font-bold disabled:opacity-50 transition-colors text-white"
+                  >
+                    2×
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-[#8b9ba5] text-sm font-semibold mb-1">
-              Difficulté
-            </label>
-            <div className="relative">
-              <select
-                value={difficulty}
-                onChange={(e) => {
-                  setDifficulty(e.target.value as Difficulty);
-                  // Clear grid
-                  setGrid(
-                    Array(ROWS).fill(
-                      Array(
-                        DIFF_SETTINGS[e.target.value as Difficulty].cols,
-                      ).fill("hidden"),
-                    ),
-                  );
-                }}
-                disabled={isPlaying}
-                className="w-full h-10 bg-bg-inner border border-border-medium px-3 text-white font-semibold outline-none focus:ring-1 focus:ring-accent rounded disabled:opacity-50 appearance-none shadow-inner text-sm capitalize"
-              >
-                <option value="easy">Facile (4 cases, 1 Dragon)</option>
-                <option value="medium">Moyen (3 cases, 1 Dragon)</option>
-                <option value="hard">Difficile (2 cases, 1 Dragon)</option>
-                <option value="expert">Expert (3 cases, 2 Dragons)</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#8b9ba5]">
-                ▼
+            <div className="flex flex-col gap-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                Difficulté
+              </label>
+              <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+                <select
+                  value={difficulty}
+                  onChange={(e) => {
+                    setDifficulty(e.target.value as Difficulty);
+                    // Clear grid
+                    setGrid(
+                      Array(ROWS).fill(
+                        Array(
+                          DIFF_SETTINGS[e.target.value as Difficulty].cols,
+                        ).fill("hidden"),
+                      ),
+                    );
+                  }}
+                  disabled={isPlaying}
+                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
+                >
+                  <option value="easy" className="text-black">Facile (4 cases, 1 Dragon)</option>
+                  <option value="medium" className="text-black">Moyen (3 cases, 1 Dragon)</option>
+                  <option value="hard" className="text-black">Difficile (2 cases, 1 Dragon)</option>
+                  <option value="expert" className="text-black">Expert (3 cases, 2 Dragons)</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
+                  ▼
+                </div>
               </div>
             </div>
-          </div>
 
           <div className="flex-1"></div>
 
@@ -262,7 +280,7 @@ export function DragonTower() {
 
           {/* Crypto Logo Background */}
           <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-             {renderCryptoIcon("stake", "w-64 h-64")}
+             {renderCryptoIcon(activeCrypto, "w-64 h-64")}
           </div>
 
           <div className="flex flex-col gap-2 w-full max-w-md my-4 z-10 relative">

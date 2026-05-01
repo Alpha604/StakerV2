@@ -66,11 +66,11 @@ export function Crash() {
     startSequence();
   };
 
-  const handleCashout = (forcedMultiplier?: number) => {
+  const handleCashout = (forcedMultiplier?: number | React.MouseEvent) => {
     if (gameState === "playing" && stateRef.current.hasBet && !stateRef.current.cashedOut) {
       setCashedOut(true);
       stateRef.current.cashedOut = true;
-      const m = forcedMultiplier || multiplier;
+      const m = typeof forcedMultiplier === "number" ? forcedMultiplier : multiplier;
       const payout = betAmount * m;
       setWinAmount(payout);
       addBalance(payout);
@@ -93,12 +93,7 @@ export function Crash() {
       // Handle Auto Cashout AT exact multiplier
       if (isAutoCashoutEnabled && hasBet && !cashedOut && currentMulti >= autoCashout) {
         if (autoCashout <= point) {
-           setCashedOut(true);
-           stateRef.current.cashedOut = true;
-           const payout = betAmount * autoCashout;
-           setWinAmount(payout);
-           addBalance(payout);
-           recordBet("Crash", betAmount, autoCashout, payout - betAmount);
+           handleCashout(autoCashout);
         }
       }
 
@@ -283,10 +278,14 @@ export function Crash() {
               )}>
                 <input
                   type="number"
-                  value={autoCashout}
-                  onChange={(e) =>
-                    setAutoCashout(Math.max(1.01, Number(e.target.value)))
-                  }
+                  value={autoCashout || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAutoCashout(val === "" ? 0 : Number(val));
+                  }}
+                  onBlur={(e) => {
+                    if (autoCashout < 1.01) setAutoCashout(1.01);
+                  }}
                   className="w-full bg-transparent p-2 pl-4 text-white font-bold outline-none focus:ring-0 text-[13px]"
                   min="1.01"
                   step="0.01"

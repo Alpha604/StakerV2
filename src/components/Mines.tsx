@@ -63,6 +63,12 @@ export function Mines() {
   const { user, balance, activeCrypto, addBalance, subtractBalance, recordBet } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [minesCount, setMinesCount] = useState<number>(3);
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [selectedSpots, setSelectedSpots] = useState<Set<number>>(new Set());
+  const [autoBetsCount, setAutoBetsCount] = useState<number>(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
+  const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [crashed, setCrashed] = useState(false);
   const [grid, setGrid] = useState<CellState[]>(Array(25).fill("hidden"));
@@ -84,6 +90,124 @@ export function Mines() {
     const expectedMult = (1 / prob) * 0.99;
     return Number(expectedMult.toFixed(2));
   };
+
+  // Auto Play Loop
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const playAutoRound = async () => {
+      // 1. Start game
+      if (betAmount > balance) {
+        setIsAutoPlaying(false);
+        return;
+      }
+      
+      const success = await subtractBalance(betAmount);
+      if (!success) {
+        setIsAutoPlaying(false);
+        return;
+      }
+
+      setIsPlaying(true);
+      setCrashed(false);
+      setWinInfo(null);
+      setRevealedCount(0);
+      
+      const newMines = new Set<number>();
+      while (newMines.size < minesCount) {
+        newMines.add(Math.floor(Math.random() * 25));
+      }
+      setMineLocations(newMines);
+      
+      // Delay so we see grid reset
+      await new Promise(r => setTimeout(r, 200));
+      
+      // 2. Pick selected spots sequentially
+      let localGrid = Array(25).fill("hidden");
+      let localRevealed = 0;
+      let localCrashed = false;
+      const spotList = Array.from(selectedSpots);
+
+      for (const index of spotList) {
+        if (newMines.has(index)) {
+          // hit a bomb
+          playSound("bomb");
+          localGrid[index] = "picked_bomb";
+          setGrid([...localGrid]);
+          setCrashed(true);
+          localCrashed = true;
+          
+          setTimeout(() => {
+            setGrid(prev => prev.map((c, i) => {
+              if (c !== "hidden" && c !== "picked_bomb") return c;
+              if (i === index) return "picked_bomb";
+              return newMines.has(i) ? "revealed_bomb" : "revealed_gem";
+            }));
+          }, 400);
+
+          await recordBet("Mines", betAmount, 0, -betAmount);
+          break; // Stop picking
+        } else {
+          // hit gem
+          playSound("gem", localRevealed);
+          localGrid[index] = "picked_gem";
+          setGrid([...localGrid]);
+          localRevealed++;
+          setRevealedCount(localRevealed);
+          
+          // Wait briefly between picks
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      // 3. Cashout if not crashed
+      if (!localCrashed && localRevealed > 0) {
+        const mult = calculateMultiplier(minesCount, localRevealed);
+        const autoPotentialWin = betAmount * mult;
+        
+        playSound("cashout");
+        await addBalance(autoPotentialWin);
+        await recordBet(
+          "Mines",
+          betAmount,
+          mult,
+          autoPotentialWin - betAmount,
+        );
+
+        setWinInfo({ multiplier: mult, payout: autoPotentialWin });
+        // show all
+        setGrid(prev => prev.map((cell, i) => {
+          if (cell !== "hidden") return cell;
+          return newMines.has(i) ? "revealed_bomb" : "revealed_gem";
+        }));
+      }
+
+      setIsPlaying(false);
+
+      // Decrement and wait
+      if (autoBetsCount > 0) {
+        setAutoBetsRemaining(prev => {
+          const next = prev - 1;
+          if (next <= 0) {
+            setIsAutoPlaying(false);
+          }
+          return next;
+        });
+      }
+
+      // If we are still auto playing, the loop will run again triggered by the dependency changes
+    };
+
+    if (isAutoPlaying && !isPlaying) {
+      if (autoBetsCount === 0 || autoBetsRemaining > 0) {
+        timeoutId = setTimeout(() => {
+          playAutoRound();
+        }, 1500); // Wait between rounds
+      }
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [isAutoPlaying, isPlaying, autoBetsRemaining, autoBetsCount, selectedSpots, minesCount, betAmount, balance]);
 
   const currentMultiplier = calculateMultiplier(minesCount, revealedCount);
   const potentialWin = betAmount * currentMultiplier;
@@ -149,6 +273,21 @@ export function Mines() {
   };
 
   const handleCellClick = async (index: number) => {
+    if (mode === "auto" && !isAutoPlaying && !isPlaying) {
+      // Toggle selection in auto mode setup
+      const newSpots = new Set(selectedSpots);
+      if (newSpots.has(index)) {
+        newSpots.delete(index);
+      } else {
+        // Can't select more than 25 - minesCount
+        if (newSpots.size < 25 - minesCount) {
+          newSpots.add(index);
+        }
+      }
+      setSelectedSpots(newSpots);
+      return;
+    }
+
     if (!isPlaying || crashed || grid[index] !== "hidden") return;
 
     const newGrid = [...grid];
@@ -196,8 +335,14 @@ export function Mines() {
         <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
-              <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
-              <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+              <button 
+                onClick={() => { if(!isAutoPlaying && !isPlaying) setMode("manual"); }}
+                className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "manual" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+              >Manuel</button>
+              <button 
+                onClick={() => { if(!isAutoPlaying && !isPlaying) setMode("auto"); }}
+                className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "auto" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+              >Auto</button>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -265,9 +410,47 @@ export function Mines() {
               </div>
             </div>
 
-            <div className="flex-1"></div>
+            {mode === "auto" && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                  Nombre de paris (0 = infini)
+                </label>
+                <input
+                  type="number"
+                  value={autoBetsCount}
+                  onChange={(e) => setAutoBetsCount(Number(e.target.value))}
+                  disabled={isAutoPlaying || isPlaying}
+                  className="w-full bg-[#0f212e] rounded border border-[#2f4553] p-2.5 text-white font-bold outline-none focus:border-[#557086] disabled:opacity-50 text-[13px]"
+                  min="0"
+                />
+              </div>
+            )}
 
-            {isPlaying ? (
+            <div className="flex-1"></div>
+            
+            {mode === "auto" ? (
+              <button
+                onClick={() => {
+                  if (isAutoPlaying) {
+                    setIsAutoPlaying(false);
+                  } else {
+                    if (selectedSpots.size === 0) {
+                      alert("Veuillez sélectionner au moins une case sur la grille d'abord.");
+                      return;
+                    }
+                    setIsAutoPlaying(true);
+                    setAutoBetsRemaining(autoBetsCount);
+                  }
+                }}
+                className={cn(
+                  "w-full py-3.5 rounded font-bold transition-all text-sm",
+                  isAutoPlaying ? "bg-[#ed4163] hover:bg-[#ed4163]/80 text-white" : (betAmount > balance || betAmount <= 0) ? "bg-[#1bc86a]/40 text-black/50 cursor-not-allowed" : "bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black"
+                )}
+                disabled={!isAutoPlaying && (betAmount > balance || betAmount <= 0)}
+              >
+                {isAutoPlaying ? "Arrêter Autobet" : "Démarrer Autobet"}
+              </button>
+            ) : isPlaying ? (
               <div className="flex flex-col gap-3">
                 <button
                   onClick={pickRandom}
@@ -340,7 +523,7 @@ export function Mines() {
             )}
 
             <div className="flex flex-col bg-[#162734] rounded-lg px-4 py-2 border border-[#233845] shadow text-center justify-center min-w-[120px]">
-               <span className="text-text-secondary text-[10px] uppercase font-bold tracking-widest leading-none mb-1">Gemmes</span>
+               <span className="text-text-secondary text-[10px] uppercase font-bold tracking-widest leading-none mb-1">Diamants</span>
                <span className="text-white text-sm font-bold leading-none">{(25 - minesCount) - revealedCount}</span>
             </div>
           </div>
@@ -351,22 +534,25 @@ export function Mines() {
                 <motion.button
                   key={i}
                   onClick={() => handleCellClick(i)}
-                  disabled={!isPlaying || crashed || cell !== "hidden"}
+                  disabled={(mode === "manual" && !isPlaying) || crashed || (isPlaying && cell !== "hidden") || (mode === "auto" && isAutoPlaying)}
                   animate={{
                      rotateY: cell !== "hidden" ? 180 : 0,
                   }}
                   transition={{ duration: 0.4, type: "spring", stiffness: 200, damping: 20 }}
                   className={cn(
                     "w-full h-full rounded-lg flex items-center justify-center relative transform-style-3d",
-                    (cell === "hidden" && isPlaying)
+                    (cell === "hidden" && (isPlaying || mode === "auto"))
                       ? "bg-[#2f4553] hover:-translate-y-1 hover:bg-[#3d5565] cursor-pointer shadow-[0_4px_0_#213743] hover:shadow-[0_6px_0_#213743] active:shadow-[0_0px_0_#213743] active:translate-y-1"
                       : "bg-transparent shadow-none",
-                    (!isPlaying && cell === "hidden") && "opacity-80 cursor-default bg-[#213743] shadow-[0_4px_0_#15242d]",
+                    (!isPlaying && mode === "manual" && cell === "hidden") && "opacity-80 cursor-default bg-[#213743] shadow-[0_4px_0_#15242d]",
                   )}
                   style={{ transformStyle: "preserve-3d" }}
                 >
                   <div className="absolute inset-0 backface-hidden flex items-center justify-center">
                     {/* Front of card (hidden state) */}
+                    {mode === "auto" && !isPlaying && selectedSpots.has(i) && (
+                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute inset-0 bg-[#00E701]/20 rounded-lg border-2 border-[#00E701]" />
+                    )}
                   </div>
 
                   <div className="absolute inset-0 backface-hidden bg-[#0f172a] shadow-inner border border-white/5 rounded-lg flex items-center justify-center overflow-hidden" style={{ transform: "rotateY(180deg)" }}>
@@ -395,10 +581,12 @@ export function Mines() {
                               cell === "revealed_gem" && "opacity-40 grayscale"
                             )}
                           >
-                            <path d="M256 0L493.597 131.6L256 512L18.4026 131.6L256 0Z" fill="#00E701" />
-                            <path d="M256 0V512L18.4026 131.6L256 0Z" fill="#00C001" />
-                            <path d="M256 0L493.597 131.6L256 186.2V0Z" fill="#1FFF20" opacity="0.6" />
-                            <path d="M256 0V186.2L18.4026 131.6L256 0Z" fill="#00FF01" opacity="0.4" />
+                            <path fill="#02D574" d="M256 512L0 192.5 125.8 0h260.4L512 192.5z"/>
+                            <path fill="#00B861" d="M256 512l256-319.5-125.8-192.5H256z"/>
+                            <path fill="#00F284" d="M256 512L125.8 192.5 256 0z"/>
+                            <path fill="#00E47A" d="M256 0v512h.2L386.2 192.5z"/>
+                            <path fill="#5FFFA8" d="M125.8 192.5h260.4L256 0z" opacity=".4"/>
+                            <path fill="#FFFFFF" d="M140 192.5L256 30l116 162.5H140z" opacity=".5"/>
                           </svg>
                         </motion.div>
                       )}

@@ -5,97 +5,49 @@ import { cn } from "../lib/utils";
 import { Coins, ChevronDown } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
-const SEGMENTS = {
-  low: [
-    { m: 1.5, color: "#3b82f6" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 0.0, color: "#475569" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.5, color: "#3b82f6" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 0.0, color: "#475569" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.5, color: "#3b82f6" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 0.0, color: "#475569" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.5, color: "#3b82f6" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 0.0, color: "#475569" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.5, color: "#3b82f6" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 0.0, color: "#475569" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-    { m: 1.2, color: "#10b981" },
-  ],
-  high: [
-    { m: 49.5, color: "#f59e0b" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 9.9, color: "#ef4444" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-    { m: 0.0, color: "#475569" },
-  ],
+const MULTIPLIERS = {
+  10: {
+    low: [1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0],
+    medium: [0, 1.9, 0, 1.5, 0, 2, 0, 1.5, 0, 3],
+    high: [0, 0, 0, 0, 0, 0, 0, 0, 0, 9.9],
+  },
+  20: {
+    low: [1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0],
+    medium: [1.5, 0, 2, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 2, 0, 2, 0, 1.5, 0, 3, 0],
+    high: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19.8],
+  },
+  30: {
+    low: [1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0],
+    medium: [1.5, 0, 1.5, 0, 2, 0, 1.5, 0, 2, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 1.5, 0, 2, 0, 1.5, 0, 2, 0, 2, 0, 1.5, 0],
+    high: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29.7],
+  },
+  40: {
+    low: [1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0],
+    medium: [2, 0, 3, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 1.5, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 2, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 1.5, 0, 2, 0, 1.5, 0, 3, 0],
+    high: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 39.6],
+  },
+  50: {
+    low: [1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0, 1.5, 1.2, 1.2, 1.2, 0, 1.2, 1.2, 1.2, 1.2, 0],
+    medium: [2, 0, 1.5, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 1.5, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 2, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 1.5, 0, 2, 0, 1.5, 0, 3, 0, 1.5, 0, 2, 0, 2, 0, 1.5, 0, 3, 0],
+    high: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49.5],
+  }
+};
+
+const getColorForMultiplier = (m: number) => {
+  if (m === 0) return "#475569";
+  if (m <= 1.2) return "#10b981";
+  if (m <= 1.5) return "#3b82f6";
+  if (m <= 2) return "#8b5cf6";
+  if (m <= 3) return "#d946ef";
+  if (m < 10) return "#f59e0b";
+  return "#ef4444";
 };
 
 export function Wheel() {
   const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet  } = useUser();
   const [betAmount, setBetAmount] = useState<number>(10);
-  const [risk, setRisk] = useState<"low" | "high">("low");
+  const [risk, setRisk] = useState<"low" | "medium" | "high">("low");
+  const [segmentsCount, setSegmentsCount] = useState<10 | 20 | 30 | 40 | 50>(10);
 
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -105,7 +57,8 @@ export function Wheel() {
     payout: number;
   } | null>(null);
 
-  const segments = SEGMENTS[risk];
+  const segmentsMultipliers = MULTIPLIERS[segmentsCount][risk];
+  const segments = segmentsMultipliers.map(m => ({ m, color: getColorForMultiplier(m) }));
   const numSegments = segments.length;
   const anglePerSegment = 360 / numSegments;
 
@@ -257,12 +210,36 @@ export function Wheel() {
               <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
                 <select
                   value={risk}
-                  onChange={(e) => setRisk(e.target.value as "low" | "high")}
+                  onChange={(e) => setRisk(e.target.value as "low" | "medium" | "high")}
                   disabled={isSpinning}
                   className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative"
                 >
-                  <option value="low" className="text-black">Classique</option>
+                  <option value="low" className="text-black">Faible</option>
+                  <option value="medium" className="text-black">Moyen</option>
                   <option value="high" className="text-black">Élevé</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
+                  <ChevronDown size={14} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                Segments
+              </label>
+              <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+                <select
+                  value={segmentsCount}
+                  onChange={(e) => setSegmentsCount(Number(e.target.value) as 10 | 20 | 30 | 40 | 50)}
+                  disabled={isSpinning}
+                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative"
+                >
+                  <option value={10} className="text-black">10</option>
+                  <option value={20} className="text-black">20</option>
+                  <option value={30} className="text-black">30</option>
+                  <option value={40} className="text-black">40</option>
+                  <option value={50} className="text-black">50</option>
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
                   <ChevronDown size={14} />

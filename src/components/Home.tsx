@@ -80,7 +80,7 @@ const ALL_GAMES = [
     img: "https://mediumrare.imgix.net/931cf1fd7147d0d0deda93f16fb8ef556d6d42df3586214f6539a9cfcfcf57b9?w=180&h=236&fit=min&auto=format",
   },
   {
-    name: "Classic Slots", category: "slots", link: "slots-game",
+    name: "Blue Samurai", category: "slots", link: "slots-game",
     releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     img: "https://mediumrare.imgix.net/3a6fa5d49d31f11ce131acb64d8cbbe6cc5d8f916bd0afacaeb1fc5976aa4fdf?w=180&h=236&fit=min&auto=format",
   }
@@ -140,7 +140,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
         {gamesToRender.map((game) => {
-          const isBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Samurai"].some(n => game.name.toLowerCase().includes(n.toLowerCase()));
+          const isBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => game.name.toLowerCase() === n.toLowerCase());
           return (
           <div
             key={game.name}
