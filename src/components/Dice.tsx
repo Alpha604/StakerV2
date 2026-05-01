@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUser, renderCryptoIcon } from "../context/UserContext";
 import { cn } from "../lib/utils";
-import { Coins, RotateCcw, Dices } from "lucide-react";
+import { Coins, RotateCcw, Dices, Maximize, Minimize } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 import { useSound } from "../lib/useSound";
 
@@ -19,6 +19,13 @@ export function Dice() {
     multiplier: number;
     payout: number;
   } | null>(null);
+
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [autoBetsCount, setAutoBetsCount] = useState<number>(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
+  const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
+  const [autoSpeed, setAutoSpeed] = useState<"normal" | "instant">("normal");
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
 
   const winChance = condition === "over" ? 100 - target : target;
   const multiplier = Number((99 / winChance).toFixed(4));
@@ -40,6 +47,75 @@ export function Dice() {
       }
       return () => clearInterval(interval);
   }, [isRolling, playTick]);
+
+  // Auto Play Loop
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const playAutoRound = async () => {
+      if (betAmount > balance) {
+        setIsAutoPlaying(false);
+        return;
+      }
+      
+      const success = await subtractBalance(betAmount);
+      if (!success) {
+        setIsAutoPlaying(false);
+        return;
+      }
+
+      setIsRolling(true);
+      setLastWin(null);
+      setWinInfo(null);
+
+      const delayAmount = autoSpeed === "normal" ? 600 : 50;
+      
+      await new Promise(r => setTimeout(r, delayAmount));
+
+      const result = Number((Math.random() * 100).toFixed(2));
+      setRollResult(result);
+
+      let isWin = false;
+      if (condition === "over" && result >= target) isWin = true;
+      if (condition === "under" && result <= target) isWin = true;
+
+      setLastWin(isWin);
+      if (isWin) playWin(); else playLoss();
+
+      const payout = isWin ? Math.floor(potentialWin * 100) / 100 : 0;
+      if (isWin) {
+        await addBalance(payout);
+        if (autoSpeed === "normal") {
+          setTimeout(() => setWinInfo({ multiplier, payout }), 500); 
+        } else {
+           setWinInfo({ multiplier, payout });
+        }
+      }
+      await recordBet("Dice", betAmount, isWin ? multiplier : 0, payout - betAmount);
+
+      setIsRolling(false);
+
+      if (autoBetsCount > 0) {
+        setAutoBetsRemaining(prev => {
+          const next = prev - 1;
+          if (next <= 0) {
+            setIsAutoPlaying(false);
+          }
+          return next;
+        });
+      }
+    };
+
+    if (isAutoPlaying && !isRolling) {
+      if (autoBetsCount === 0 || autoBetsRemaining > 0) {
+        timeoutId = setTimeout(() => {
+          playAutoRound();
+        }, autoSpeed === "instant" ? 100 : 500);
+      }
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [isAutoPlaying, isRolling, autoBetsRemaining, autoBetsCount, betAmount, balance, autoSpeed, condition, target, potentialWin, multiplier]);
 
   const handleRoll = () => {
     if (!user || balance < betAmount) return; // Add proper auth/balance notifications in real app
@@ -73,15 +149,21 @@ export function Dice() {
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
-      <div className="w-full flex lg:flex-row flex-col max-w-[1200px] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[600px]">
+    <>
+      <div className={cn("flex flex-col md:flex-row gap-4 mx-auto p-4 md:p-8 transition-all duration-300", isTheaterMode ? "max-w-full h-full lg:h-[calc(100vh-80px)]" : "max-w-[1200px] min-h-[calc(100vh-80px)]")}>
         
         {/* Left Side: Controls */}
         <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
-              <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
-              <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+              <button 
+                onClick={() => { if(!isAutoPlaying && !isRolling) setMode("manual"); }}
+                className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "manual" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+              >Manuel</button>
+              <button 
+                onClick={() => { if(!isAutoPlaying && !isRolling) setMode("auto"); }}
+                className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "auto" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+              >Auto</button>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -143,23 +225,99 @@ export function Dice() {
               </div>
             </div>
 
+            {mode === "auto" && (
+              <div className="flex flex-col gap-3 mt-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                    Nombre de paris (0 = infini)
+                  </label>
+                  <input
+                    type="number"
+                    value={autoBetsCount}
+                    onChange={(e) => setAutoBetsCount(Number(e.target.value))}
+                    disabled={isAutoPlaying || isRolling}
+                    className="w-full bg-[#0f212e] rounded border border-[#2f4553] p-2.5 text-white font-bold outline-none focus:border-[#557086] disabled:opacity-50 text-[13px]"
+                    min="0"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                    Vitesse
+                  </label>
+                  <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+                    <select
+                      value={autoSpeed}
+                      onChange={(e) => setAutoSpeed(e.target.value as "normal" | "instant")}
+                      disabled={isAutoPlaying || isRolling}
+                      className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
+                    >
+                      <option value="normal" className="text-black">Normale</option>
+                      {/* <option value="instant" className="text-black">Instantanée</option> */}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
+                      ▼
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex-1"></div>
 
-            <button
-              onClick={handleRoll}
-              disabled={isRolling || balance < betAmount || betAmount <= 0}
-              className={cn(
-                "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
-                (isRolling || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed",
-              )}
-            >
-              Pari
-            </button>
+            {mode === "auto" ? (
+              <div className="toggle-cont">
+                <input
+                  className="toggle-input"
+                  id="toggle"
+                  name="toggle"
+                  type="checkbox"
+                  checked={isAutoPlaying}
+                  disabled={!isAutoPlaying && (betAmount > balance || betAmount <= 0)}
+                  onChange={(e) => {
+                    if (isAutoPlaying) {
+                      setIsAutoPlaying(false);
+                    } else {
+                      setIsAutoPlaying(true);
+                      setAutoBetsRemaining(autoBetsCount);
+                    }
+                  }}
+                />
+                <label className="toggle-label" htmlFor="toggle" title={isAutoPlaying ? "Arrêter Autobet" : "Démarrer Autobet"}>
+                  <div className="cont-label-play">
+                    <span className="label-play"></span>
+                  </div>
+                </label>
+              </div>
+            ) : (
+              <button
+                onClick={handleRoll}
+                disabled={isRolling || balance < betAmount || betAmount <= 0}
+                className={cn(
+                  "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                  (isRolling || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed",
+                )}
+              >
+                Pari
+              </button>
+            )}
           </div>
         </div>
 
         {/* Right Side: Game Canvas */}
-        <div className="flex-1 bg-[#0f212e] lg:rounded-r-2xl lg:rounded-bl-none rounded-b-2xl relative p-4 lg:p-12 flex flex-col items-center justify-center border border-l-0 border-[#233845] order-1 lg:order-2 min-h-[400px]">
+        <div className="flex-1 bg-[#0f212e] lg:rounded-r-2xl lg:rounded-bl-none rounded-b-2xl relative p-4 lg:p-12 flex flex-col items-center justify-center border border-l-0 border-[#233845] order-1 lg:order-2 flex-grow">
+          
+          <button 
+            onClick={() => setIsTheaterMode(!isTheaterMode)}
+            className="absolute bottom-4 right-4 text-[#8b9ba5] hover:text-white transition-colors bg-[#0f212e] hover:bg-[#2f4553] border border-[#2f4553] p-2 rounded-lg z-20"
+            title={isTheaterMode ? "Quitter le mode théâtre" : "Mode théâtre"}
+          >
+            {isTheaterMode ? (
+              <Minimize size={18} />
+            ) : (
+              <Maximize size={18} />
+            )}
+          </button>
+
           {winInfo && (
             <WinPopup
               multiplier={winInfo.multiplier}
@@ -228,22 +386,22 @@ export function Dice() {
                </div>
 
                {/* Track */}
-               <div className="relative w-full h-3.5 bg-[#0d1b24] rounded-full flex items-center shadow-inner">
-                  {/* Fill Logic for colors */}
+               <div className="relative w-full h-4 bg-[#0d1b24] rounded-full flex items-center shadow-inner overflow-hidden">
+                  {/* Red / Green Zones */}
                   <div
-                    className="absolute h-full rounded-full transition-all duration-300 pointer-events-none"
+                    className="absolute h-full transition-all duration-300 pointer-events-none"
                     style={{
-                      left: condition === "over" ? `${target}%` : "0%",
-                      right: condition === "over" ? "0%" : `${100 - target}%`,
-                      backgroundColor: condition === "over" ? "#00e676" : "#00e676",
+                      left: "0%",
+                      width: `${target}%`,
+                      backgroundColor: condition === "over" ? "#ed4163" : "#00e676",
                     }}
                   />
                   <div
-                    className="absolute h-full rounded-full transition-all duration-300 pointer-events-none"
+                    className="absolute h-full transition-all duration-300 pointer-events-none"
                     style={{
-                      left: condition === "under" ? `${target}%` : "0%",
-                      right: condition === "under" ? "0%" : `${100 - target}%`,
-                      backgroundColor: condition === "under" ? "#ed4163" : "#ed4163",
+                      left: `${target}%`,
+                      width: `${100 - target}%`,
+                      backgroundColor: condition === "over" ? "#00e676" : "#ed4163",
                     }}
                   />
 
@@ -271,29 +429,24 @@ export function Dice() {
 
                {/* Custom Thumb Element */}
                <div
-                 className="absolute bottom-[36.5px] w-8 h-8 z-10 -translate-x-1/2 cursor-pointer pointer-events-none"
-                 style={{ left: `calc(48px + (100% - 96px) * (${target - 2} / 96))` }} // Adjusted based on padding, but simpler approach:
+                 className="absolute bottom-[44.5px] w-8 h-8 z-10 -translate-x-1/2 cursor-pointer pointer-events-none"
+                 style={{ left: `calc(1.5rem + (100% - 3rem) * (${target} / 100))` }}
                >
-                 <div
-                   className="absolute pointer-events-none"
-                   style={{ left: `calc(${target}% + ${24 - target * 0.48}px)` }} // Tailwind slider thumb trick or just use pure absolute left.
-                 />
-                 {/* Visual Handle mapped directly to % */}
                </div>
                
                {/* Visual Handle absolute positioned over the track */}
                <div 
-                 className="absolute bottom-[44px] -translate-x-1/2 w-8 h-8 bg-white rounded-lg shadow-md z-10 pointer-events-none flex items-center justify-center border border-gray-200"
-                 style={{ left: `calc(1.5rem + (100% - 3rem) * (${target} / 100))` }}
+                 className="absolute bottom-[45px] -translate-x-1/2 w-8 h-10 bg-white rounded shadow-md z-10 pointer-events-none flex items-center justify-center border-2 border-[#0f212e] transition-transform hover:scale-105"
+                 style={{ left: `calc(1.5rem + 0px + (100% - 3rem) * (${target} / 100))` }}
                >
-                 <div className="w-3 h-1.5 flex gap-[3px] justify-center">
-                    <div className="w-[3px] h-[12px] bg-[#9ba7b5] rounded-full" />
-                    <div className="w-[3px] h-[12px] bg-[#9ba7b5] rounded-full" />
-                 </div>
+                 {/* Stake-like handle styling */}
+                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="rotate-90">
+                    <path d="M12 2L2 12l10 10 10-10L12 2z" fill="#9ba7b5" />
+                 </svg>
                  {/* Floating Label */}
                  <div className={cn(
-                    "absolute -top-10 text-xs font-bold py-1 px-2 rounded-md shadow-lg truncate text-white pointer-events-none after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:border-l-4 after:border-r-4 after:border-t-4 after:border-solid after:border-l-transparent after:border-r-transparent",
-                    condition === "over" ? "bg-[#00e676] after:border-t-[#00e676] text-[#0f212e]" : "bg-[#00e676] after:border-t-[#00e676] text-[#0f212e]"
+                    "absolute -top-10 text-xs font-bold py-1 px-2 rounded shadow-lg truncate text-[#0f212e] pointer-events-none after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:border-l-4 after:border-r-4 after:border-t-4 after:border-solid after:border-l-transparent after:border-r-transparent",
+                    "bg-[#00e676] after:border-t-[#00e676]"
                   )}>
                     {target.toFixed(2)}
                  </div>
@@ -375,11 +528,10 @@ export function Dice() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

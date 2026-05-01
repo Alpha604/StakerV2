@@ -456,7 +456,7 @@ export function Mines() {
                       className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
                     >
                       <option value="normal" className="text-black">Normale</option>
-                      <option value="instant" className="text-black">Instantanée</option>
+                      {/* <option value="instant" className="text-black">Instantanée</option> */}
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white">
                       ▼
@@ -571,6 +571,9 @@ export function Mines() {
               onClose={() => {
                 setWinInfo(null);
                 setGrid(Array(25).fill("hidden"));
+                setRevealedCount(0);
+                setCrashed(false);
+                setIsPlaying(false);
               }}
             />
           )}
