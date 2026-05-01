@@ -17,6 +17,8 @@ export function AdminPanel() {
   const [editForm, setEditForm] = useState<Partial<BinUser>>({});
   const [editLoading, setEditLoading] = useState(false);
   const [suspensionHours, setSuspensionHours] = useState<number | "">("");
+  const [editTab, setEditTab] = useState<"general"|"finances"|"security"|"history">("general");
+  const [userBets, setUserBets] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUsers();
@@ -95,6 +97,19 @@ export function AdminPanel() {
       password: u.password,
     });
     setSuspensionHours("");
+    setEditTab("general");
+    
+    try {
+      const betsStr = localStorage.getItem("stake_global_bets_cache");
+      if (betsStr) {
+        const bets = JSON.parse(betsStr);
+        setUserBets(bets.filter((b: any) => b.user === u.username));
+      } else {
+        setUserBets([]);
+      }
+    } catch(e) {
+      setUserBets([]);
+    }
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -374,140 +389,279 @@ export function AdminPanel() {
 
       {/* Edit User Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#0f212e] border border-[#2f4553] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-[#2f4553] flex items-center justify-between bg-[#2f4553]/20">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <Edit3 className="text-blue-500" />
-                Editer: {editingUser.username}
-              </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0f212e] border border-[#2f4553] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 md:p-6 border-b border-[#2f4553] flex items-center justify-between bg-gradient-to-r from-[#2f4553]/40 to-transparent">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                   <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center uppercase font-bold text-xl border border-blue-500/30">
+                     {editingUser.username.substring(0, 2)}
+                   </div>
+                   {editingUser.lastOnline && (Date.now() - editingUser.lastOnline < 5 * 60 * 1000) && (
+                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#1bc86a] border-2 border-[#0f212e] rounded-full"></div>
+                   )}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2 text-white tracking-tight">
+                    {editingUser.username}
+                  </h2>
+                  <div className="flex gap-2 mt-1">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                      ${editForm.status === 'approved' ? 'bg-[#1bc86a]/10 text-[#1bc86a] border border-[#1bc86a]/20' : 
+                        editForm.status === 'suspended' ? 'bg-[#f6c722]/10 text-[#f6c722] border border-[#f6c722]/20' :
+                        editForm.status === 'banned' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                        'bg-gray-500/10 text-gray-400 border border-gray-500/20'}`}>
+                      {editForm.status || 'pending'}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${editForm.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                      {editForm.role || 'user'}
+                    </span>
+                  </div>
+                </div>
+              </div>
               <button 
                 onClick={() => setEditingUser(null)}
-                className="text-[#8b9ba5] hover:text-white p-1 rounded hover:bg-[#2f4553] transition-colors"
+                className="text-[#8b9ba5] hover:text-white p-2 rounded-lg hover:bg-[#2f4553] transition-colors"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-              <form id="edit-user-form" onSubmit={handleSaveEdit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-[#8b9ba5]">Solde Courant</label>
-                    <input 
-                      type="number" step="0.01" 
-                      value={editForm.balance ?? ''} 
-                      onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})}
-                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-[#8b9ba5]">Coffre</label>
-                    <input 
-                      type="number" step="0.01" 
-                      value={editForm.vault ?? ''} 
-                      onChange={e => setEditForm({...editForm, vault: Number(e.target.value)})}
-                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-[#8b9ba5]">Rôle</label>
-                    <select 
-                      value={editForm.role}
-                      onChange={e => setEditForm({...editForm, role: e.target.value as "admin"|"user"})}
-                      disabled={editingUser.username === "AdminFDJS"}
-                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none disabled:opacity-50"
-                    >
-                      <option value="user">Utilisateur</option>
-                      <option value="admin">Administrateur</option>
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-[#8b9ba5]">Statut</label>
-                    <select 
-                      value={editForm.status}
-                      onChange={e => setEditForm({...editForm, status: e.target.value as "pending"|"approved"|"suspended"|"banned"})}
-                      disabled={editingUser.username === "AdminFDJS"}
-                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none disabled:opacity-50"
-                    >
-                      <option value="approved">Approuvé</option>
-                      <option value="pending">En attente</option>
-                      <option value="suspended">Suspendu</option>
-                      <option value="banned">Banni</option>
-                    </select>
-                  </div>
-                </div>
+            {/* Tabs Navigation */}
+            <div className="flex border-b border-[#2f4553] px-2 overflow-x-auto custom-scrollbar">
+              <button onClick={() => setEditTab("general")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "general" ? "border-blue-500 text-blue-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Général</button>
+              <button onClick={() => setEditTab("finances")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "finances" ? "border-amber-500 text-amber-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Finances</button>
+              <button onClick={() => setEditTab("security")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "security" ? "border-red-500 text-red-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Sécurité & Accès</button>
+              <button onClick={() => setEditTab("history")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${editTab === "history" ? "border-purple-500 text-purple-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>
+                Historique <span className="bg-[#2f4553] text-[#8b9ba5] px-1.5 py-0.5 rounded text-[10px]">{userBets.length}</span>
+              </button>
+            </div>
 
-                {editForm.status === "suspended" && editingUser.username !== "AdminFDJS" && (
-                  <div className="flex flex-col gap-1.5 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-                    <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
-                      Durée de suspension (Heures)
-                    </label>
-                    <input 
-                      type="number" min="1" step="1"
-                      placeholder="Ex: 24 (Laisser vide pour permanent)"
-                      value={suspensionHours} 
-                      onChange={e => setSuspensionHours(e.target.value !== "" ? Number(e.target.value) : "")}
-                      className="bg-[#0f212e] text-white p-2.5 rounded border border-[#2f4553] focus:border-amber-500 outline-none"
-                    />
-                    <span className="text-xs text-[#8b9ba5]">
-                      Le compte sera réactivé automatiquement après ce délai.
-                    </span>
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative bg-[#0a171f]">
+              <form id="edit-user-form" onSubmit={handleSaveEdit}>
+                
+                {editTab === "general" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Rôle de l'utilisateur</label>
+                        <select 
+                          value={editForm.role}
+                          onChange={e => setEditForm({...editForm, role: e.target.value as "admin"|"user"})}
+                          disabled={editingUser.username === "AdminFDJS"}
+                          className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:opacity-50 transition-all"
+                        >
+                          <option value="user">Utilisateur Standard</option>
+                          <option value="admin">Administrateur (FDJS)</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Statut du compte</label>
+                        <div className="relative">
+                          <select 
+                            value={editForm.status}
+                            onChange={e => setEditForm({...editForm, status: e.target.value as "pending"|"approved"|"suspended"|"banned"})}
+                            disabled={editingUser.username === "AdminFDJS"}
+                            className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:opacity-50 transition-all w-full appearance-none pr-10"
+                          >
+                            <option value="approved">✅ Actif / Approuvé</option>
+                            <option value="pending">⏳ En attente de validation</option>
+                            <option value="suspended">⚠️ Suspendu temporairement</option>
+                            <option value="banned">❌ Banni définitivement</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#8b9ba5]">
+                            ▼
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {editForm.status === "suspended" && editingUser.username !== "AdminFDJS" && (
+                      <div className="flex flex-col gap-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-in zoom-in-95 duration-200">
+                        <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
+                          <ShieldAlert size={16} /> Durée de suspension (Heures)
+                        </label>
+                        <input 
+                          type="number" min="1" step="1"
+                          placeholder="Ex: 24 (Laisser vide pour permanent)"
+                          value={suspensionHours} 
+                          onChange={e => setSuspensionHours(e.target.value !== "" ? Number(e.target.value) : "")}
+                          className="bg-[#0f212e] text-amber-500 font-mono text-lg p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none placeholder:text-amber-500/30 w-full md:w-1/2"
+                        />
+                        <p className="text-xs text-amber-500/70 mt-1">
+                          {suspensionHours ? `Le compte sera automatiquement débanni dans ${suspensionHours} heure(s).` : "Sans durée spécifiée, la suspension est manuelle (indéterminée)."}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-[#8b9ba5]">Paris Totaux ($)</label>
-                    <input 
-                      type="number" step="0.01" 
-                      value={editForm.totalWagered ?? ''} 
-                      onChange={e => setEditForm({...editForm, totalWagered: Number(e.target.value)})}
-                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-[#8b9ba5]">Gains Totaux ($)</label>
-                    <input 
-                      type="number" step="0.01" 
-                      value={editForm.totalWon ?? ''} 
-                      onChange={e => setEditForm({...editForm, totalWon: Number(e.target.value)})}
-                      className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
-                    />
-                  </div>
-                </div>
+                {editTab === "finances" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-2 relative group">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Solde Courant</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1bc86a] font-bold">$</span>
+                          <input 
+                            type="number" step="0.01" 
+                            value={editForm.balance ?? ''} 
+                            onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})}
+                            className="bg-[#2f4553] text-[#1bc86a] font-mono text-lg p-3 pl-8 rounded-lg border border-[#0f212e] focus:border-[#1bc86a] outline-none w-full"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Coffre Fort</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white font-bold">$</span>
+                          <input 
+                            type="number" step="0.01" 
+                            value={editForm.vault ?? ''} 
+                            onChange={e => setEditForm({...editForm, vault: Number(e.target.value)})}
+                            className="bg-[#2f4553] text-white font-mono text-lg p-3 pl-8 rounded-lg border border-[#0f212e] focus:border-white outline-none w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="flex flex-col gap-1.5 pt-2 border-t border-[#2f4553]">
-                  <label className="text-sm font-bold text-[#8b9ba5]">Nouveau Mot de Passe (Optionnel)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Laisser vide pour ne pas changer"
-                    value={editForm.password ?? ''} 
-                    onChange={e => setEditForm({...editForm, password: e.target.value})}
-                    className="bg-[#2f4553] text-white p-2.5 rounded border border-[#0f212e] focus:border-blue-500 outline-none"
-                  />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#2f4553]">
+                       <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Total Misé (Statistique)</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 font-bold">$</span>
+                          <input 
+                            type="number" step="0.01" 
+                            value={editForm.totalWagered ?? ''} 
+                            onChange={e => setEditForm({...editForm, totalWagered: Number(e.target.value)})}
+                            className="bg-[#0f212e] text-blue-400 font-mono p-3 pl-8 rounded-lg border border-[#2f4553] focus:border-blue-400 outline-none w-full"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Total Gagné (Statistique)</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400 font-bold">$</span>
+                          <input 
+                            type="number" step="0.01" 
+                            value={editForm.totalWon ?? ''} 
+                            onChange={e => setEditForm({...editForm, totalWon: Number(e.target.value)})}
+                            className="bg-[#0f212e] text-purple-400 font-mono p-3 pl-8 rounded-lg border border-[#2f4553] focus:border-purple-400 outline-none w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {editTab === "security" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex flex-col gap-2 p-4 bg-[#2f4553]/50 rounded-xl border border-[#2f4553]">
+                      <label className="text-sm font-bold text-white flex items-center gap-2">
+                        <Key size={16} className="text-blue-500"/> Modifier le mot de passe
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="Nouveau mot de passe... (Laisser vide pour garder l'actuel)"
+                        value={editForm.password ?? ''} 
+                        onChange={e => setEditForm({...editForm, password: e.target.value})}
+                        className="bg-[#0f212e] text-white font-mono p-3 rounded-lg border border-[#2f4553] focus:border-blue-500 outline-none w-full"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-4 p-4 border border-red-500/20 bg-red-500/5 rounded-xl">
+                       <h3 className="text-red-500 font-bold flex items-center gap-2">
+                         <AlertTriangle size={18} /> Actions Rapides
+                       </h3>
+                       <div className="flex flex-wrap gap-3">
+                         <button 
+                           type="button"
+                           onClick={() => setEditForm({...editForm, balance: 0, vault: 0})}
+                           className="bg-red-500/20 text-red-500 border border-red-500/30 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-500/30 transition-colors"
+                         >
+                           Ruin (0$)
+                         </button>
+                         <button 
+                           type="button"
+                           onClick={() => setEditForm({...editForm, totalWagered: 0, totalWon: 0})}
+                           className="bg-amber-500/20 text-amber-500 border border-amber-500/30 px-4 py-2 rounded-lg font-bold text-sm hover:bg-amber-500/30 transition-colors"
+                         >
+                           Reset Statistiques
+                         </button>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {editTab === "history" && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    {userBets.length === 0 ? (
+                      <div className="text-center p-8 bg-[#2f4553]/20 rounded-xl border border-[#2f4553] border-dashed">
+                        <p className="text-[#8b9ba5]">Aucun pari récent trouvé dans le cache global pour {editingUser.username}.</p>
+                      </div>
+                    ) : (
+                      <div className="bg-[#0f212e] rounded-xl border border-[#2f4553] overflow-hidden">
+                        <table className="w-full text-left font-mono text-sm">
+                          <thead className="bg-[#2f4553]/50 text-[#8b9ba5]">
+                            <tr>
+                              <th className="p-3">Jeu</th>
+                              <th className="p-3">Mise</th>
+                              <th className="p-3">Mult.</th>
+                              <th className="p-3">Profit</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {userBets.slice(0, 15).map((bet, i) => (
+                              <tr key={i} className="border-t border-[#2f4553] hover:bg-[#2f4553]/20">
+                                <td className="p-3 text-white">{bet.game}</td>
+                                <td className="p-3 text-[#8b9ba5]">{bet.wagered?.toFixed(2)}$</td>
+                                <td className="p-3 text-[#8b9ba5]">{bet.multiplier?.toFixed(2)}x</td>
+                                <td className={`p-3 font-bold ${bet.profit > 0 ? "text-[#1bc86a]" : "text-rose-500"}`}>
+                                  {bet.profit > 0 ? "+" : ""}{bet.profit?.toFixed(2)}$
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {userBets.length > 15 && (
+                          <div className="p-3 text-center text-xs text-[#8b9ba5] bg-[#2f4553]/10 border-t border-[#2f4553]">
+                            + {userBets.length - 15} paris plus anciens
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </form>
             </div>
-            <div className="p-4 border-t border-[#2f4553] bg-[#2f4553]/20 flex justify-end gap-3">
-              <button 
-                type="button"
-                onClick={() => setEditingUser(null)}
-                disabled={editLoading}
-                className="px-4 py-2 bg-transparent text-white font-bold hover:bg-[#3d5a6c] rounded transition-colors disabled:opacity-50"
-              >
-                Annuler
-              </button>
-              <button 
-                type="submit"
-                form="edit-user-form"
-                disabled={editLoading}
-                className="px-6 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2 min-w-[140px] justify-center"
-              >
-                {editLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><Save size={18} /> Sauvegarder</>}
-              </button>
+            <div className="p-4 border-t border-[#2f4553] bg-[#0f212e] flex justify-between items-center">
+              <span className="text-sm font-mono text-[#8b9ba5]">
+                Dernière co: {editingUser.lastOnline ? new Date(editingUser.lastOnline).toLocaleString() : 'Inconnue'}
+              </span>
+              <div className="flex items-center gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  disabled={editLoading}
+                  className="px-5 py-2.5 bg-transparent text-[#8b9ba5] font-bold hover:text-white hover:bg-[#2f4553] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="submit"
+                  form="edit-user-form"
+                  disabled={editLoading}
+                  className="px-8 py-2.5 bg-[#1bc86a] text-black font-bold rounded-lg hover:bg-[#1bc86a]/90 transition-all disabled:opacity-50 flex items-center gap-2 min-w-[160px] justify-center shadow-lg shadow-[#1bc86a]/20"
+                >
+                  {editLoading ? (
+                     <div className="flex items-center gap-2">
+                       <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                       Enregistrement...
+                     </div>
+                  ) : <><Save size={20} /> Appliquer les modifs</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>
