@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { formatCurrency } from "../lib/utils";
 import { useUser, CRYPTOS, CryptoType, renderCryptoIcon } from "../context/UserContext";
 import { RankBadge } from "./RankBadge";
 import {
@@ -72,12 +73,12 @@ export function Header({
                 className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-4 pr-3 py-2 rounded-l flex items-center gap-2 shadow-inner cursor-pointer transition-colors max-w-[200px] relative"
                 onClick={() => setCryptoDropdownOpen(!cryptoDropdownOpen)}
               >
-                <span className="font-bold text-sm tracking-tight text-white truncate shrink">
-                  {parseFloat(balance.toFixed(8)).toString()}
+                <span className="font-bold text-lg tracking-tight text-white truncate shrink">
+                  {formatCurrency(balance)}
                 </span>
-                {renderCryptoIcon(activeCrypto, "w-4 h-4 ml-1")}
+                {renderCryptoIcon(activeCrypto, "w-5 h-5 ml-1")}
                 <ChevronDown
-                  size={14}
+                  size={16}
                   className={`text-text-secondary ml-1 mt-1 shrink-0 transition-transform ${cryptoDropdownOpen ? 'rotate-180' : ''}`}
                 />
                 

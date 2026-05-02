@@ -17,6 +17,11 @@ export interface BinUser {
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
   suspensionEndsAt?: number;
+  permissions?: {
+    canDeposit?: boolean;
+    canWithdraw?: boolean;
+    blockedGames?: Record<string, boolean>;
+  };
 }
 
 export interface GlobalBet {

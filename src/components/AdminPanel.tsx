@@ -436,6 +436,7 @@ export function AdminPanel() {
               <button onClick={() => setEditTab("general")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "general" ? "border-blue-500 text-blue-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Général</button>
               <button onClick={() => setEditTab("finances")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "finances" ? "border-amber-500 text-amber-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Finances</button>
               <button onClick={() => setEditTab("security")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "security" ? "border-red-500 text-red-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Sécurité & Accès</button>
+              <button onClick={() => setEditTab("permissions")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "permissions" ? "border-green-500 text-green-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Droits</button>
               <button onClick={() => setEditTab("history")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${editTab === "history" ? "border-purple-500 text-purple-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>
                 Historique <span className="bg-[#2f4553] text-[#8b9ba5] px-1.5 py-0.5 rounded text-[10px]">{userBets.length}</span>
               </button>
@@ -611,6 +612,86 @@ export function AdminPanel() {
                            Reset Statistiques
                          </button>
                        </div>
+                    </div>
+                  </div>
+                )}
+
+                {editTab === "permissions" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex flex-col gap-4 p-4 bg-[#2f4553]/20 rounded-xl border border-[#2f4553]">
+                      <h3 className="text-white font-bold mb-2">Actions Financières</h3>
+                      <label className="flex items-center gap-3 text-white cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 accent-green-500 bg-[#0f212e] border-[#2f4553] rounded"
+                          checked={editForm.permissions?.canDeposit !== false}
+                          onChange={e => setEditForm({
+                            ...editForm, 
+                            permissions: { ...(editForm.permissions || {}), canDeposit: e.target.checked }
+                          })}
+                        />
+                        <span className="group-hover:text-green-400 transition-colors">Autoriser les Dépôts</span>
+                      </label>
+                      <label className="flex items-center gap-3 text-white cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 accent-green-500 bg-[#0f212e] border-[#2f4553] rounded"
+                          checked={editForm.permissions?.canWithdraw !== false}
+                          onChange={e => setEditForm({
+                            ...editForm, 
+                            permissions: { ...(editForm.permissions || {}), canWithdraw: e.target.checked }
+                          })}
+                        />
+                        <span className="group-hover:text-green-400 transition-colors">Autoriser les Retraits</span>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-4 p-4 bg-[#2f4553]/20 rounded-xl border border-[#2f4553]">
+                      <h3 className="text-white font-bold mb-2">Blocage par jeu (Coché = Bloqué)</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {[
+                          { id: "mines", name: "Mines" },
+                          { id: "roulette", name: "Roulette" },
+                          { id: "keno", name: "Keno" },
+                          { id: "dice", name: "Dice" },
+                          { id: "plinko", name: "Plinko" },
+                          { id: "crash", name: "Crash" },
+                          { id: "limbo", name: "Limbo" },
+                          { id: "wheel", name: "Wheel" },
+                          { id: "hilo", name: "Hilo" },
+                          { id: "dragon-tower", name: "Dragon Tower" },
+                          { id: "flip", name: "Flip" },
+                          { id: "slide", name: "Slide" },
+                          { id: "video-poker", name: "Video Poker" },
+                          { id: "baccarat", name: "Baccarat" },
+                          { id: "tome-of-life", name: "Tome of Life" },
+                          { id: "slots-game", name: "Slots" },
+                          { id: "blackjack", name: "Blackjack" },
+                          { id: "chicken", name: "Chicken" },
+                          { id: "moles", name: "Moles" }
+                        ].map(game => (
+                          <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 accent-red-500 rounded"
+                              checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                              onChange={e => {
+                                const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
+                                if (e.target.checked) {
+                                  newBlockedGames[game.id] = true;
+                                } else {
+                                  delete newBlockedGames[game.id];
+                                }
+                                setEditForm({
+                                  ...editForm,
+                                  permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
+                                });
+                              }}
+                            />
+                            <span>{game.name}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

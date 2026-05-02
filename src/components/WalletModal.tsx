@@ -11,6 +11,7 @@ import {
   Landmark,
   ArrowDownToLine,
   ArrowUpFromLine,
+  ShieldAlert,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
@@ -40,6 +41,16 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) {
       setError("Montant invalide");
+      return;
+    }
+
+    if (tab === "buy" && user?.permissions?.canDeposit === false) {
+      setError("Les dépôts sont actuellement désactivés pour votre compte.");
+      return;
+    }
+
+    if (tab === "cashout" && user?.permissions?.canWithdraw === false) {
+      setError("Les retraits sont actuellement désactivés pour votre compte.");
       return;
     }
 
@@ -206,6 +217,17 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
+          {(tab === "buy" && user?.permissions?.canDeposit === false) ? (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 mt-0.5 shrink-0" />
+              <div className="text-sm font-medium">Les dépôts sont actuellement bloqués par l'administration sur votre compte.</div>
+            </div>
+          ) : (tab === "cashout" && user?.permissions?.canWithdraw === false) ? (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 mt-0.5 shrink-0" />
+              <div className="text-sm font-medium">Les retraits sont actuellement bloqués par l'administration sur votre compte.</div>
+            </div>
+          ) : (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
@@ -294,6 +316,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
               )}
             </button>
           </div>
+          )}
         </div>
       </motion.div>
     </div>

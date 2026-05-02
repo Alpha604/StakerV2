@@ -143,25 +143,25 @@ function InnerApp() {
               {view === "verify" && <VerifyBet />}
               {view === "admin" && <AdminPanel />}
               {view === "profile" && <Profile />}
-              {view === "mines" && <ApprovalGuard><Mines /></ApprovalGuard>}
-              {view === "roulette" && <ApprovalGuard><Roulette /></ApprovalGuard>}
-              {view === "keno" && <ApprovalGuard><Keno /></ApprovalGuard>}
-              {view === "dice" && <ApprovalGuard><Dice /></ApprovalGuard>}
-              {view === "plinko" && <ApprovalGuard><Plinko /></ApprovalGuard>}
-              {view === "crash" && <ApprovalGuard><Crash /></ApprovalGuard>}
-              {view === "limbo" && <ApprovalGuard><Limbo /></ApprovalGuard>}
-              {view === "wheel" && <ApprovalGuard><Wheel /></ApprovalGuard>}
-              {view === "hilo" && <ApprovalGuard><Hilo /></ApprovalGuard>}
-              {view === "dragon-tower" && <ApprovalGuard><DragonTower /></ApprovalGuard>}
-              {view === "flip" && <ApprovalGuard><Flip /></ApprovalGuard>}
-              {view === "slide" && <ApprovalGuard><Slide /></ApprovalGuard>}
-              {view === "video-poker" && <ApprovalGuard><VideoPoker /></ApprovalGuard>}
-              {view === "baccarat" && <ApprovalGuard><Baccarat /></ApprovalGuard>}
-              {view === "tome-of-life" && <ApprovalGuard><TomeOfLife /></ApprovalGuard>}
-              {view === "slots-game" && <ApprovalGuard><Slots /></ApprovalGuard>}
-              {view === "blackjack" && <ApprovalGuard><Blackjack /></ApprovalGuard>}
-              {view === "chicken" && <ApprovalGuard><Chicken /></ApprovalGuard>}
-              {view === "moles" && <ApprovalGuard><Moles /></ApprovalGuard>}
+              {view === "mines" && <ApprovalGuard gameName="mines"><Mines /></ApprovalGuard>}
+              {view === "roulette" && <ApprovalGuard gameName="roulette"><Roulette /></ApprovalGuard>}
+              {view === "keno" && <ApprovalGuard gameName="keno"><Keno /></ApprovalGuard>}
+              {view === "dice" && <ApprovalGuard gameName="dice"><Dice /></ApprovalGuard>}
+              {view === "plinko" && <ApprovalGuard gameName="plinko"><Plinko /></ApprovalGuard>}
+              {view === "crash" && <ApprovalGuard gameName="crash"><Crash /></ApprovalGuard>}
+              {view === "limbo" && <ApprovalGuard gameName="limbo"><Limbo /></ApprovalGuard>}
+              {view === "wheel" && <ApprovalGuard gameName="wheel"><Wheel /></ApprovalGuard>}
+              {view === "hilo" && <ApprovalGuard gameName="hilo"><Hilo /></ApprovalGuard>}
+              {view === "dragon-tower" && <ApprovalGuard gameName="dragon-tower"><DragonTower /></ApprovalGuard>}
+              {view === "flip" && <ApprovalGuard gameName="flip"><Flip /></ApprovalGuard>}
+              {view === "slide" && <ApprovalGuard gameName="slide"><Slide /></ApprovalGuard>}
+              {view === "video-poker" && <ApprovalGuard gameName="video-poker"><VideoPoker /></ApprovalGuard>}
+              {view === "baccarat" && <ApprovalGuard gameName="baccarat"><Baccarat /></ApprovalGuard>}
+              {view === "tome-of-life" && <ApprovalGuard gameName="tome-of-life"><TomeOfLife /></ApprovalGuard>}
+              {view === "slots-game" && <ApprovalGuard gameName="slots-game"><Slots /></ApprovalGuard>}
+              {view === "blackjack" && <ApprovalGuard gameName="blackjack"><Blackjack /></ApprovalGuard>}
+              {view === "chicken" && <ApprovalGuard gameName="chicken"><Chicken /></ApprovalGuard>}
+              {view === "moles" && <ApprovalGuard gameName="moles"><Moles /></ApprovalGuard>}
             </div>
             
             {/* Footer */}
