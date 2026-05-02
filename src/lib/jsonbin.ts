@@ -56,7 +56,7 @@ export const getBinData = async (): Promise<BinData> => {
     const json = await res.json();
     return json.record || { users: [], globalBets: [] };
   } catch (error) {
-    console.error(error);
+    console.warn("Fetch failed, returning empty data:", error);
     return { users: [], globalBets: [] };
   }
 };
@@ -72,9 +72,9 @@ export const putBinData = async (data: BinData): Promise<void> => {
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      console.error("Failed to update bin");
+      console.warn("Failed to update bin");
     }
   } catch (error) {
-    console.error(error);
+    console.warn("Put failed:", error);
   }
 };

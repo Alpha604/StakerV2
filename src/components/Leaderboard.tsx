@@ -17,7 +17,7 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
         binUsers.sort((a, b) => (b.balance || 0) - (a.balance || 0));
         setUsers(binUsers.slice(0, 50));
       } catch (err) {
-        console.error(err);
+        console.warn(err);
       } finally {
         setLoading(false);
       }

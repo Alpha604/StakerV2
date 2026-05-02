@@ -218,6 +218,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               role: binUser.role || "user",
               status: binUser.status || "pending",
               lastOnline: binUser.lastOnline,
+              permissions: binUser.permissions,
             };
             setUser(updatedUser);
             localStorage.setItem(
@@ -233,7 +234,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             setUser(null);
           }
         } catch (e) {
-          console.error("Session error", e);
+          console.warn("Session error", e);
         }
       }
       setLoading(false);
@@ -256,14 +257,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
            }
            
            const newStatus = binUser.status || "pending";
-           if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status || binUser.vault !== parsedSession.vault || binUser.rank !== parsedSession.rank) {
+           if (
+             binUser.balance !== parsedSession.balance || 
+             binUser.status !== parsedSession.status || 
+             binUser.vault !== parsedSession.vault || 
+             binUser.rank !== parsedSession.rank ||
+             binUser.role !== parsedSession.role ||
+             JSON.stringify(binUser.permissions || {}) !== JSON.stringify(parsedSession.permissions || {})
+           ) {
              const updatedUser = {
                 ...parsedSession,
                 balance: binUser.balance,
                 vault: binUser.vault || 0,
                 rank: binUser.rank || "None",
                 status: newStatus,
-                role: binUser.role || "user"
+                role: binUser.role || "user",
+                permissions: binUser.permissions
              };
              setUser(updatedUser);
              localStorage.setItem("stake_user_session", JSON.stringify(updatedUser));
@@ -308,7 +317,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       data.users = users;
       await putBinData(data);
     } catch (e) {
-      console.error("Error syncing to bin", e);
+      console.warn("Error syncing to bin", e);
     }
   };
 
@@ -453,7 +462,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("stake_user_session", JSON.stringify(localUser));
       return true;
     } catch (e) {
-      console.error("Login verification failed", e);
+      console.warn("Login verification failed", e);
       return false;
     }
   };

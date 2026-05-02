@@ -648,49 +648,144 @@ export function AdminPanel() {
 
                     <div className="flex flex-col gap-4 p-4 bg-[#2f4553]/20 rounded-xl border border-[#2f4553]">
                       <h3 className="text-white font-bold mb-2">Blocage par jeu (Coché = Bloqué)</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {[
-                          { id: "mines", name: "Mines" },
-                          { id: "roulette", name: "Roulette" },
-                          { id: "keno", name: "Keno" },
-                          { id: "dice", name: "Dice" },
-                          { id: "plinko", name: "Plinko" },
-                          { id: "crash", name: "Crash" },
-                          { id: "limbo", name: "Limbo" },
-                          { id: "wheel", name: "Wheel" },
-                          { id: "hilo", name: "Hilo" },
-                          { id: "dragon-tower", name: "Dragon Tower" },
-                          { id: "flip", name: "Flip" },
-                          { id: "slide", name: "Slide" },
-                          { id: "video-poker", name: "Video Poker" },
-                          { id: "baccarat", name: "Baccarat" },
-                          { id: "tome-of-life", name: "Tome of Life" },
-                          { id: "slots-game", name: "Slots" },
-                          { id: "blackjack", name: "Blackjack" },
-                          { id: "chicken", name: "Chicken" },
-                          { id: "moles", name: "Moles" }
-                        ].map(game => (
-                          <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="w-4 h-4 accent-red-500 rounded"
-                              checked={!!editForm.permissions?.blockedGames?.[game.id]}
-                              onChange={e => {
-                                const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
-                                if (e.target.checked) {
-                                  newBlockedGames[game.id] = true;
-                                } else {
-                                  delete newBlockedGames[game.id];
-                                }
-                                setEditForm({
-                                  ...editForm,
-                                  permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
-                                });
-                              }}
-                            />
-                            <span>{game.name}</span>
-                          </label>
-                        ))}
+                      
+                      {/* Originaux / Classiques */}
+                      <div className="mb-2">
+                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Originaux / Classiques</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { id: "crash", name: "Crash" },
+                            { id: "dice", name: "Dice" },
+                            { id: "hilo", name: "Hilo" },
+                            { id: "keno", name: "Keno" },
+                            { id: "limbo", name: "Limbo" },
+                            { id: "mines", name: "Mines" },
+                            { id: "plinko", name: "Plinko" },
+                            { id: "roulette", name: "Roulette" },
+                            { id: "slide", name: "Slide" },
+                            { id: "wheel", name: "Wheel" }
+                          ].map(game => (
+                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="w-4 h-4 accent-red-500 rounded"
+                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                onChange={e => {
+                                  const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
+                                  if (e.target.checked) {
+                                    newBlockedGames[game.id] = true;
+                                  } else {
+                                    delete newBlockedGames[game.id];
+                                  }
+                                  setEditForm({
+                                    ...editForm,
+                                    permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
+                                  });
+                                }}
+                              />
+                              <span>{game.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Cartes */}
+                      <div className="mb-2 mt-4">
+                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Cartes</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { id: "baccarat", name: "Baccarat" },
+                            { id: "blackjack", name: "Blackjack" },
+                            { id: "video-poker", name: "Video Poker" }
+                          ].map(game => (
+                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="w-4 h-4 accent-red-500 rounded"
+                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                onChange={e => {
+                                  const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
+                                  if (e.target.checked) {
+                                    newBlockedGames[game.id] = true;
+                                  } else {
+                                    delete newBlockedGames[game.id];
+                                  }
+                                  setEditForm({
+                                    ...editForm,
+                                    permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
+                                  });
+                                }}
+                              />
+                              <span>{game.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Machines à sous / Slots */}
+                      <div className="mb-2 mt-4">
+                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Machines à sous</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { id: "slots-game", name: "Slots" },
+                            { id: "tome-of-life", name: "Tome of Life" }
+                          ].map(game => (
+                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="w-4 h-4 accent-red-500 rounded"
+                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                onChange={e => {
+                                  const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
+                                  if (e.target.checked) {
+                                    newBlockedGames[game.id] = true;
+                                  } else {
+                                    delete newBlockedGames[game.id];
+                                  }
+                                  setEditForm({
+                                    ...editForm,
+                                    permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
+                                  });
+                                }}
+                              />
+                              <span>{game.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Mini-jeux / Autres */}
+                      <div className="mt-4">
+                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Mini-jeux / Autres</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { id: "chicken", name: "Chicken" },
+                            { id: "dragon-tower", name: "Dragon Tower" },
+                            { id: "flip", name: "Flip" },
+                            { id: "moles", name: "Moles" }
+                          ].map(game => (
+                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="w-4 h-4 accent-red-500 rounded"
+                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                onChange={e => {
+                                  const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
+                                  if (e.target.checked) {
+                                    newBlockedGames[game.id] = true;
+                                  } else {
+                                    delete newBlockedGames[game.id];
+                                  }
+                                  setEditForm({
+                                    ...editForm,
+                                    permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
+                                  });
+                                }}
+                              />
+                              <span>{game.name}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
