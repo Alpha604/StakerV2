@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { UserProvider } from "./context/UserContext";
+import { UserProvider, useUser } from "./context/UserContext";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { Home } from "./components/Home";
@@ -123,6 +123,15 @@ function InnerApp() {
 
   return (
     <UserProvider>
+      <InnerAppContent view={view} sidebarOpen={sidebarOpen} isChangingView={isChangingView} handleSetView={handleSetView} setSidebarOpen={setSidebarOpen} />
+    </UserProvider>
+  );
+}
+
+function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, setSidebarOpen }: any) {
+  const { isLoggingOut } = useUser();
+
+  return (
       <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
         <Header
           setView={handleSetView as any}
@@ -177,8 +186,7 @@ function InnerApp() {
           </main>
         </div>
         <LiveSessionWidget />
-        {isChangingView && <HamsterLoader />}
+        {(isChangingView || isLoggingOut) && <HamsterLoader />}
       </div>
-    </UserProvider>
   );
 }

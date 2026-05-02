@@ -171,6 +171,7 @@ interface UserContextType {
   setShowSessionStats: (show: boolean) => void;
   activeCrypto: CryptoType;
   setActiveCrypto: (c: CryptoType) => void;
+  isLoggingOut: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -183,6 +184,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [sessionBets, setSessionBets] = useState<SessionBet[]>([]);
   const [showSessionStats, setShowSessionStats] = useState(false);
   const [activeCrypto, setActiveCrypto] = useState<CryptoType>(CRYPTOS[0]);
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const balance = user?.balance || 0;
   const vault = user?.vault || 0;
@@ -208,17 +211,36 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           );
 
           if (binUser) {
+            let actualBalance = binUser.balance || 0;
+            let actualVault = binUser.vault || 0;
+            let actualWagered = binUser.totalWagered || 0;
+            let actualWon = binUser.totalWon || 0;
+
+            // Anti-fraud: Si l'utilisateur a fermé la page très vite après un pari
+            if (parsedUser.totalWagered && parsedUser.totalWagered > (binUser.totalWagered || 0)) {
+               actualBalance = parsedUser.balance;
+               actualVault = parsedUser.vault;
+               actualWagered = parsedUser.totalWagered;
+               actualWon = parsedUser.totalWon || 0;
+               // On déclenche une synchro avec les vraies valeurs locales
+               // car le backend a raté des paris.
+               setTimeout(() => {
+                 syncUserToBin(parsedUser);
+               }, 1000);
+            }
+
             const updatedUser = {
               id: binUser.username,
               username: binUser.username,
-              balance: binUser.balance || 0,
-              vault: binUser.vault || 0,
-              totalWagered: binUser.totalWagered || 0,
-              totalWon: binUser.totalWon || 0,
+              balance: actualBalance,
+              vault: actualVault,
+              totalWagered: actualWagered,
+              totalWon: actualWon,
               role: binUser.role || "user",
               status: binUser.status || "pending",
               lastOnline: binUser.lastOnline,
               permissions: binUser.permissions,
+              rank: binUser.rank || "None",
             };
             setUser(updatedUser);
             localStorage.setItem(
@@ -257,19 +279,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
            }
            
            const newStatus = binUser.status || "pending";
+
+           // Anti-fraud / desync protection during polling
+           let actualBalance = binUser.balance;
+           let actualVault = binUser.vault || 0;
+           let actualRank = binUser.rank || "None";
+           if (parsedSession.totalWagered && parsedSession.totalWagered > (binUser.totalWagered || 0)) {
+              actualBalance = parsedSession.balance;
+              actualVault = parsedSession.vault;
+              actualRank = parsedSession.rank || "None";
+           }
+
            if (
-             binUser.balance !== parsedSession.balance || 
-             binUser.status !== parsedSession.status || 
-             binUser.vault !== parsedSession.vault || 
-             binUser.rank !== parsedSession.rank ||
+             actualBalance !== parsedSession.balance || 
+             newStatus !== parsedSession.status || 
+             actualVault !== parsedSession.vault || 
+             actualRank !== parsedSession.rank ||
              binUser.role !== parsedSession.role ||
              JSON.stringify(binUser.permissions || {}) !== JSON.stringify(parsedSession.permissions || {})
            ) {
              const updatedUser = {
                 ...parsedSession,
-                balance: binUser.balance,
-                vault: binUser.vault || 0,
-                rank: binUser.rank || "None",
+                balance: actualBalance,
+                vault: actualVault,
+                rank: actualRank,
                 status: newStatus,
                 role: binUser.role || "user",
                 permissions: binUser.permissions
@@ -454,6 +487,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           totalWon: existingUser.totalWon || 0,
           role: existingUser.role || "user",
           status: existingUser.status || "pending",
+          rank: existingUser.rank || "None",
+          permissions: existingUser.permissions,
           lastOnline: existingUser.lastOnline,
         };
       }
@@ -468,8 +503,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logoutUser = async () => {
+    setIsLoggingOut(true);
+    if (user) {
+      await syncUserToBin(user);
+    }
     setUser(null);
     localStorage.removeItem("stake_user_session");
+    setIsLoggingOut(false);
   };
 
   const addBalance = async (amount: number) => {
@@ -630,6 +670,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setShowSessionStats,
         activeCrypto,
         setActiveCrypto,
+        isLoggingOut,
       }}
     >
       {!loading ? (
