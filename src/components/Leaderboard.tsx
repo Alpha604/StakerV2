@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getBinData, BinUser } from "../lib/jsonbin";
 import { Trophy, X, Medal } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn, formatCurrency } from "../lib/utils";
 
 export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; isPage?: boolean }) {
   const [loading, setLoading] = useState(true);

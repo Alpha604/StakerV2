@@ -1,3 +1,4 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState } from 'react';
 import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { WinPopup } from './WinPopup';

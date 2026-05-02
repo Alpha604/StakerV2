@@ -3,7 +3,7 @@ import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { Coins, AlertCircle } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "../lib/utils";
+import { cn, formatCurrency } from "../lib/utils";
 
 export function Slots() {
   const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();

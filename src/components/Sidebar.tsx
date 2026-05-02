@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../lib/utils";
+import { RankBadge } from "./RankBadge";
 import {
   Home,
   Trophy,
@@ -28,7 +29,7 @@ export function Sidebar({
   setView: (v: string) => void;
   isOpen: boolean;
 }) {
-  const { showSessionStats, setShowSessionStats } = useUser();
+  const { user, showSessionStats, setShowSessionStats } = useUser();
 
   return (
     <aside 
@@ -37,6 +38,16 @@ export function Sidebar({
         isOpen ? "w-full opacity-100 flex" : "w-0 min-w-0 opacity-0 overflow-hidden px-0 py-0"
       )}
     >
+      {user && user.rank && user.rank !== "None" && (
+        <div 
+          className="w-full h-[40px] flex justify-center items-center cursor-pointer hover:brightness-125 transition-all -mt-4 mb-2 flex-shrink-0"
+          onClick={() => setView("profile")}
+          title="Voir mon rang"
+        >
+          <RankBadge rank={user.rank} className="w-full h-full !object-cover !object-left" />
+        </div>
+      )}
+
       {/* Active green item */}
       <div
         className={cn("w-full h-12 flex items-center justify-center cursor-pointer mb-2 transition-colors", view === "home" ? "bg-accent" : "hover:bg-bg-inner")}

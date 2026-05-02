@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
-import { cn } from "../lib/utils";
+import { cn, formatCurrency } from "../lib/utils";
 import { Target } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 import { useSound } from "../lib/useSound";

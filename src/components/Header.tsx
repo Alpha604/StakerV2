@@ -52,7 +52,6 @@ export function Header({
               alt="Stake Logo" 
               className="h-6 md:h-7 brightness-[100] invert drop-shadow-md"
             />
-            {user && <RankBadge rank={user.rank} />}
             {user && user.status !== "approved" && user.role !== "admin" && (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                   user.status === 'suspended' ? 'bg-[#f6c722]/20 text-[#f6c722]' :

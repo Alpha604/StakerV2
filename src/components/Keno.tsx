@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useUser, renderCryptoIcon } from "../context/UserContext";
-import { cn } from "../lib/utils";
+import { cn, formatCurrency } from "../lib/utils";
 import { WinPopup } from "./WinPopup";
 import { motion, AnimatePresence } from "motion/react";
 import { useSound } from "../lib/useSound";

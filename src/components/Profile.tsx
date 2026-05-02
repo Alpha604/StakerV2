@@ -36,9 +36,9 @@ export function Profile() {
               {user.username.substring(0, 2)}
             </div>
             
-            <h2 className="text-2xl font-bold mb-1 relative z-10 flex flex-col items-center gap-1">
+            <h2 className="text-2xl font-bold mb-1 relative z-10 flex flex-col items-center gap-2">
               {user.username}
-              <RankBadge rank={user.rank} className="mt-1" />
+              <RankBadge rank={user.rank} className="mt-1 h-12 md:h-16 drop-shadow-lg" />
             </h2>
             <div className="flex items-center justify-center gap-2 mb-6 relative z-10">
                <span className={cn(

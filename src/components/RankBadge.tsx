@@ -12,7 +12,7 @@ export const RANK_IMAGES: Record<string, string> = {
   "Supersonic Legend": "https://static.wikia.nocookie.net/rocketleague/images/a/a9/S21SupersonicLegendPlayerBanner.png/revision/latest?cb=20260311144216"
 };
 
-export function RankBadge({ rank, className = "h-5 md:h-6" }: { rank?: UserRank, className?: string }) {
+export function RankBadge({ rank, className = "h-8 md:h-10" }: { rank?: UserRank, className?: string }) {
   if (!rank || rank === "None") return null;
   
   const imgSrc = RANK_IMAGES[rank];

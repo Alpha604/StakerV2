@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
-import { cn } from "../lib/utils";
+import { cn, formatCurrency } from "../lib/utils";
 import { motion } from "motion/react";
 import { Coins } from "lucide-react";
 import { WinPopup } from "./WinPopup";

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { motion, useAnimation } from "motion/react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
-import { cn } from "../lib/utils";
+import { cn, formatCurrency } from "../lib/utils";
 import { Coins, ChevronDown } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 
