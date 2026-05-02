@@ -3,11 +3,14 @@ const MASTER_KEY = "$2a$10$IwjzylKTtK7iiXGJPWGTNesdMO8SzFxTZKMlJLu0/3sbpUtGr6kM.
 export const JSONBIN_URL_GET = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
 export const JSONBIN_URL_PUT = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
+export type UserRank = "None" | "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Blood Diamond" | "Obsidian";
+
 export interface BinUser {
   username: string;
   password?: string;
   balance: number;
   vault?: number;
+  rank?: UserRank;
   totalWagered: number;
   totalWon: number;
   role?: "admin" | "user";

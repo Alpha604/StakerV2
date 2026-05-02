@@ -145,7 +145,7 @@ export function VideoPoker() {
                 Montant de la mise
               </label>
               <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+                $ {formatCurrency(balance )}
               </span>
             </div>
             <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">

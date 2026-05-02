@@ -1,3 +1,4 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { RotateCcw, XCircle } from "lucide-react";
@@ -230,7 +231,7 @@ export function Roulette() {
             <div className="flex justify-between items-center text-xs font-semibold opacity-80">
               <span className="text-[#8b9ba5]">Pari Total</span>
               <span className="text-white font-mono">
-                {totalBet.toFixed(2)} $US
+                {formatCurrency(totalBet)} $US
               </span>
             </div>
             <div className="flex items-center bg-bg-inner border border-border-medium rounded shadow-inner h-11">

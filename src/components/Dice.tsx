@@ -172,7 +172,7 @@ export function Dice() {
                   Montant de la mise
                 </label>
                 <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                  $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+                  $ {formatCurrency(balance )}
                 </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
@@ -363,7 +363,7 @@ export function Dice() {
                         lastWin === true ? "text-[#00e676] drop-shadow-[0_0_30px_rgba(0,230,118,0.4)]" : "text-[#ed4163]"
                       )}
                     >
-                      {rollResult.toFixed(2)}
+                      {formatCurrency(rollResult)}
                     </motion.div>
                   ) : (
                     <div className="text-7xl font-black tabular-nums tracking-tighter text-white opacity-10">
@@ -448,7 +448,7 @@ export function Dice() {
                     "absolute -top-10 text-xs font-bold py-1 px-2 rounded shadow-lg truncate text-[#0f212e] pointer-events-none after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:border-l-4 after:border-r-4 after:border-t-4 after:border-solid after:border-l-transparent after:border-r-transparent",
                     "bg-[#00e676] after:border-t-[#00e676]"
                   )}>
-                    {target.toFixed(2)}
+                    {formatCurrency(target)}
                  </div>
                </div>
 
@@ -481,7 +481,7 @@ export function Dice() {
                 <div className="flex items-center justify-between">
                   <input
                     type="number"
-                    value={target.toFixed(2)}
+                    value={formatCurrency(target)}
                     readOnly
                     className="bg-transparent text-white font-bold text-sm w-full outline-none disabled:opacity-100 tabular-nums"
                   />
@@ -502,7 +502,7 @@ export function Dice() {
                 <div className="flex items-center">
                    <input
                      type="number"
-                     value={winChance.toFixed(2)}
+                     value={formatCurrency(winChance)}
                      readOnly
                      className="bg-transparent text-white font-bold text-sm w-full outline-none disabled:opacity-100 tabular-nums"
                    />
@@ -521,7 +521,7 @@ export function Dice() {
                    </div>
                    <input
                      type="number"
-                     value={potentialWin.toFixed(2)}
+                     value={formatCurrency(potentialWin)}
                      readOnly
                      className="bg-transparent text-[#00e676] font-bold text-sm w-full outline-none tabular-nums truncate"
                    />

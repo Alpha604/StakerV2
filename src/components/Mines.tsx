@@ -90,7 +90,7 @@ export function Mines() {
     }
     // House edge of ~1%
     const expectedMult = (1 / prob) * 0.99;
-    return Number(expectedMult.toFixed(2));
+    return Number(formatCurrency(expectedMult));
   };
 
   // Auto Play Loop
@@ -370,7 +370,7 @@ export function Mines() {
                   Montant de la mise
                 </label>
                 <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                  $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+                  $ {formatCurrency(balance )}
                 </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
@@ -508,12 +508,12 @@ export function Mines() {
                   <div className="flex justify-between items-center bg-[#0f212e] rounded p-2 border border-[#2f4553]">
                     <div className="flex flex-col">
                       <span className="text-[#8b9ba5] text-[10px] font-bold uppercase tracking-wider">M. Actuel</span>
-                      <span className="text-white font-bold text-[13px]">{currentMultiplier.toFixed(2)}×</span>
+                      <span className="text-white font-bold text-[13px]">{formatCurrency(currentMultiplier)}×</span>
                     </div>
                     <div className="w-[1px] h-6 bg-[#2f4553]"></div>
                     <div className="flex flex-col text-right">
                       <span className="text-[#8b9ba5] text-[10px] font-bold uppercase tracking-wider">Prochain M.</span>
-                      <span className="text-[#00e701] font-bold text-[13px]">{nextMultiplier.toFixed(2)}×</span>
+                      <span className="text-[#00e701] font-bold text-[13px]">{formatCurrency(nextMultiplier)}×</span>
                     </div>
                   </div>
                 )}
@@ -530,7 +530,7 @@ export function Mines() {
                   <span>Retrait</span>
                   {revealedCount > 0 && (
                     <span className="flex items-center gap-1">
-                      {(Math.floor(potentialWin * 100) / 100).toFixed(2)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
+                      {formatCurrency(potentialWin )} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
                     </span>
                   )}
                 </button>
@@ -594,7 +594,7 @@ export function Mines() {
                    className="flex flex-col"
                  >
                    <span className="text-[10px] uppercase font-extrabold text-white tracking-widest leading-none mb-1">Prochain</span>
-                   <span className="text-[#00e701] text-sm font-black drop-shadow-[0_0_5px_rgba(0,231,1,0.3)] leading-none">{nextMultiplier.toFixed(2)}×</span>
+                   <span className="text-[#00e701] text-sm font-black drop-shadow-[0_0_5px_rgba(0,231,1,0.3)] leading-none">{formatCurrency(nextMultiplier)}×</span>
                  </motion.div>
               </div>
             )}

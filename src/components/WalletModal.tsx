@@ -1,3 +1,4 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState } from "react";
 import { useUser } from "../context/UserContext";
 import {
@@ -117,7 +118,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                 <Wallet size={12} /> Solde Jeu
               </span>
               <span className="text-xl font-bold font-mono text-white">
-                ${balance.toFixed(2)}
+                ${formatCurrency(balance)}
               </span>
             </div>
 
@@ -131,7 +132,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                 <Vault size={12} /> Vault
               </span>
               <span className="text-xl font-bold font-mono text-indigo-400">
-                ${vault.toFixed(2)}
+                ${formatCurrency(vault)}
               </span>
             </div>
           </div>
@@ -213,12 +214,12 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                 </label>
                 {(tab === "vault_in" || tab === "cashout") && (
                   <span className="text-xs text-text-secondary font-mono">
-                    Max: ${balance.toFixed(2)}
+                    Max: ${formatCurrency(balance)}
                   </span>
                 )}
                 {tab === "vault_out" && (
                   <span className="text-xs text-text-secondary font-mono">
-                    Max: ${vault.toFixed(2)}
+                    Max: ${formatCurrency(vault)}
                   </span>
                 )}
               </div>

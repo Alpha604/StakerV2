@@ -1,3 +1,4 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { Search, Trophy, Frown, Copy, Check } from "lucide-react";
 import { useUser, SessionBet } from "../context/UserContext";
@@ -160,7 +161,7 @@ export function VerifyBet() {
               <div className="p-6 grid grid-cols-2 gap-4">
                 <div className="bg-[#213743] rounded-lg p-4">
                   <div className="text-[#8b9ba5] text-xs font-bold uppercase mb-1">Mise</div>
-                  <div className="text-white font-mono font-bold">{searchedBet.wagered.toFixed(2)}</div>
+                  <div className="text-white font-mono font-bold">{formatCurrency(searchedBet.wagered)}</div>
                 </div>
                 <div className="bg-[#213743] rounded-lg p-4">
                   <div className="text-[#8b9ba5] text-xs font-bold uppercase mb-1">Multiplicateur</div>
@@ -172,7 +173,7 @@ export function VerifyBet() {
                     "font-mono font-bold text-2xl",
                     searchedBet.profit > 0 ? "text-[#1bc86a]" : "text-[#8b9ba5]"
                   )}>
-                    {searchedBet.payout.toFixed(2)}
+                    {formatCurrency(searchedBet.payout)}
                   </div>
                 </div>
               </div>

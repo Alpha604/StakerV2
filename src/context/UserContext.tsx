@@ -256,11 +256,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
            }
            
            const newStatus = binUser.status || "pending";
-           if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status || binUser.vault !== parsedSession.vault) {
+           if (binUser.balance !== parsedSession.balance || binUser.status !== parsedSession.status || binUser.vault !== parsedSession.vault || binUser.rank !== parsedSession.rank) {
              const updatedUser = {
                 ...parsedSession,
                 balance: binUser.balance,
                 vault: binUser.vault || 0,
+                rank: binUser.rank || "None",
                 status: newStatus,
                 role: binUser.role || "user"
              };

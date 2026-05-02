@@ -1,8 +1,10 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
-import { getBinData, putBinData, BinUser, BinData } from "../lib/jsonbin";
+import { getBinData, putBinData, BinUser, BinData, UserRank } from "../lib/jsonbin";
 import { useUser } from "../context/UserContext";
 import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Key, Shield, ShieldAlert, RefreshCw, AlertTriangle, X, Edit3, Save } from "lucide-react";
 import { cn } from "../lib/utils";
+import { RankBadge } from "./RankBadge";
 
 export function AdminPanel() {
   const { user } = useUser();
@@ -95,6 +97,7 @@ export function AdminPanel() {
       role: u.role || 'user',
       status: u.status || 'pending',
       password: u.password,
+      rank: u.rank,
     });
     setSuspensionHours("");
     setEditTab("general");
@@ -214,7 +217,7 @@ export function AdminPanel() {
           </div>
           <div>
             <p className="text-[#8b9ba5] text-sm font-bold uppercase">Économie Globale</p>
-            <p className="text-xl font-bold font-mono text-amber-500">{totalBalance.toFixed(2)}$</p>
+            <p className="text-xl font-bold font-mono text-amber-500">{formatCurrency(totalBalance)}$</p>
           </div>
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-colors"></div>
         </div>
@@ -286,7 +289,7 @@ export function AdminPanel() {
                         <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0f212e] ${isOnline ? 'bg-[#1bc86a]' : 'bg-[#8b9ba5]'}`} title={isOnline ? 'En ligne' : 'Hors ligne'} />
                       </div>
                       <div>
-                        <div className="font-bold">{u.username}</div>
+                        <div className="font-bold flex items-center gap-1.5">{u.username} <RankBadge rank={u.rank} /></div>
                         <div className="text-xs text-[#8b9ba5] font-mono" title="Dernière connexion">
                           {u.lastOnline ? new Date(u.lastOnline).toLocaleTimeString() : 'Jamais'}
                         </div>
@@ -321,9 +324,9 @@ export function AdminPanel() {
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col gap-1">
-                      <div className="font-mono text-[#1bc86a] text-sm font-bold">{u.balance.toFixed(2)}$</div>
+                      <div className="font-mono text-[#1bc86a] text-sm font-bold">{formatCurrency(u.balance)}$</div>
                       <div className="text-xs text-[#8b9ba5]">
-                        Coffre: <span className="font-mono text-white">{(u.vault || 0).toFixed(2)}$</span>
+                        Coffre: <span className="font-mono text-white">{formatCurrency((u.vault || 0))}$</span>
                       </div>
                     </div>
                   </td>
@@ -405,7 +408,7 @@ export function AdminPanel() {
                   <h2 className="text-2xl font-bold flex items-center gap-2 text-white tracking-tight">
                     {editingUser.username}
                   </h2>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-2 mt-1 items-center">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
                       ${editForm.status === 'approved' ? 'bg-[#1bc86a]/10 text-[#1bc86a] border border-[#1bc86a]/20' : 
                         editForm.status === 'suspended' ? 'bg-[#f6c722]/10 text-[#f6c722] border border-[#f6c722]/20' :
@@ -416,6 +419,7 @@ export function AdminPanel() {
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${editForm.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
                       {editForm.role || 'user'}
                     </span>
+                    <RankBadge rank={editForm.rank} />
                   </div>
                 </div>
               </div>
@@ -473,6 +477,23 @@ export function AdminPanel() {
                             ▼
                           </div>
                         </div>
+                      </div>
+                      <div className="flex flex-col gap-2 md:col-span-2">
+                        <label className="text-sm font-bold text-[#8b9ba5]">Rang VIP</label>
+                        <select 
+                          value={editForm.rank || "None"}
+                          onChange={e => setEditForm({...editForm, rank: e.target.value as UserRank})}
+                          className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                        >
+                          <option value="None">Aucun</option>
+                          <option value="Bronze">Bronze</option>
+                          <option value="Silver">Argent (Silver)</option>
+                          <option value="Gold">Or (Gold)</option>
+                          <option value="Platinum">Platine (Platinum)</option>
+                          <option value="Diamond">Diamant (Diamond)</option>
+                          <option value="Blood Diamond">Diamant de Sang (Blood Diamond)</option>
+                          <option value="Obsidian">Obsidienne (Obsidian)</option>
+                        </select>
                       </div>
                     </div>
 

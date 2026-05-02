@@ -127,7 +127,7 @@ export function Limbo() {
                   Montant de la mise
                 </label>
                 <span className="text-[#8b9ba5] text-xs font-bold flex items-center gap-1">
-                  $ {(Math.floor((balance || 0) * 100) / 100).toFixed(2)}
+                  $ {formatCurrency(balance || 0)}
                 </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] p-1 transition-colors focus-within:border-border-hover">
@@ -174,7 +174,7 @@ export function Limbo() {
                 </div>
                 <input
                   type="number"
-                  value={profitOnWin === 0 ? "" : profitOnWin.toFixed(2)}
+                  value={profitOnWin === 0 ? "" : formatCurrency(profitOnWin)}
                   onChange={(e) => handleProfitChange(e.target.value)}
                   className="w-full bg-transparent text-white font-bold outline-none tabular-nums text-sm px-1 py-1"
                   min="0"
@@ -209,7 +209,7 @@ export function Limbo() {
                     <div className="flex items-center">
                         <input
                             type="number"
-                            value={winChance.toFixed(2)}
+                            value={formatCurrency(winChance)}
                             readOnly
                             className="bg-transparent text-white font-bold w-full outline-none disabled:opacity-100 tabular-nums text-sm"
                         />
@@ -259,7 +259,7 @@ export function Limbo() {
                     : "text-white",
               )}
             >
-              {resultMultiplier.toFixed(2)}
+              {formatCurrency(resultMultiplier)}
               <span className="text-5xl lg:text-7xl font-bold ml-2">×</span>
             </motion.div>
 
@@ -270,7 +270,7 @@ export function Limbo() {
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         className={cn("mt-8 text-center font-bold px-6 py-2 rounded-lg text-sm tracking-wide", lastWin ? "text-[#00e676] bg-[#00e676]/10" : "text-[#e53935] bg-[#e53935]/10")}
                     >
-                        Cible: {targetMultiplier.toFixed(2)}×
+                        Cible: {formatCurrency(targetMultiplier)}×
                     </motion.div>
                 )}
             </AnimatePresence>

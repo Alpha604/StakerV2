@@ -179,7 +179,7 @@ export function Hilo() {
                 Montant de la mise
               </label>
               <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+                $ {formatCurrency(balance )}
               </span>
             </div>
             <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
@@ -248,7 +248,7 @@ export function Hilo() {
               onClick={handleCashout}
               className="w-full py-4 rounded-md font-extrabold text-base transition-all bg-[#ff9800] hover:bg-[#f57c00] text-[#0f1116] shadow-[0_4px_0_#e65100] active:translate-y-1 active:shadow-[0_0px_0_#e65100]"
             >
-              Retirer €{potentialWin.toFixed(2)}
+              Retirer €{formatCurrency(potentialWin)}
             </button>
           )}
         </div>
@@ -272,7 +272,7 @@ export function Hilo() {
             >
               <div className="w-20 py-2 bg-[#213743] border border-border-medium rounded text-center transition-colors group-hover:bg-[#2c4755]">
                 <span className="font-bold text-white tabular-nums">
-                  {higherMulti.toFixed(2)}×
+                  {formatCurrency(higherMulti)}×
                 </span>
               </div>
               <div className="w-16 h-16 rounded-full bg-bg-panel shadow-lg flex flex-col items-center justify-center border border-[#00e676]/30 text-[#00e676] transition-transform group-hover:scale-105 group-active:scale-95 group-active:bg-[#00e676] group-active:text-[#0f172a]">
@@ -296,7 +296,7 @@ export function Hilo() {
             >
               <div className="w-20 py-2 bg-[#213743] border border-border-medium rounded text-center transition-colors group-hover:bg-[#2c4755]">
                 <span className="font-bold text-white tabular-nums">
-                  {lowerMulti.toFixed(2)}×
+                  {formatCurrency(lowerMulti)}×
                 </span>
               </div>
               <div className="w-16 h-16 rounded-full bg-bg-panel shadow-lg flex flex-col items-center justify-center border border-[#ed4163]/30 text-[#ed4163] transition-transform group-hover:scale-105 group-active:scale-95 group-active:bg-[#ed4163] group-active:text-[#0f172a]">

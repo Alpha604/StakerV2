@@ -116,7 +116,7 @@ export function Moles() {
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center px-1">
                 <label className="text-[#8b9ba5] text-xs font-bold"> Montant de la mise </label>
-                <span className="text-[#8b9ba5] text-xs font-bold flex items-center gap-1"> $ {(Math.floor((balance || 0) * 100) / 100).toFixed(2)} </span>
+                <span className="text-[#8b9ba5] text-xs font-bold flex items-center gap-1"> $ {formatCurrency(balance || 0)} </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded border border-[#2f4553] p-1 transition-colors focus-within:border-border-hover">
                 <div className="pl-2 pr-1 flex items-center justify-center"> {renderCryptoIcon(activeCrypto, "w-4 h-4")} </div>
@@ -162,7 +162,7 @@ export function Moles() {
                 disabled={revealedCount === 0 || gameOver}
                 className="w-full py-3.5 mt-2 rounded text-white font-bold text-sm bg-[#e53935] hover:bg-[#ef5350] transition-colors shadow disabled:opacity-50"
               >
-                 Retirer {currentProfit.toFixed(2)} $
+                 Retirer {formatCurrency(currentProfit)} $
               </button>
           ) : (
               <button 

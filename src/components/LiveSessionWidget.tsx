@@ -1,3 +1,4 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUser } from "../context/UserContext";
@@ -27,7 +28,7 @@ export function LiveSessionWidget() {
     currentProfit += bet.profit;
     totalWagered += bet.wagered || 0;
     totalPayout += bet.payout || 0;
-    chartData.push({ profit: parseFloat(currentProfit.toFixed(2)) });
+    chartData.push({ profit: parseFloat(formatCurrency(currentProfit)) });
   });
 
   const totalProfit = currentProfit;
@@ -100,7 +101,7 @@ export function LiveSessionWidget() {
                     Total Paris
                   </span>
                   <span className="text-white font-mono font-medium">
-                    {totalWagered.toFixed(2)}$
+                    {formatCurrency(totalWagered)}$
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
@@ -108,7 +109,7 @@ export function LiveSessionWidget() {
                     Total Gains
                   </span>
                   <span className="text-white font-mono font-medium">
-                    {totalPayout.toFixed(2)}$
+                    {formatCurrency(totalPayout)}$
                   </span>
                 </div>
               </div>
@@ -124,7 +125,7 @@ export function LiveSessionWidget() {
                   )}
                 >
                   {totalProfit > 0 ? "+" : ""}
-                  {totalProfit.toFixed(2)}$
+                  {formatCurrency(totalProfit)}$
                 </span>
               </div>
 
@@ -163,7 +164,7 @@ export function LiveSessionWidget() {
                       <div className="flex items-center gap-2">
                         <span className="text-text-secondary">{bet.game.substring(0, 4)}</span>
                         <span className={bet.profit > 0 ? "text-emerald-500" : "text-rose-500"}>
-                          {bet.profit > 0 ? "+" : ""}{bet.profit.toFixed(2)}$
+                          {bet.profit > 0 ? "+" : ""}{formatCurrency(bet.profit)}$
                         </span>
                       </div>
                       <button 

@@ -1,7 +1,9 @@
+import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { User, Shield, Activity, DollarSign, Wallet, ShieldCheck, Gamepad2 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { RankBadge } from "./RankBadge";
 
 export function Profile() {
   const { user, balance, vault, totalWagered, totalWon } = useUser() as any; // typing workaround if needed
@@ -34,7 +36,10 @@ export function Profile() {
               {user.username.substring(0, 2)}
             </div>
             
-            <h2 className="text-2xl font-bold mb-1 relative z-10">{user.username}</h2>
+            <h2 className="text-2xl font-bold mb-1 relative z-10 flex flex-col items-center gap-1">
+              {user.username}
+              <RankBadge rank={user.rank} />
+            </h2>
             <div className="flex items-center justify-center gap-2 mb-6 relative z-10">
                <span className={cn(
                  "px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
@@ -80,7 +85,7 @@ export function Profile() {
                 Solde Actuel
               </div>
               <div className="text-3xl font-mono font-bold text-white tracking-tight">
-                {typeof balance === 'number' ? balance.toFixed(2) : "0.00"}$
+                {typeof balance === 'number' ? formatCurrency(balance) : "0.00"}$
               </div>
             </div>
             
@@ -90,7 +95,7 @@ export function Profile() {
                 Coffre
               </div>
               <div className="text-3xl font-mono font-bold text-white tracking-tight">
-                {typeof vault === 'number' ? vault.toFixed(2) : "0.00"}$
+                {typeof vault === 'number' ? formatCurrency(vault) : "0.00"}$
               </div>
             </div>
           </div>
@@ -103,13 +108,13 @@ export function Profile() {
                 <div className="p-4 bg-[#2f4553]/20 rounded-lg border border-[#2f4553]">
                   <div className="text-[#8b9ba5] text-sm font-bold mb-1">Total Misé</div>
                   <div className="text-2xl font-mono font-bold text-blue-400">
-                    {typeof user.totalWagered === 'number' ? user.totalWagered.toFixed(2) : "0.00"}$
+                    {typeof user.totalWagered === 'number' ? formatCurrency(user.totalWagered) : "0.00"}$
                   </div>
                 </div>
                 <div className="p-4 bg-[#2f4553]/20 rounded-lg border border-[#2f4553]">
                   <div className="text-[#8b9ba5] text-sm font-bold mb-1">Total Gagné</div>
                   <div className="text-2xl font-mono font-bold text-purple-400">
-                    {typeof user.totalWon === 'number' ? user.totalWon.toFixed(2) : "0.00"}$
+                    {typeof user.totalWon === 'number' ? formatCurrency(user.totalWon) : "0.00"}$
                   </div>
                 </div>
              </div>

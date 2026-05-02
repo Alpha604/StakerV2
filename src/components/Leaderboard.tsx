@@ -91,14 +91,14 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
                         {u.username || "Utilisateur Anonyme"}
                       </span>
                       <span className="text-xs text-text-secondary font-mono tracking-tight text-emerald-400">
-                        Total Parié: ${(u.totalWagered || 0).toFixed(2)}
+                        Total Parié: ${formatCurrency((u.totalWagered || 0))}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span className="text-white font-black font-mono tracking-tighter">
-                      ${(u.balance || 0).toFixed(2)}
+                      ${formatCurrency((u.balance || 0))}
                     </span>
                   </div>
                 </div>

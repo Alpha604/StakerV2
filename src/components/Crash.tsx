@@ -233,7 +233,7 @@ export function Crash() {
                   Montant de la mise
                 </label>
                 <span className="text-[#8b9ba5] text-[13px] flex items-center gap-1 font-semibold">
-                  $ {(Math.floor(balance * 100) / 100).toFixed(2)}
+                  $ {formatCurrency(balance )}
                 </span>
               </div>
               <div className="relative flex items-center bg-[#0f212e] rounded hover:border-[#334b5c] focus-within:border-[#557086] transition-colors border border-[#2f4553] h-[40px] overflow-hidden">
@@ -359,7 +359,7 @@ export function Crash() {
             )}
             {cashedOut && gameState !== "crashed" && (
               <div className="mt-4 text-[#00e676] font-bold text-xl uppercase tracking-widest bg-black/50 px-6 py-2 rounded-full backdrop-blur-sm">
-                Gagné ! +€{winAmount.toFixed(2)}
+                Gagné ! +€{formatCurrency(winAmount)}
               </div>
             )}
           </div>
