@@ -289,7 +289,7 @@ export function AdminPanel() {
                         <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0f212e] ${isOnline ? 'bg-[#1bc86a]' : 'bg-[#8b9ba5]'}`} title={isOnline ? 'En ligne' : 'Hors ligne'} />
                       </div>
                       <div>
-                        <div className="font-bold flex items-center gap-1.5">{u.username} <RankBadge rank={u.rank} /></div>
+                        <div className="font-bold flex items-center gap-1.5">{u.username} <RankBadge rank={u.rank} className="h-4" /></div>
                         <div className="text-xs text-[#8b9ba5] font-mono" title="Dernière connexion">
                           {u.lastOnline ? new Date(u.lastOnline).toLocaleTimeString() : 'Jamais'}
                         </div>
@@ -419,7 +419,7 @@ export function AdminPanel() {
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${editForm.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
                       {editForm.role || 'user'}
                     </span>
-                    <RankBadge rank={editForm.rank} />
+                    <RankBadge rank={editForm.rank} className="h-5 ml-1" />
                   </div>
                 </div>
               </div>
