@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useUser, CRYPTOS, CryptoType, renderCryptoIcon } from "../context/UserContext";
 import {
   Trophy,
@@ -21,6 +21,18 @@ export function Header({
   const [showWallet, setShowWallet] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [cryptoDropdownOpen, setCryptoDropdownOpen] = useState(false);
+  
+  const cryptoDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (cryptoDropdownRef.current && !cryptoDropdownRef.current.contains(event.target as Node)) {
+        setCryptoDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -54,7 +66,7 @@ export function Header({
         {user ? (
           <div className="flex items-center gap-2 md:gap-4">
             {/* Middle Container for Balance */}
-            <div className="flex items-center absolute left-1/2 -translate-x-1/2">
+            <div className="flex items-center absolute left-1/2 -translate-x-1/2" ref={cryptoDropdownRef}>
               <div
                 className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-4 pr-3 py-2 rounded-l flex items-center gap-2 shadow-inner cursor-pointer transition-colors max-w-[200px] relative"
                 onClick={() => setCryptoDropdownOpen(!cryptoDropdownOpen)}
@@ -74,7 +86,11 @@ export function Header({
                       <div 
                         key={crypto.symbol}
                         className="flex items-center gap-3 px-4 py-3 hover:bg-bg-inner transition-colors border-b border-border-subtle last:border-b-0"
-                        onClick={() => setActiveCrypto(crypto)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveCrypto(crypto);
+                          setCryptoDropdownOpen(false);
+                        }}
                       >
                          {renderCryptoIcon(crypto, "w-5 h-5")}
                          <div className="flex flex-col">

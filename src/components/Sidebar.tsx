@@ -15,6 +15,7 @@ import {
   Headset,
   Tv,
   ShieldAlert,
+  User,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -89,6 +90,14 @@ export function Sidebar({
         title="Statistiques de Pari"
       >
         <Search size={20} />
+      </button>
+
+      <button
+        onClick={() => setView("profile")}
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "profile" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+        title="Profil"
+      >
+        <User size={20} />
       </button>
 
       {useUser().user?.role === "admin" && (

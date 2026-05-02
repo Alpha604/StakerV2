@@ -26,6 +26,7 @@ import { Slots } from "./components/Slots";
 import { AdminPanel } from "./components/AdminPanel";
 import { VerifyBet } from "./components/VerifyBet";
 import { ApprovalGuard } from "./components/ApprovalGuard";
+import { Profile } from "./components/Profile";
 
 export type ViewType =
   | "home"
@@ -53,7 +54,8 @@ export type ViewType =
   | "moles"
   | "slots-game"
   | "verify"
-  | "admin";
+  | "admin"
+  | "profile";
 
 class ErrorBoundary extends React.Component<any, any> {
   state = { hasError: false, error: null };
@@ -140,6 +142,7 @@ function InnerApp() {
               )}
               {view === "verify" && <VerifyBet />}
               {view === "admin" && <AdminPanel />}
+              {view === "profile" && <Profile />}
               {view === "mines" && <ApprovalGuard><Mines /></ApprovalGuard>}
               {view === "roulette" && <ApprovalGuard><Roulette /></ApprovalGuard>}
               {view === "keno" && <ApprovalGuard><Keno /></ApprovalGuard>}
