@@ -491,8 +491,9 @@ export function AdminPanel() {
                           <option value="Gold">Or (Gold)</option>
                           <option value="Platinum">Platine (Platinum)</option>
                           <option value="Diamond">Diamant (Diamond)</option>
-                          <option value="Blood Diamond">Diamant de Sang (Blood Diamond)</option>
-                          <option value="Obsidian">Obsidienne (Obsidian)</option>
+                          <option value="Champion">Champion</option>
+                          <option value="Grand Champion">Grand Champion</option>
+                          <option value="Supersonic Legend">Supersonic Legend</option>
                         </select>
                       </div>
                     </div>
