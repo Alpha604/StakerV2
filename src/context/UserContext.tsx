@@ -131,6 +131,12 @@ export interface CustomUser {
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
+  rank?: UserRank;
+  permissions?: {
+    canDeposit?: boolean;
+    canWithdraw?: boolean;
+    blockedGames?: Record<string, boolean>;
+  };
 }
 
 export interface SessionBet {
@@ -172,6 +178,8 @@ interface UserContextType {
   activeCrypto: CryptoType;
   setActiveCrypto: (c: CryptoType) => void;
   isLoggingOut: boolean;
+  logoutProgress: number;
+  logoutMessage: string;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -186,6 +194,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeCrypto, setActiveCrypto] = useState<CryptoType>(CRYPTOS[0]);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutProgress, setLogoutProgress] = useState(0);
+  const [logoutMessage, setLogoutMessage] = useState("");
 
   const balance = user?.balance || 0;
   const vault = user?.vault || 0;
@@ -319,36 +329,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const syncUserToBin = async (updatedUser: CustomUser) => {
     try {
-      const data = await getBinData();
-      let users = data.users || [];
-      const userIndex = users.findIndex((u) => u.username === updatedUser.username);
-      
-      if (userIndex >= 0) {
-        users[userIndex] = {
-          ...users[userIndex],
+      await fetch("/api/user/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: updatedUser.username,
           balance: updatedUser.balance,
           vault: updatedUser.vault,
-          totalWagered: updatedUser.totalWagered || users[userIndex].totalWagered || 0,
-          totalWon: updatedUser.totalWon || users[userIndex].totalWon || 0,
-          role: updatedUser.role || users[userIndex].role || "user",
-          status: updatedUser.status || users[userIndex].status || "pending",
-          lastOnline: Date.now(),
-        };
-      } else {
-         users.push({
-            username: updatedUser.username,
-            balance: updatedUser.balance,
-            vault: updatedUser.vault,
-            totalWagered: updatedUser.totalWagered || 0,
-            totalWon: updatedUser.totalWon || 0,
-            role: updatedUser.role || "user",
-            status: updatedUser.status || "pending",
-            lastOnline: Date.now(),
-         });
-      }
-      
-      data.users = users;
-      await putBinData(data);
+          totalWagered: updatedUser.totalWagered,
+          totalWon: updatedUser.totalWon,
+          lastOnline: Date.now()
+        })
+      });
     } catch (e) {
       console.warn("Error syncing to bin", e);
     }
@@ -409,7 +401,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               role: "admin",
               status: "approved",
             };
-            users.push({ ...localUser, password });
+            users.push({ ...localUser, password, totalWagered: 0, totalWon: 0 } as BinUser);
             await putBinData({ ...data, users });
             setUser(localUser);
             localStorage.setItem("stake_user_session", JSON.stringify(localUser));
@@ -426,7 +418,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               role: "admin",
               status: "approved",
             };
-            users.push({ ...localUser, password });
+            users.push({ ...localUser, password, totalWagered: 0, totalWon: 0 } as BinUser);
             await putBinData({ ...data, users });
             setUser(localUser);
             localStorage.setItem("stake_user_session", JSON.stringify(localUser));
@@ -443,7 +435,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               role: "admin",
               status: "approved",
             };
-            users.push({ ...localUser, password, lastOnline: Date.now() });
+            users.push({ ...localUser, password, lastOnline: Date.now(), totalWagered: 0, totalWon: 0 } as BinUser);
             await putBinData({ ...data, users });
             setUser(localUser);
             localStorage.setItem("stake_user_session", JSON.stringify(localUser));
@@ -504,9 +496,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logoutUser = async () => {
     setIsLoggingOut(true);
+    setLogoutProgress(10);
+    setLogoutMessage("Enregistrement de la session...");
+    
     if (user) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setLogoutProgress(40);
+      setLogoutMessage("Vérification des retraits...");
+      
       await syncUserToBin(user);
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setLogoutProgress(80);
+      setLogoutMessage("Synchronisation de la balance locale...");
+      
+      await new Promise(resolve => setTimeout(resolve, 600));
     }
+    
+    setLogoutProgress(100);
+    setLogoutMessage("Déconnexion réussie !");
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     setUser(null);
     localStorage.removeItem("stake_user_session");
     setIsLoggingOut(false);
@@ -671,6 +681,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         activeCrypto,
         setActiveCrypto,
         isLoggingOut,
+        logoutProgress,
+        logoutMessage,
       }}
     >
       {!loading ? (

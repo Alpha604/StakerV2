@@ -8,7 +8,10 @@ const PORT = 3000;
 
 app.use(express.json());
 
-const DB_FILE = path.join(process.cwd(), "db.json");
+const BIN_ID = "69eb9c5436566621a8e9f358";
+const MASTER_KEY = "$2a$10$IwjzylKTtK7iiXGJPWGTNesdMO8SzFxTZKMlJLu0/3sbpUtGr6kM.";
+const JSONBIN_URL_GET = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
+const JSONBIN_URL_PUT = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 let cachedBinData: { users: any[], globalBets: any[] } = { users: [], globalBets: [] };
 let isBinFetched = false;
@@ -16,13 +19,19 @@ let flushTimeout: any = null;
 
 async function fetchBinInitial() {
   try {
-    const data = await fs.readFile(DB_FILE, "utf-8");
-    cachedBinData = JSON.parse(data);
+    const res = await fetch(JSONBIN_URL_GET, {
+      headers: {
+        Accept: "application/json",
+        "X-Master-Key": MASTER_KEY
+      }
+    });
+    if (res.ok) {
+      const json = await res.json();
+      cachedBinData = json.record || { users: [], globalBets: [] };
+    }
     isBinFetched = true;
   } catch (error: any) {
-    if (error.code !== "ENOENT") {
-      console.error("Initial bin fetch error", error);
-    }
+    console.error("Initial bin fetch error", error);
     isBinFetched = true;
   }
 }
@@ -31,13 +40,20 @@ function scheduleFlush() {
   if (flushTimeout) return;
   flushTimeout = setTimeout(async () => {
     try {
-      await fs.writeFile(DB_FILE, JSON.stringify(cachedBinData, null, 2), "utf-8");
+      await fetch(JSONBIN_URL_PUT, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": MASTER_KEY
+        },
+        body: JSON.stringify(cachedBinData),
+      });
     } catch (error) {
       console.error("Bin update error", error);
     } finally {
       flushTimeout = null;
     }
-  }, 1000); // lower wait for better reliability
+  }, 5000); // Flush every 5s max to JSONBin
 }
 
 app.use(async (req, res, next) => {
@@ -50,6 +66,14 @@ app.use(async (req, res, next) => {
 // API Routes
 app.get("/api/bin", (req, res) => {
   res.json({ record: cachedBinData });
+});
+
+app.put("/api/bin", (req, res) => {
+  if (req.body && typeof req.body === "object") {
+    cachedBinData = req.body;
+    scheduleFlush();
+  }
+  res.json({ success: true });
 });
 
 app.post("/api/user/sync", (req, res) => {

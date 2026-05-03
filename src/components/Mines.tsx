@@ -132,7 +132,7 @@ export function Mines() {
       let localGrid = Array(25).fill("hidden");
       let localRevealed = 0;
       let localCrashed = false;
-      const spotList = Array.from(selectedSpots);
+      const spotList = Array.from(selectedSpots) as number[];
 
       for (const index of spotList) {
         if (newMines.has(index)) {

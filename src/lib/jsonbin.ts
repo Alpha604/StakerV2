@@ -1,8 +1,3 @@
-const BIN_ID = "69eb9c5436566621a8e9f358";
-const MASTER_KEY = "$2a$10$IwjzylKTtK7iiXGJPWGTNesdMO8SzFxTZKMlJLu0/3sbpUtGr6kM.";
-export const JSONBIN_URL_GET = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
-export const JSONBIN_URL_PUT = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-
 export type UserRank = "None" | "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Champion" | "Grand Champion" | "Supersonic Legend";
 
 export interface BinUser {
@@ -42,13 +37,7 @@ export interface BinData {
 
 export const getBinData = async (): Promise<BinData> => {
   try {
-    const res = await fetch(JSONBIN_URL_GET, {
-      cache: "no-store",
-      headers: { 
-        Accept: "application/json",
-        "X-Master-Key": MASTER_KEY 
-      },
-    });
+    const res = await fetch("/api/bin", { cache: "no-store", headers: { Accept: "application/json" } });
     if (!res.ok) {
       console.warn("Could not fetch bin, returning empty");
       return { users: [], globalBets: [] };
@@ -63,17 +52,12 @@ export const getBinData = async (): Promise<BinData> => {
 
 export const putBinData = async (data: BinData): Promise<void> => {
   try {
-    const res = await fetch(JSONBIN_URL_PUT, {
+    const res = await fetch("/api/bin", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": MASTER_KEY
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!res.ok) {
-      console.warn("Failed to update bin");
-    }
+    if (!res.ok) console.warn("Failed to update bin");
   } catch (error) {
     console.warn("Put failed:", error);
   }

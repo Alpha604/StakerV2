@@ -27,6 +27,7 @@ import { AdminPanel } from "./components/AdminPanel";
 import { VerifyBet } from "./components/VerifyBet";
 import { ApprovalGuard } from "./components/ApprovalGuard";
 import { Profile } from "./components/Profile";
+import { Leaderboard } from "./components/Leaderboard";
 
 export type ViewType =
   | "home"
@@ -186,7 +187,67 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           </main>
         </div>
         <LiveSessionWidget />
-        {(isChangingView || isLoggingOut) && <HamsterLoader />}
+        {isChangingView && !isLoggingOut && <HamsterLoader />}
+        {isLoggingOut && <LogoutScreen />}
       </div>
+  );
+}
+
+function LogoutScreen() {
+  const { logoutProgress, logoutMessage } = useUser();
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923] bg-opacity-90 backdrop-blur-md transition-opacity duration-300">
+      <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-sm w-full border border-[#374151] flex flex-col items-center">
+        <div className="flex justify-center mb-6 relative">
+          <div className="w-16 h-16 rounded-full border-4 border-[#374151] flex items-center justify-center bg-[#111827]">
+            <CloudIcon className="w-8 h-8 text-[#10b981] animate-pulse" />
+          </div>
+          {logoutProgress < 100 && (
+            <div className="absolute top-0 right-0 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
+          )}
+        </div>
+        
+        <h3 className="text-white text-xl font-bold mb-2">Sauvegarde en cours</h3>
+        <p className="text-[#9ca3af] text-sm text-center mb-6 h-10">
+          {logoutMessage || "Veuillez patienter..."}
+        </p>
+
+        <div className="w-full bg-[#374151] rounded-full h-2 mb-2 overflow-hidden relative">
+          <div 
+            className="bg-[#10b981] h-2 rounded-full transition-all duration-300 ease-out flex relative"
+            style={{ width: `${logoutProgress}%` }}
+          >
+            <div className="absolute top-0 bottom-0 left-0 right-0 overflow-hidden rounded-md">
+               <div className="w-full h-full bg-white opacity-20 transform -skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]"></div>
+            </div>
+          </div>
+        </div>
+        <div className="w-full flex justify-between text-xs text-[#9ca3af]">
+          <span>0%</span>
+          <span className="font-mono text-[#10b981]">{logoutProgress}%</span>
+          <span>100%</span>
+        </div>
+        
+        <div className="mt-6 text-xs text-red-400 font-medium tracking-wide flex items-center justify-center gap-2">
+          <AlertCircleIcon className="w-4 h-4" /> Ne fermez pas la page
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CloudIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+    </svg>
+  );
+}
+
+function AlertCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
   );
 }
