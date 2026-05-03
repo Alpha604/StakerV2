@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { getBinData, putBinData, BinUser, BinData } from "../lib/jsonbin";
+import { getBinData, putBinData, BinUser, BinData, UserRank } from "../lib/jsonbin";
 
 export interface CryptoType {
   symbol: string;
@@ -279,13 +279,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!savedUserStr) return;
       try {
          const parsedSession = JSON.parse(savedUserStr) as CustomUser;
-         const data = await getBinData();
-         const binUser = data.users?.find((u) => u.username === parsedSession.username);
+         const res = await fetch(`/api/user/status?username=${encodeURIComponent(parsedSession.username)}`);
+         if (!res.ok) return;
+         const binUser = await res.json();
          if (binUser) {
            if (binUser.status === "suspended" && binUser.suspensionEndsAt && Date.now() > binUser.suspensionEndsAt) {
              binUser.status = "approved";
              binUser.suspensionEndsAt = undefined;
-             await putBinData(data);
+             // Minimal PUT since it's just updating status, but this sync will run again anyway.
            }
            
            const newStatus = binUser.status || "pending";
@@ -357,133 +358,48 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     try {
-      const data = await getBinData();
-      let users = data.users || [];
-      const existingUser = users.find((u) => u.username === username);
-
-      let localUser: CustomUser;
-
-      if (isRegister) {
-        if (existingUser) return false; // Username already taken
-        
-        localUser = {
-          id: username,
-          username: username,
-          balance: 100, // starting balance
-          vault: 0,
-          totalWagered: 0,
-          totalWon: 0,
-          role: "user",
-          status: "pending",
-        };
-        
-        users.push({
-           username,
-           password,
-           balance: 100,
-           vault: 0,
-           totalWagered: 0,
-           totalWon: 0,
-           role: "user",
-           status: "pending",
-        });
-        await putBinData({ ...data, users });
-      } else {
-        if (!existingUser) {
-          if (username === "romeo" && password === "romeo123") {
-            localUser = {
-              id: "romeo",
-              username: "romeo",
-              balance: 1e5,
-              vault: 0,
-              totalWagered: 0,
-              totalWon: 0,
-              role: "admin",
-              status: "approved",
-            };
-            users.push({ ...localUser, password, totalWagered: 0, totalWon: 0 } as BinUser);
-            await putBinData({ ...data, users });
-            setUser(localUser);
-            localStorage.setItem("stake_user_session", JSON.stringify(localUser));
-            return true;
-          }
-          if (username === "Mimi" && password === "mimi123") {
-            localUser = {
-              id: "Mimi",
-              username: "Mimi",
-              balance: 1000000,
-              vault: 0,
-              totalWagered: 0,
-              totalWon: 0,
-              role: "admin",
-              status: "approved",
-            };
-            users.push({ ...localUser, password, totalWagered: 0, totalWon: 0 } as BinUser);
-            await putBinData({ ...data, users });
-            setUser(localUser);
-            localStorage.setItem("stake_user_session", JSON.stringify(localUser));
-            return true;
-          }
-          if (username === "AdminFDJS" && password === "admin123") {
-            localUser = {
-              id: "AdminFDJS",
-              username: "AdminFDJS",
-              balance: 1000000,
-              vault: 0,
-              totalWagered: 0,
-              totalWon: 0,
-              role: "admin",
-              status: "approved",
-            };
-            users.push({ ...localUser, password, lastOnline: Date.now(), totalWagered: 0, totalWon: 0 } as BinUser);
-            await putBinData({ ...data, users });
-            setUser(localUser);
-            localStorage.setItem("stake_user_session", JSON.stringify(localUser));
-            return true;
-          }
-          return false; // Invalid username
-        }
-        if (existingUser.password && existingUser.password !== password) return false; // Invalid password
-        
-        if (existingUser.status === "suspended") {
-            if (existingUser.suspensionEndsAt && Date.now() > existingUser.suspensionEndsAt) {
-                existingUser.status = "approved";
-                existingUser.suspensionEndsAt = undefined;
-                // Will update BinData below
-            } else {
-                alert("Accès refusé. " + (existingUser.suspensionEndsAt ? `Votre compte est suspendu jusqu'au ${new Date(existingUser.suspensionEndsAt).toLocaleString()}.` : "Votre compte est suspendu."));
-                return false;
-            }
-        }
-        
-        if (existingUser.status === "banned") {
-            alert("Accès refusé. Votre compte est banni.");
-            return false;
-        }
-        
-        // Force upgrade AdminFDJS or Mimi if they already exist but lack permissions
-        if ((username === "AdminFDJS" && password === "admin123") || (username === "Mimi" && password === "mimi123") || (username === "romeo" && password === "romeo123")) {
-           existingUser.role = "admin";
-           existingUser.status = "approved";
-        }
-        
-        existingUser.lastOnline = Date.now();
-        await putBinData({ ...data, users });
-
-        localUser = {
-          id: username,
-          username: username,
-          balance: existingUser.balance,
-          vault: existingUser.vault || 0,
-          totalWagered: existingUser.totalWagered || 0,
-          totalWon: existingUser.totalWon || 0,
-          role: existingUser.role || "user",
-          status: existingUser.status || "pending",
-          rank: existingUser.rank || "None",
-          permissions: existingUser.permissions,
-          lastOnline: existingUser.lastOnline,
-        };
+      let endpoint = isRegister ? "/api/user/register" : "/api/user/login";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      
+      const result = await res.json();
+      if (!res.ok) {
+         if (result.error) console.error(result.error);
+         return false;
       }
+      
+      const serverUser = result.user;
+      
+      if (serverUser.status === "suspended") {
+          if (serverUser.suspensionEndsAt && Date.now() > serverUser.suspensionEndsAt) {
+             // Let it pass, backend or next polling will fix it
+          } else {
+              alert("Accès refusé. " + (serverUser.suspensionEndsAt ? `Votre compte est suspendu jusqu'au ${new Date(serverUser.suspensionEndsAt).toLocaleString()}.` : "Votre compte est suspendu."));
+              return false;
+          }
+      }
+      
+      if (serverUser.status === "banned") {
+          alert("Accès refusé. Votre compte est banni.");
+          return false;
+      }
+
+      const localUser: CustomUser = {
+        id: serverUser.username,
+        username: serverUser.username,
+        balance: serverUser.balance,
+        vault: serverUser.vault || 0,
+        totalWagered: serverUser.totalWagered || 0,
+        totalWon: serverUser.totalWon || 0,
+        role: serverUser.role || "user",
+        status: serverUser.status || "pending",
+        rank: serverUser.rank || "None",
+        permissions: serverUser.permissions,
+        lastOnline: serverUser.lastOnline,
+      };
 
       setUser(localUser);
       localStorage.setItem("stake_user_session", JSON.stringify(localUser));

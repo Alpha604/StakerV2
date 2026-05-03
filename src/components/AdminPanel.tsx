@@ -647,7 +647,7 @@ export function AdminPanel() {
                     </div>
 
                     <div className="flex flex-col gap-4 p-4 bg-[#2f4553]/20 rounded-xl border border-[#2f4553]">
-                      <h3 className="text-white font-bold mb-2">Blocage par jeu (Coché = Bloqué)</h3>
+                      <h3 className="text-white font-bold mb-2">Accès par jeu (Coché = Autorisé)</h3>
                       
                       {/* Originaux / Classiques */}
                       <div className="mb-2">
@@ -668,14 +668,14 @@ export function AdminPanel() {
                             <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
                               <input 
                                 type="checkbox" 
-                                className="w-4 h-4 accent-red-500 rounded"
-                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                className="w-4 h-4 accent-green-500 rounded"
+                                checked={!editForm.permissions?.blockedGames?.[game.id]}
                                 onChange={e => {
                                   const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
                                   if (e.target.checked) {
-                                    newBlockedGames[game.id] = true;
-                                  } else {
                                     delete newBlockedGames[game.id];
+                                  } else {
+                                    newBlockedGames[game.id] = true;
                                   }
                                   setEditForm({
                                     ...editForm,
@@ -701,14 +701,14 @@ export function AdminPanel() {
                             <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
                               <input 
                                 type="checkbox" 
-                                className="w-4 h-4 accent-red-500 rounded"
-                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                className="w-4 h-4 accent-green-500 rounded"
+                                checked={!editForm.permissions?.blockedGames?.[game.id]}
                                 onChange={e => {
                                   const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
                                   if (e.target.checked) {
-                                    newBlockedGames[game.id] = true;
-                                  } else {
                                     delete newBlockedGames[game.id];
+                                  } else {
+                                    newBlockedGames[game.id] = true;
                                   }
                                   setEditForm({
                                     ...editForm,
@@ -733,14 +733,14 @@ export function AdminPanel() {
                             <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
                               <input 
                                 type="checkbox" 
-                                className="w-4 h-4 accent-red-500 rounded"
-                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                className="w-4 h-4 accent-green-500 rounded"
+                                checked={!editForm.permissions?.blockedGames?.[game.id]}
                                 onChange={e => {
                                   const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
                                   if (e.target.checked) {
-                                    newBlockedGames[game.id] = true;
-                                  } else {
                                     delete newBlockedGames[game.id];
+                                  } else {
+                                    newBlockedGames[game.id] = true;
                                   }
                                   setEditForm({
                                     ...editForm,
@@ -767,14 +767,14 @@ export function AdminPanel() {
                             <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
                               <input 
                                 type="checkbox" 
-                                className="w-4 h-4 accent-red-500 rounded"
-                                checked={!!editForm.permissions?.blockedGames?.[game.id]}
+                                className="w-4 h-4 accent-green-500 rounded"
+                                checked={!editForm.permissions?.blockedGames?.[game.id]}
                                 onChange={e => {
                                   const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
                                   if (e.target.checked) {
-                                    newBlockedGames[game.id] = true;
-                                  } else {
                                     delete newBlockedGames[game.id];
+                                  } else {
+                                    newBlockedGames[game.id] = true;
                                   }
                                   setEditForm({
                                     ...editForm,
