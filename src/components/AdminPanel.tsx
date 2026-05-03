@@ -98,6 +98,7 @@ export function AdminPanel() {
       status: u.status || 'pending',
       password: u.password,
       rank: u.rank,
+      permissions: u.permissions,
     });
     setSuspensionHours("");
     setEditTab("general");
