@@ -279,9 +279,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!savedUserStr) return;
       try {
          const parsedSession = JSON.parse(savedUserStr) as CustomUser;
-         const res = await fetch(`/api/user/status?username=${encodeURIComponent(parsedSession.username)}`);
-         if (!res.ok) return;
-         const binUser = await res.json();
+         const data = await getBinData();
+         const binUser = data.users?.find((u) => u.username === parsedSession.username);
          if (binUser) {
            if (binUser.status === "suspended" && binUser.suspensionEndsAt && Date.now() > binUser.suspensionEndsAt) {
              binUser.status = "approved";
@@ -323,25 +322,46 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
            }
          }
       } catch (e) {}
-    }, 3000); // 3 seconds
+    }, 5000); // 5 seconds polling
 
     return () => clearInterval(pollInterval);
   }, []);
 
   const syncUserToBin = async (updatedUser: CustomUser) => {
     try {
-      await fetch("/api/user/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: updatedUser.username,
-          balance: updatedUser.balance,
-          vault: updatedUser.vault,
-          totalWagered: updatedUser.totalWagered,
-          totalWon: updatedUser.totalWon,
-          lastOnline: Date.now()
-        })
-      });
+      // First try to use the backend server for quick batch sync
+      try {
+         const syncRes = await fetch("/api/user/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: updatedUser.username,
+              balance: updatedUser.balance,
+              vault: updatedUser.vault,
+              totalWagered: updatedUser.totalWagered,
+              totalWon: updatedUser.totalWon,
+              lastOnline: Date.now()
+            })
+         });
+         const dataStr = await syncRes.text();
+         if (syncRes.ok && !dataStr.trim().startsWith("<")) return; 
+      } catch(e) {}
+      
+      // Fallback: sync locally if backend is unavailable (like on Cloudflare Pages)
+      const data = await getBinData();
+      let users = data.users || [];
+      const index = users.findIndex((u) => u.username === updatedUser.username);
+      if (index >= 0) {
+        users[index] = {
+           ...users[index],
+           balance: updatedUser.balance,
+           vault: updatedUser.vault,
+           totalWagered: updatedUser.totalWagered,
+           totalWon: updatedUser.totalWon,
+           lastOnline: Date.now()
+        };
+        await putBinData({ ...data, users });
+      }
     } catch (e) {
       console.warn("Error syncing to bin", e);
     }
@@ -358,20 +378,88 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     try {
-      let endpoint = isRegister ? "/api/user/register" : "/api/user/login";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
+      // Try to use the API login first
+      let serverUser = null;
+      let usedServer = false;
+      try {
+          let endpoint = isRegister ? "/api/user/register" : "/api/user/login";
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+          });
+          const text = await res.text();
+          if (res.ok && !text.trim().startsWith("<")) {
+             const result = JSON.parse(text);
+             serverUser = result.user;
+             usedServer = true;
+          } else if (!res.ok && !text.trim().startsWith("<")) {
+             const result = JSON.parse(text);
+             if (result.error) alert(result.error);
+             return false;
+          }
+      } catch(e) {}
       
-      const result = await res.json();
-      if (!res.ok) {
-         if (result.error) console.error(result.error);
-         return false;
+      if (!usedServer) {
+          // STATIC HOSTING FALLBACK
+          const data = await getBinData(true);
+          let users = data.users || [];
+          const existingUser = users.find((u) => u.username === username);
+          if (isRegister) {
+            if (existingUser) {
+               alert("Ce nom d'utilisateur est déjà pris.");
+               return false;
+            }
+            serverUser = {
+               username,
+               password,
+               balance: 100,
+               vault: 0,
+               totalWagered: 0,
+               totalWon: 0,
+               role: "user",
+               status: "pending",
+               lastOnline: Date.now()
+            };
+            users.push(serverUser);
+            await putBinData({ ...data, users }, true);
+          } else {
+            if (!existingUser) {
+              if (username === "romeo" && password === "romeo123" || username === "Mimi" && password === "mimi123" || username === "AdminFDJS" && password === "admin123") {
+                 serverUser = {
+                    id: username,
+                    username,
+                    balance: username === "romeo" ? 100000 : 1000000,
+                    vault: 0,
+                    totalWagered: 0,
+                    totalWon: 0,
+                    role: "admin",
+                    status: "approved",
+                    password
+                 };
+                 users.push(serverUser);
+                 await putBinData({ ...data, users }, true);
+              } else {
+                 alert("Utilisateur introuvable ou mot de passe incorrect.");
+                 return false;
+              }
+            } else {
+              if (existingUser.password && existingUser.password !== password) {
+                 alert("Utilisateur introuvable ou mot de passe incorrect.");
+                 return false;
+              }
+              if ((username === "AdminFDJS" && password === "admin123") || (username === "Mimi" && password === "mimi123") || (username === "romeo" && password === "romeo123")) {
+                 existingUser.role = "admin";
+                 existingUser.status = "approved";
+              }
+              existingUser.lastOnline = Date.now();
+              serverUser = existingUser;
+              await putBinData({ ...data, users }, true);
+            }
+          }
       }
       
-      const serverUser = result.user;
+      if (!serverUser) return false;
       
       if (serverUser.status === "suspended") {
           if (serverUser.suspensionEndsAt && Date.now() > serverUser.suspensionEndsAt) {
