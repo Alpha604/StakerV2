@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserRank } from '../lib/jsonbin';
+import { UserRank } from '../context/UserContext';
 
 export const RANK_IMAGES: Record<string, string> = {
   "Bronze": "https://static.wikia.nocookie.net/rocketleague/images/d/d1/S21BronzePlayerBanner.png/revision/latest?cb=20260311144043",

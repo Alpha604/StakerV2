@@ -5,17 +5,23 @@
       "description": "A user's profile and wallet balance.",
       "type": "object",
       "properties": {
-        "userId": { "type": "string", "description": "The UID matching auth.uid" },
+        "id": { "type": "string", "description": "The UID matching auth.uid" },
+        "username": { "type": "string" },
         "email": { "type": "string", "description": "User's email" },
-        "displayName": { "type": "string", "description": "User's display name" },
         "photoURL": { "type": "string", "description": "User's avatar URL" },
-        "balance": { "type": "number", "description": "User's StakeCoin balance" },
-        "totalWagered": { "type": "number", "description": "Total amount wagered" },
-        "totalWon": { "type": "number", "description": "Total amount won" },
-        "createdAt": { "type": "number", "description": "Timestamp of creation" },
-        "updatedAt": { "type": "number", "description": "Timestamp of last update" }
+        "balance": { "type": "number" },
+        "vault": { "type": "number" },
+        "totalWagered": { "type": "number" },
+        "totalWon": { "type": "number" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "suspended", "banned"] },
+        "rank": { "type": "string" },
+        "suspensionEndsAt": { "type": "number" },
+        "suspensionReason": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "lastOnline": { "type": "number" }
       },
-      "required": ["userId", "balance", "createdAt", "updatedAt"]
+      "required": ["id", "username", "balance", "vault", "role", "status"]
     },
     "Bet": {
       "title": "Bet",

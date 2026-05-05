@@ -1,93 +1,104 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
-import { getBinData, putBinData, BinUser, BinData, UserRank } from "../lib/jsonbin";
-import { useUser } from "../context/UserContext";
+import { useUser, CustomUser, UserRank } from "../context/UserContext";
 import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Key, Shield, ShieldAlert, RefreshCw, AlertTriangle, X, Edit3, Save } from "lucide-react";
 import { cn } from "../lib/utils";
 import { RankBadge } from "./RankBadge";
+import { db } from "../lib/firebase";
+import { collection, getDocs, doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 
 export function AdminPanel() {
   const { user } = useUser();
-  const [users, setUsers] = useState<BinUser[]>([]);
+  const [users, setUsers] = useState<CustomUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [globalBetsCount, setGlobalBetsCount] = useState(0);
 
   // Edit Modal State
-  const [editingUser, setEditingUser] = useState<BinUser | null>(null);
-  const [editForm, setEditForm] = useState<Partial<BinUser>>({});
+  const [editingUser, setEditingUser] = useState<CustomUser | null>(null);
+  const [editForm, setEditForm] = useState<Partial<CustomUser>>({});
   const [editLoading, setEditLoading] = useState(false);
   const [suspensionHours, setSuspensionHours] = useState<number | "">("");
-  const [editTab, setEditTab] = useState<"general"|"finances"|"security"|"history">("general");
+  const [editTab, setEditTab] = useState<"general"|"finances"|"permissions"|"history">("general");
   const [userBets, setUserBets] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUsers();
+    fetchBets();
     
-    // Poll for live updates every 3 seconds
+    // Poll for live updates every 5 seconds
     const interval = setInterval(() => {
-      getBinData().then(data => {
-        setUsers(data.users || []);
-      }).catch(() => {});
-    }, 3000);
-
-    const betsInterval = setInterval(() => {
-       try {
-         const bets = localStorage.getItem("stake_global_bets_cache");
-         if (bets) setGlobalBetsCount(JSON.parse(bets).length);
-       } catch(e) {}
-    }, 3000);
+      fetchUsers(false);
+      fetchBets();
+    }, 5000);
 
     return () => {
       clearInterval(interval);
-      clearInterval(betsInterval);
     };
   }, []);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    const data = await getBinData();
-    setUsers(data.users || []);
+  const fetchUsers = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
-      const bets = localStorage.getItem("stake_global_bets_cache");
-      if (bets) setGlobalBetsCount(JSON.parse(bets).length);
-    } catch(e) {}
-    setLoading(false);
+      const usersSnap = await getDocs(collection(db, "users"));
+      const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as CustomUser);
+      setUsers(usersData);
+    } catch (e) {
+      console.warn(e);
+    }
+    if (showLoading) setLoading(false);
   };
 
-  const updateUser = async (username: string, updates: Partial<BinUser>) => {
-    setActionLoading(username + Object.keys(updates)[0]);
-    const data = await getBinData();
-    const index = data.users.findIndex(u => u.username === username);
-    if (index >= 0) {
-      data.users[index] = { ...data.users[index], ...updates };
-      await putBinData(data);
-      setUsers(data.users);
+  const fetchBets = async () => {
+    try {
+      const betsSnap = await getDocs(collection(db, "bets"));
+      setGlobalBetsCount(betsSnap.size);
+    } catch (e) {}
+  };
+
+  const updateUser = async (userId: string, updates: Partial<CustomUser>) => {
+    setActionLoading(userId + Object.keys(updates)[0]);
+    try {
+      await updateDoc(doc(db, "users", userId), updates);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+    } catch (e) {
+      console.warn(e);
     }
     setActionLoading(null);
   };
 
-  const deleteUser = async (username: string) => {
-    if (username === "AdminFDJS") return alert("Impossible de supprimer le super administrateur.");
-    if (!confirm(`Etes-vous sûr de vouloir supprimer définitivement ${username} ?`)) return;
+  const deleteUser = async (userToDelete: CustomUser) => {
+    if (userToDelete.email === "lafrancaise.desjeux@outlook.fr") return alert("Impossible de supprimer le super administrateur.");
+    if (!confirm(`Etes-vous sûr de vouloir supprimer définitivement ${userToDelete.username} ?`)) return;
     
-    setActionLoading(username + "delete");
-    const data = await getBinData();
-    data.users = data.users.filter(u => u.username !== username);
-    await putBinData(data);
-    setUsers(data.users);
+    setActionLoading(userToDelete.id + "delete");
+    try {
+      await deleteDoc(doc(db, "users", userToDelete.id));
+      setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+    } catch (e) {
+      console.warn(e);
+    }
     setActionLoading(null);
   };
 
-  const clearGlobalBets = () => {
+  const clearGlobalBets = async () => {
     if (!confirm("Etes-vous sûr de vouloir purger l'historique global des paris ?")) return;
-    localStorage.removeItem("stake_global_bets_cache");
-    setGlobalBetsCount(0);
-    alert("Historique des paris purgé.");
+    try {
+      const betsSnap = await getDocs(collection(db, "bets"));
+      const batch = writeBatch(db);
+      betsSnap.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      setGlobalBetsCount(0);
+      alert("Historique des paris purgé.");
+    } catch (e) {
+      console.warn(e);
+    }
   };
 
-  const handleEditClick = (u: BinUser) => {
+  const handleEditClick = async (u: CustomUser) => {
     setEditingUser(u);
     setEditForm({
       balance: u.balance,
@@ -96,21 +107,17 @@ export function AdminPanel() {
       totalWon: u.totalWon || 0,
       role: u.role || 'user',
       status: u.status || 'pending',
-      password: u.password,
       rank: u.rank,
       permissions: u.permissions,
     });
     setSuspensionHours("");
     setEditTab("general");
     
+    // Fetch user bets from firestore
     try {
-      const betsStr = localStorage.getItem("stake_global_bets_cache");
-      if (betsStr) {
-        const bets = JSON.parse(betsStr);
-        setUserBets(bets.filter((b: any) => b.user === u.username));
-      } else {
-        setUserBets([]);
-      }
+      const betsSnap = await getDocs(collection(db, "bets"));
+      const betsUrl = betsSnap.docs.map(doc => doc.data()).filter(bet => bet.userId === u.id);
+      setUserBets(betsUrl);
     } catch(e) {
       setUserBets([]);
     }
@@ -121,13 +128,9 @@ export function AdminPanel() {
     if (!editingUser) return;
     
     setEditLoading(true);
-    await new Promise(r => setTimeout(r, 800)); // fake loader for UX
 
-    const data = await getBinData();
-    const index = data.users.findIndex(u => u.username === editingUser.username);
-    
-    if (index >= 0) {
-      const finalUpdates: Partial<BinUser> = { ...editForm };
+    try {
+      const finalUpdates: Partial<CustomUser> = { ...editForm };
       
       if (finalUpdates.status === 'suspended' && suspensionHours !== "") {
         finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionHours) * 3600 * 1000;
@@ -135,22 +138,23 @@ export function AdminPanel() {
         finalUpdates.suspensionEndsAt = undefined;
       }
       
-      data.users[index] = { ...data.users[index], ...finalUpdates };
-      await putBinData(data);
-      setUsers(data.users);
+      await updateDoc(doc(db, "users", editingUser.id), finalUpdates as any);
+      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...finalUpdates } : u));
+    } catch(e) {
+      console.warn(e);
     }
     
     setEditLoading(false);
     setEditingUser(null);
   };
 
-  if (user?.role !== "admin" || user?.username !== "AdminFDJS") {
+  if (user?.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="bg-[#0f212e] p-8 rounded-lg text-center border border-red-500/20 max-w-md w-full">
           <ShieldAlert size={48} className="mx-auto text-red-500 mb-4" />
           <h2 className="text-2xl font-bold text-red-500 mb-2">Accès Restreint</h2>
-          <p className="text-[#8b9ba5]">Vous n'avez pas les droits d'administration. Seul <strong className="text-white">AdminFDJS</strong> peut accéder à ce panel FDJS de haut niveau.</p>
+          <p className="text-[#8b9ba5]">Vous n'avez pas les droits d'administration.</p>
         </div>
       </div>
     );
@@ -181,7 +185,7 @@ export function AdminPanel() {
             <AlertTriangle size={16} />
             Purger Paris
           </button>
-          <button onClick={fetchUsers} className="flex items-center gap-2 bg-[#2f4553] text-white px-4 py-2 rounded font-bold hover:bg-[#3d5a6c] transition-colors">
+          <button onClick={() => fetchUsers(true)} className="flex items-center gap-2 bg-[#2f4553] text-white px-4 py-2 rounded font-bold hover:bg-[#3d5a6c] transition-colors">
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             Actualiser
           </button>
@@ -279,14 +283,19 @@ export function AdminPanel() {
                 </tr>
               ) : filteredUsers.map(u => {
                 const isOnline = u.lastOnline && (Date.now() - u.lastOnline < 5 * 60 * 1000);
+                const isSuperAdmin = u.email === "lafrancaise.desjeux@outlook.fr";
                 return (
-                <tr key={u.username} className="border-t border-[#2f4553] hover:bg-[#2f4553]/10 flex flex-col md:table-row relative group transition-colors">
+                <tr key={u.id} className="border-t border-[#2f4553] hover:bg-[#2f4553]/10 flex flex-col md:table-row relative group transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="w-8 h-8 bg-[#2f4553] rounded-full flex items-center justify-center uppercase font-bold text-sm">
-                          {u.username.substring(0, 2)}
-                        </div>
+                        {u.photoURL ? (
+                           <img src={u.photoURL} alt={u.username} className="w-8 h-8 rounded-full border border-gray-600" />
+                        ) : (
+                           <div className="w-8 h-8 bg-[#2f4553] rounded-full flex items-center justify-center uppercase font-bold text-sm">
+                             {u.username.substring(0, 2)}
+                           </div>
+                        )}
                         <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0f212e] ${isOnline ? 'bg-[#1bc86a]' : 'bg-[#8b9ba5]'}`} title={isOnline ? 'En ligne' : 'Hors ligne'} />
                       </div>
                       <div>
@@ -311,10 +320,10 @@ export function AdminPanel() {
                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
                          {u.role || 'user'}
                        </span>
-                       {u.username !== "AdminFDJS" && (
+                       {!isSuperAdmin && (
                          <button
-                           onClick={() => updateUser(u.username, { role: u.role === "admin" ? "user" : "admin" })}
-                           disabled={actionLoading?.startsWith(u.username)}
+                           onClick={() => updateUser(u.id, { role: u.role === "admin" ? "user" : "admin" })}
+                           disabled={actionLoading?.startsWith(u.id)}
                            className="text-[#8b9ba5] hover:text-white p-1 rounded hover:bg-[#2f4553] transition-colors"
                            title={u.role === "admin" ? "Rétrograder" : "Promouvoir"}
                          >
@@ -335,15 +344,15 @@ export function AdminPanel() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditClick(u)}
-                        disabled={actionLoading?.startsWith(u.username)}
+                        disabled={actionLoading?.startsWith(u.id)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-[#2f4553] text-white hover:bg-[#3d5a6c] rounded transition-colors text-xs font-bold"
                       >
                          <Edit3 size={14} /> Éditer
                       </button>
-                      {u.username !== "AdminFDJS" && (
+                      {!isSuperAdmin && (
                         <button
-                          onClick={() => deleteUser(u.username)}
-                          disabled={actionLoading?.startsWith(u.username)}
+                          onClick={() => deleteUser(u)}
+                          disabled={actionLoading?.startsWith(u.id)}
                           className="px-2 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded transition-colors"
                           title="Supprimer Utilisateur"
                         >
@@ -356,29 +365,29 @@ export function AdminPanel() {
                      <div className="flex gap-1.5 flex-wrap">
                       {u.status !== 'approved' && (
                         <button 
-                          onClick={() => updateUser(u.username, { status: "approved", suspensionEndsAt: undefined })} 
-                          disabled={actionLoading === u.username + "status"}
+                          onClick={() => updateUser(u.id, { status: "approved", suspensionEndsAt: undefined })} 
+                          disabled={actionLoading === u.id + "status"}
                           className="bg-[#1bc86a]/10 text-[#1bc86a] hover:bg-[#1bc86a]/20 border border-[#1bc86a]/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
                         >
-                          {actionLoading === u.username + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Approuver
+                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Approuver
                         </button>
                       )}
-                      {u.status !== 'suspended' && u.username !== "AdminFDJS" && (
+                      {u.status !== 'suspended' && !isSuperAdmin && (
                         <button 
-                          onClick={() => updateUser(u.username, { status: "suspended" })} 
-                          disabled={actionLoading === u.username + "status"}
+                          onClick={() => updateUser(u.id, { status: "suspended" })} 
+                          disabled={actionLoading === u.id + "status"}
                           className="bg-[#f6c722]/10 text-[#f6c722] hover:bg-[#f6c722]/20 border border-[#f6c722]/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
                         >
-                          {actionLoading === u.username + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Suspendre
+                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Suspendre
                         </button>
                       )}
-                      {u.status !== 'banned' && u.username !== "AdminFDJS" && (
+                      {u.status !== 'banned' && !isSuperAdmin && (
                         <button 
-                          onClick={() => updateUser(u.username, { status: "banned" })} 
-                          disabled={actionLoading === u.username + "status"}
+                          onClick={() => updateUser(u.id, { status: "banned" })} 
+                          disabled={actionLoading === u.id + "status"}
                           className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
                         >
-                          {actionLoading === u.username + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Bannir
+                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Bannir
                         </button>
                       )}
                     </div>
@@ -398,9 +407,13 @@ export function AdminPanel() {
             <div className="p-4 md:p-6 border-b border-[#2f4553] flex items-center justify-between bg-gradient-to-r from-[#2f4553]/40 to-transparent">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                   <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center uppercase font-bold text-xl border border-blue-500/30">
-                     {editingUser.username.substring(0, 2)}
-                   </div>
+                   {editingUser.photoURL ? (
+                      <img src={editingUser.photoURL} alt={editingUser.username} className="w-12 h-12 rounded-full border border-gray-600" />
+                   ) : (
+                      <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center uppercase font-bold text-xl border border-blue-500/30">
+                        {editingUser.username.substring(0, 2)}
+                      </div>
+                   )}
                    {editingUser.lastOnline && (Date.now() - editingUser.lastOnline < 5 * 60 * 1000) && (
                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#1bc86a] border-2 border-[#0f212e] rounded-full"></div>
                    )}
@@ -436,7 +449,6 @@ export function AdminPanel() {
             <div className="flex border-b border-[#2f4553] px-2 overflow-x-auto custom-scrollbar">
               <button onClick={() => setEditTab("general")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "general" ? "border-blue-500 text-blue-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Général</button>
               <button onClick={() => setEditTab("finances")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "finances" ? "border-amber-500 text-amber-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Finances</button>
-              <button onClick={() => setEditTab("security")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "security" ? "border-red-500 text-red-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Sécurité & Accès</button>
               <button onClick={() => setEditTab("permissions")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "permissions" ? "border-green-500 text-green-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Droits</button>
               <button onClick={() => setEditTab("history")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${editTab === "history" ? "border-purple-500 text-purple-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>
                 Historique <span className="bg-[#2f4553] text-[#8b9ba5] px-1.5 py-0.5 rounded text-[10px]">{userBets.length}</span>
@@ -454,11 +466,11 @@ export function AdminPanel() {
                         <select 
                           value={editForm.role}
                           onChange={e => setEditForm({...editForm, role: e.target.value as "admin"|"user"})}
-                          disabled={editingUser.username === "AdminFDJS"}
+                          disabled={editingUser.email === "lafrancaise.desjeux@outlook.fr"}
                           className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:opacity-50 transition-all"
                         >
                           <option value="user">Utilisateur Standard</option>
-                          <option value="admin">Administrateur (FDJS)</option>
+                          <option value="admin">Administrateur</option>
                         </select>
                       </div>
                       <div className="flex flex-col gap-2">
@@ -467,7 +479,7 @@ export function AdminPanel() {
                           <select 
                             value={editForm.status}
                             onChange={e => setEditForm({...editForm, status: e.target.value as "pending"|"approved"|"suspended"|"banned"})}
-                            disabled={editingUser.username === "AdminFDJS"}
+                            disabled={editingUser.email === "lafrancaise.desjeux@outlook.fr"}
                             className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:opacity-50 transition-all w-full appearance-none pr-10"
                           >
                             <option value="approved">✅ Actif / Approuvé</option>
@@ -493,14 +505,11 @@ export function AdminPanel() {
                           <option value="Gold">Or (Gold)</option>
                           <option value="Platinum">Platine (Platinum)</option>
                           <option value="Diamond">Diamant (Diamond)</option>
-                          <option value="Champion">Champion</option>
-                          <option value="Grand Champion">Grand Champion</option>
-                          <option value="Supersonic Legend">Supersonic Legend</option>
                         </select>
                       </div>
                     </div>
 
-                    {editForm.status === "suspended" && editingUser.username !== "AdminFDJS" && (
+                    {editForm.status === "suspended" && editingUser.email !== "lafrancaise.desjeux@outlook.fr" && (
                       <div className="flex flex-col gap-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-in zoom-in-95 duration-200">
                         <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
                           <ShieldAlert size={16} /> Durée de suspension (Heures)
@@ -574,45 +583,6 @@ export function AdminPanel() {
                           />
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {editTab === "security" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex flex-col gap-2 p-4 bg-[#2f4553]/50 rounded-xl border border-[#2f4553]">
-                      <label className="text-sm font-bold text-white flex items-center gap-2">
-                        <Key size={16} className="text-blue-500"/> Modifier le mot de passe
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder="Nouveau mot de passe... (Laisser vide pour garder l'actuel)"
-                        value={editForm.password ?? ''} 
-                        onChange={e => setEditForm({...editForm, password: e.target.value})}
-                        className="bg-[#0f212e] text-white font-mono p-3 rounded-lg border border-[#2f4553] focus:border-blue-500 outline-none w-full"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-col gap-4 p-4 border border-red-500/20 bg-red-500/5 rounded-xl">
-                       <h3 className="text-red-500 font-bold flex items-center gap-2">
-                         <AlertTriangle size={18} /> Actions Rapides
-                       </h3>
-                       <div className="flex flex-wrap gap-3">
-                         <button 
-                           type="button"
-                           onClick={() => setEditForm({...editForm, balance: 0, vault: 0})}
-                           className="bg-red-500/20 text-red-500 border border-red-500/30 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-500/30 transition-colors"
-                         >
-                           Ruin (0$)
-                         </button>
-                         <button 
-                           type="button"
-                           onClick={() => setEditForm({...editForm, totalWagered: 0, totalWon: 0})}
-                           className="bg-amber-500/20 text-amber-500 border border-amber-500/30 px-4 py-2 rounded-lg font-bold text-sm hover:bg-amber-500/30 transition-colors"
-                         >
-                           Reset Statistiques
-                         </button>
-                       </div>
                     </div>
                   </div>
                 )}
@@ -722,72 +692,6 @@ export function AdminPanel() {
                           ))}
                         </div>
                       </div>
-
-                      {/* Machines à sous / Slots */}
-                      <div className="mb-2 mt-4">
-                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Machines à sous</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {[
-                            { id: "slots-game", name: "Slots" },
-                            { id: "tome-of-life", name: "Tome of Life" }
-                          ].map(game => (
-                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="w-4 h-4 accent-green-500 rounded"
-                                checked={!editForm.permissions?.blockedGames?.[game.id]}
-                                onChange={e => {
-                                  const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
-                                  if (e.target.checked) {
-                                    delete newBlockedGames[game.id];
-                                  } else {
-                                    newBlockedGames[game.id] = true;
-                                  }
-                                  setEditForm({
-                                    ...editForm,
-                                    permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
-                                  });
-                                }}
-                              />
-                              <span>{game.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Mini-jeux / Autres */}
-                      <div className="mt-4">
-                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Mini-jeux / Autres</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {[
-                            { id: "chicken", name: "Chicken" },
-                            { id: "dragon-tower", name: "Dragon Tower" },
-                            { id: "flip", name: "Flip" },
-                            { id: "moles", name: "Moles" }
-                          ].map(game => (
-                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="w-4 h-4 accent-green-500 rounded"
-                                checked={!editForm.permissions?.blockedGames?.[game.id]}
-                                onChange={e => {
-                                  const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
-                                  if (e.target.checked) {
-                                    delete newBlockedGames[game.id];
-                                  } else {
-                                    newBlockedGames[game.id] = true;
-                                  }
-                                  setEditForm({
-                                    ...editForm,
-                                    permissions: { ...(editForm.permissions || {}), blockedGames: newBlockedGames }
-                                  });
-                                }}
-                              />
-                              <span>{game.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -813,10 +717,10 @@ export function AdminPanel() {
                             {userBets.slice(0, 15).map((bet, i) => (
                               <tr key={i} className="border-t border-[#2f4553] hover:bg-[#2f4553]/20">
                                 <td className="p-3 text-white">{bet.game}</td>
-                                <td className="p-3 text-[#8b9ba5]">{bet.wagered?.toFixed(2)}$</td>
+                                <td className="p-3 text-[#8b9ba5]">{bet.betAmount?.toFixed(2)}$</td>
                                 <td className="p-3 text-[#8b9ba5]">{bet.multiplier?.toFixed(2)}x</td>
-                                <td className={`p-3 font-bold ${bet.profit > 0 ? "text-[#1bc86a]" : "text-rose-500"}`}>
-                                  {bet.profit > 0 ? "+" : ""}{bet.profit?.toFixed(2)}$
+                                <td className={`p-3 font-bold ${bet.payout - bet.betAmount > 0 ? "text-[#1bc86a]" : "text-rose-500"}`}>
+                                  {bet.payout - bet.betAmount > 0 ? "+" : ""}{(bet.payout - bet.betAmount)?.toFixed(2)}$
                                 </td>
                               </tr>
                             ))}
@@ -868,4 +772,3 @@ export function AdminPanel() {
     </div>
   );
 }
-

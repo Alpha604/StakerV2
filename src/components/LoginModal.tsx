@@ -1,34 +1,26 @@
 import React, { useState } from "react";
 import { useUser } from "../context/UserContext";
-import { X, User, Lock, ArrowRight, ShieldCheck } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function LoginModal({ onClose }: { onClose: () => void }) {
-  const { login } = useUser();
-  const [isRegister, setIsRegister] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const { loginWithGoogle } = useUser();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      const success = await login(username, password, isRegister);
+      const success = await loginWithGoogle();
       if (success) {
         onClose();
       } else {
-        setError(
-          isRegister
-            ? "Ce nom d'utilisateur est déjà pris"
-            : "Identifiants incorrects. Veuillez réessayer.",
-        );
+        setError("Erreur de connexion. Veuillez réessayer.");
       }
-    } catch (err) {
-      setError("Une erreur est survenue.");
+    } catch (err: any) {
+      setError(err.message || "Une erreur est survenue.");
     } finally {
       setIsLoading(false);
     }
@@ -48,135 +40,52 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-bg-panel border border-border-medium rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative z-10 flex flex-col"
+        className="bg-bg-panel border border-border-medium rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative z-10 flex flex-col p-6"
       >
-        <div className="flex justify-between items-center p-6 border-b border-border-medium bg-bg-base/50 relative">
-          {/* Active Tab Indicator */}
-          <div className="absolute bottom-0 left-6 right-16 flex gap-4">
-            <div className="w-1/2 flex justify-center pb-2 relative">
-               <div className={`absolute -bottom-px w-full h-0.5 transition-colors duration-300 ${!isRegister ? 'bg-accent' : 'bg-transparent'}`} />
-            </div>
-            <div className="w-1/2 flex justify-center pb-2 relative">
-               <div className={`absolute -bottom-px w-full h-0.5 transition-colors duration-300 ${isRegister ? 'bg-accent' : 'bg-transparent'}`} />
-            </div>
-          </div>
-          <div className="flex gap-4 w-full">
-            <button
-              onClick={() => {
-                setIsRegister(false);
-                setError("");
-              }}
-              className={`flex-1 font-bold transition-colors pb-2 ${!isRegister ? "text-white" : "text-text-secondary hover:text-white"}`}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-text-secondary hover:text-white transition-colors bg-bg-inner hover:bg-border-subtle p-1 rounded-full"
+        >
+          <X size={20} />
+        </button>
+
+        <h2 className="text-xl font-bold mb-6 text-center mt-2">Connectez-vous</h2>
+
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              key="error-message"
+              initial={{ opacity: 0, height: 0, marginTop: -10 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-red-500/10 text-red-400 border border-red-500/20 p-3 rounded-lg text-sm flex items-center mb-4 gap-2"
             >
-              Connexion
-            </button>
-            <button
-              onClick={() => {
-                setIsRegister(true);
-                setError("");
-              }}
-              className={`flex-1 font-bold transition-colors pb-2 ${isRegister ? "text-white" : "text-text-secondary hover:text-white"}`}
-            >
-              Créer un compte
-            </button>
-          </div>
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-text-secondary hover:text-white transition-colors bg-bg-inner hover:bg-border-subtle p-1 rounded-full"
-          >
-            <X size={20} />
-          </button>
-        </div>
+              <X size={16} className="shrink-0" /> <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-6">
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                key="error-message"
-                initial={{ opacity: 0, height: 0, marginTop: -10 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 0 }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-red-500/10 text-red-400 border border-red-500/20 p-3 rounded-lg text-sm flex items-center gap-2"
-              >
-                <X size={16} className="shrink-0" /> <span>{error}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-            <div className="flex flex-col gap-6">
-              <div className="form-control">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-                <label>
-                  {"Nom d'utilisateur".split("").map((char, index) => (
-                    <span key={index} style={{ transitionDelay: `${index * 30}ms` }}>
-                      {char === " " ? "\u00A0" : char}
-                    </span>
-                  ))}
-                </label>
-              </div>
-
-              <div className="form-control">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <label>
-                  {"Mot de passe".split("").map((char, index) => (
-                    <span key={index} style={{ transitionDelay: `${index * 30}ms` }}>
-                      {char === " " ? "\u00A0" : char}
-                    </span>
-                  ))}
-                </label>
-              </div>
-              {!isRegister && (
-                <button
-                  type="button"
-                  className="text-xs text-text-secondary hover:text-white mt-1 self-end transition-colors"
-                >
-                  Mot de passe oublié ?
-                </button>
-              )}
-
-              {isRegister && (
-                <div className="flex items-start gap-2 bg-accent/10 border border-accent/20 p-3 rounded-lg">
-                  <ShieldCheck
-                    size={18}
-                    className="text-accent shrink-0 mt-0.5"
-                  />
-                  <p className="text-xs text-text-secondary">
-                    En créant un compte, vous acceptez nos conditions
-                    d'utilisations. Votre progression sera sauvegardée via votre
-                    navigateur.
-                  </p>
-                </div>
-              )}
+        <button
+          onClick={handleLogin}
+          disabled={isLoading}
+          className="connexion-btn w-full relative disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3 bg-white text-black hover:bg-gray-100 rounded-lg py-3 font-semibold transition-all"
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
             </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || username.length < 1}
-            className="connexion-btn w-full mt-2 relative disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ width: '100%', height: '3.5em' }}
-          >
-            {isLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center gap-2">
-                {isRegister ? "S'inscrire & Jouer" : "Se Connecter"}
-                <ArrowRight size={20} className="relative top-[1px]" />
-              </span>
-            )}
-          </button>
-        </form>
+          ) : (
+             <>
+              <svg width="18" height="18" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"></path>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"></path>
+                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"></path>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"></path>
+              </svg>
+              <span>Continuer avec Google</span>
+             </>
+          )}
+        </button>
       </motion.div>
     </div>
   );

@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { getBinData, BinUser } from "../lib/jsonbin";
 import { Trophy, X, Medal } from "lucide-react";
 import { cn, formatCurrency } from "../lib/utils";
+import { db } from "../lib/firebase";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { CustomUser } from "../context/UserContext";
 
 export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; isPage?: boolean }) {
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<BinUser[]>([]);
+  const [users, setUsers] = useState<CustomUser[]>([]);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const data = await getBinData();
-        let binUsers = data.users || [];
-
+        const usersRef = collection(db, "users");
         // Sort descending by balance, take up to 50
-        binUsers.sort((a, b) => (b.balance || 0) - (a.balance || 0));
-        setUsers(binUsers.slice(0, 50));
+        const q = query(usersRef, orderBy("balance", "desc"), limit(50));
+        const querySnapshot = await getDocs(q);
+        const fetchedUsers = querySnapshot.docs.map(doc => doc.data() as CustomUser);
+        setUsers(fetchedUsers);
       } catch (err) {
         console.warn(err);
       } finally {
@@ -68,7 +70,7 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
             <div className="flex flex-col gap-2">
               {users.map((u, i) => (
                 <div
-                  key={u.username}
+                  key={u.id}
                   className="flex items-center justify-between bg-bg-inner border border-border-medium rounded-xl p-3 shadow-inner hover:border-border-subtle transition-colors"
                 >
                   <div className="flex items-center gap-4">
@@ -84,7 +86,11 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
                       )}
                     </div>
                     <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold overflow-hidden border border-border-medium shadow shrink-0">
-                      {u.username?.charAt(0).toUpperCase() || "U"}
+                      {u.photoURL ? (
+                        <img src={u.photoURL} alt={u.username} className="w-full h-full object-cover" />
+                      ) : (
+                        u.username?.charAt(0).toUpperCase() || "U"
+                      )}
                     </div>
                     <div className="flex flex-col">
                       <span className="font-bold text-white text-sm">
