@@ -69,7 +69,8 @@ export function Wheel() {
       return;
     }
     
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsSpinning(true);
     setWinInfo(null);
 

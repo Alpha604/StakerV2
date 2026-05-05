@@ -63,9 +63,10 @@ export function Baccarat() {
     return cards.reduce((acc, c) => acc + c.value, 0) % 10;
   };
 
-  const startGame = () => {
+  const startGame = async () => {
     if (!user || balance < betAmount) return;
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsPlaying(true);
     setWinInfo(null);
     setPlayerCards([]);

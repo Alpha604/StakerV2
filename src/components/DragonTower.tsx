@@ -60,12 +60,13 @@ export function DragonTower() {
   const [dragons, setDragons] = useState<number[][]>([]);
   const [currentRow, setCurrentRow] = useState(0); // 0 is bottom, 8 is top
 
-  const startGame = () => {
+  const startGame = async () => {
     if (!user || balance < betAmount) {
       alert("Connectez-vous et créditez votre compte pour jouer.");
       return;
     }
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsPlaying(true);
     setWinInfo(null);
 

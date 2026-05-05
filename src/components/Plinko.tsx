@@ -52,10 +52,11 @@ export function Plinko() {
 
   const MULTIPLIERS = getMultipliers(rows, risk);
 
-  const handleDrop = () => {
+  const handleDrop = async () => {
     if (!user || balance < betAmount) return;
 
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setWinInfo(null);
     playTick();
 

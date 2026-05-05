@@ -31,9 +31,10 @@ export function TomeOfLife() {
     line?: number;
   } | null>(null);
 
-  const spin = () => {
+  const spin = async () => {
     if (!user || balance < betAmount) return;
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsPlaying(true);
     setWinInfo(null);
 

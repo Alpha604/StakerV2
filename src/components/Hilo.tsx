@@ -73,9 +73,10 @@ export function Hilo() {
     calculateOdds(currentCard.value);
   }, [currentCard]);
 
-  const startGame = () => {
+  const startGame = async () => {
     if (!user || balance < betAmount) return;
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsPlaying(true);
     setWinInfo(null);
     const firstCard = getRandomCard();

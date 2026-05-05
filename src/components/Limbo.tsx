@@ -56,10 +56,11 @@ export function Limbo() {
     return Math.max(1.0, result);
   };
 
-  const handleBet = () => {
+  const handleBet = async () => {
     if (!user || balance < betAmount) return; // Add auth handler
 
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsRolling(true);
     setLastWin(null);
     setResultMultiplier(1.0); // Reset visual

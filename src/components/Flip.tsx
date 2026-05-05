@@ -21,9 +21,10 @@ export function Flip() {
   const multiplier = 1.98;
   const potentialWin = betAmount * multiplier;
 
-  const handleBet = () => {
+  const handleBet = async () => {
     if (!user || balance < betAmount) return;
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsPlaying(true);
     setIsFlipping(true);
     setCoinSide(null);

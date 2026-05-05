@@ -51,12 +51,13 @@ export function Crash() {
     return Math.max(1.0, result);
   };
 
-  const handleBet = () => {
+  const handleBet = async () => {
     if (!user || balance < betAmount) {
       alert("Connectez-vous et créditez votre compte pour jouer.");
       return;
     }
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setHasBet(true);
     setCashedOut(false);
     stateRef.current.hasBet = true;

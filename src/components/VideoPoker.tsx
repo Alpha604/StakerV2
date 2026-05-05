@@ -55,9 +55,10 @@ export function VideoPoker() {
     };
   };
 
-  const dealInitial = () => {
+  const dealInitial = async () => {
     if (!user || balance < betAmount) return;
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setWinInfo(null);
     setHeldCards([false, false, false, false, false]);
 

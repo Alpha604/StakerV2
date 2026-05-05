@@ -21,7 +21,7 @@ export function Moles() {
 
   const start = async () => {
     if (!user || balance < betAmount || betAmount <= 0) return;
-    const success = subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
     if (!success) return;
     playTick();
 

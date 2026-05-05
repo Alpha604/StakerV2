@@ -20,9 +20,10 @@ export function Slide() {
   const controls = useAnimation();
   const animationRef = useRef<number>();
 
-  const startGame = () => {
+  const startGame = async () => {
     if (!user || balance < betAmount) return;
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsPlaying(true);
     setCrashPoint(null);
     setCurrentMulti(1.0);

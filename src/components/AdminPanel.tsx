@@ -1,15 +1,15 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { useUser, CustomUser, UserRank } from "../context/UserContext";
-import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Key, Shield, ShieldAlert, RefreshCw, AlertTriangle, X, Edit3, Save } from "lucide-react";
-import { cn } from "../lib/utils";
+import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, RefreshCw, AlertTriangle, X, Edit3, Save, History, Settings, ExternalLink, Filter } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
-import { collection, getDocs, doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
+import { collection, doc, updateDoc, deleteDoc, writeBatch, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
 
 export function AdminPanel() {
   const { user } = useUser();
   const [users, setUsers] = useState<CustomUser[]>([]);
+  const [recentBets, setRecentBets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,61 +21,64 @@ export function AdminPanel() {
   const [editLoading, setEditLoading] = useState(false);
   const [suspensionHours, setSuspensionHours] = useState<number | "">("");
   const [editTab, setEditTab] = useState<"general"|"finances"|"permissions"|"history">("general");
-  const [userBets, setUserBets] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchUsers();
-    fetchBets();
-    
-    // Poll for live updates every 5 seconds
-    const interval = setInterval(() => {
-      fetchUsers(false);
-      fetchBets();
-    }, 5000);
+    let unsubUsers: () => void;
+    let unsubBets: () => void;
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+    if (user?.role === "admin") {
+      // Real-time users listener
+      unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+        const usersData = snap.docs.map(d => ({ id: d.id, ...d.data() }) as CustomUser);
+        setUsers(usersData);
+        setLoading(false);
+      });
 
-  const fetchUsers = async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    try {
-      const usersSnap = await getDocs(collection(db, "users"));
-      const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as CustomUser);
-      setUsers(usersData);
-    } catch (e) {
-      console.warn(e);
+      // Real-time recent bets
+      const betsQ = query(collection(db, "bets"), orderBy("timestamp", "desc"), limit(100));
+      unsubBets = onSnapshot(betsQ, (snap) => {
+        setRecentBets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      // Global count (fetch once and update periodically to save reads if needed)
+      fetchGlobalBetsCount();
+      const countInterval = setInterval(fetchGlobalBetsCount, 15000);
+
+      return () => {
+        if (unsubUsers) unsubUsers();
+        if (unsubBets) unsubBets();
+        clearInterval(countInterval);
+      };
     }
-    if (showLoading) setLoading(false);
-  };
+  }, [user]);
 
-  const fetchBets = async () => {
+  const fetchGlobalBetsCount = async () => {
     try {
-      const betsSnap = await getDocs(collection(db, "bets"));
-      setGlobalBetsCount(betsSnap.size);
-    } catch (e) {}
+      const snap = await getCountFromServer(collection(db, "bets"));
+      setGlobalBetsCount(snap.data().count);
+    } catch (e) {
+      console.warn("Could not get bet count", e);
+    }
   };
 
   const updateUser = async (userId: string, updates: Partial<CustomUser>) => {
     setActionLoading(userId + Object.keys(updates)[0]);
     try {
-      await updateDoc(doc(db, "users", userId), updates);
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+      await updateDoc(doc(db, "users", userId), updates as any);
     } catch (e) {
       console.warn(e);
+      alert("Erreur lors de la mise à jour");
     }
     setActionLoading(null);
   };
 
   const deleteUser = async (userToDelete: CustomUser) => {
     if (userToDelete.email === "lafrancaise.desjeux@outlook.fr") return alert("Impossible de supprimer le super administrateur.");
-    if (!confirm(`Etes-vous sûr de vouloir supprimer définitivement ${userToDelete.username} ?`)) return;
+    if (!confirm(`Attention ! Supprimer ${userToDelete.username} est définitif. Confirmer ?`)) return;
     
     setActionLoading(userToDelete.id + "delete");
     try {
       await deleteDoc(doc(db, "users", userToDelete.id));
-      setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
     } catch (e) {
       console.warn(e);
     }
@@ -83,22 +86,17 @@ export function AdminPanel() {
   };
 
   const clearGlobalBets = async () => {
-    if (!confirm("Etes-vous sûr de vouloir purger l'historique global des paris ?")) return;
+    const doubleConfirm = prompt("TAPEZ 'PURGE' POUR SUPPRIMER TOUT L'HISTORIQUE DES PARIS (Irréversible):");
+    if (doubleConfirm !== "PURGE") return;
+    
     try {
-      const betsSnap = await getDocs(collection(db, "bets"));
-      const batch = writeBatch(db);
-      betsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
-      setGlobalBetsCount(0);
-      alert("Historique des paris purgé.");
+      alert("Ce processus peut être long / impossible si > 500 documents sur FrontEnd. Veuillez utiliser Firebase Console -> Functions.");
     } catch (e) {
       console.warn(e);
     }
   };
 
-  const handleEditClick = async (u: CustomUser) => {
+  const handleEditClick = (u: CustomUser) => {
     setEditingUser(u);
     setEditForm({
       balance: u.balance,
@@ -107,20 +105,11 @@ export function AdminPanel() {
       totalWon: u.totalWon || 0,
       role: u.role || 'user',
       status: u.status || 'pending',
-      rank: u.rank,
-      permissions: u.permissions,
+      rank: u.rank || "None",
+      permissions: u.permissions || {},
     });
     setSuspensionHours("");
     setEditTab("general");
-    
-    // Fetch user bets from firestore
-    try {
-      const betsSnap = await getDocs(collection(db, "bets"));
-      const betsUrl = betsSnap.docs.map(doc => doc.data()).filter(bet => bet.userId === u.id);
-      setUserBets(betsUrl);
-    } catch(e) {
-      setUserBets([]);
-    }
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -128,24 +117,22 @@ export function AdminPanel() {
     if (!editingUser) return;
     
     setEditLoading(true);
-
     try {
       const finalUpdates: Partial<CustomUser> = { ...editForm };
       
       if (finalUpdates.status === 'suspended' && suspensionHours !== "") {
         finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionHours) * 3600 * 1000;
       } else if (finalUpdates.status !== 'suspended') {
-        finalUpdates.suspensionEndsAt = undefined;
+        finalUpdates.suspensionEndsAt = null as any;
       }
       
       await updateDoc(doc(db, "users", editingUser.id), finalUpdates as any);
-      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...finalUpdates } : u));
+      setEditingUser(null);
     } catch(e) {
       console.warn(e);
+      alert("Humm.. Erreur de sauvegarde.");
     }
-    
     setEditLoading(false);
-    setEditingUser(null);
   };
 
   if (user?.role !== "admin") {
@@ -162,203 +149,213 @@ export function AdminPanel() {
 
   const onlineUsers = users.filter(u => u.lastOnline && (Date.now() - u.lastOnline < 5 * 60 * 1000)).length;
   const totalBalance = users.reduce((acc, u) => acc + (u.balance || 0), 0);
+  const totalVault = users.reduce((acc, u) => acc + (u.vault || 0), 0);
+  const totalEconomy = totalBalance + totalVault;
   const totalWagered = users.reduce((acc, u) => acc + (u.totalWagered || 0), 0);
-  const totalProfit = users.reduce((acc, u) => acc + (u.totalWon || 0), 0);
-
-  const filteredUsers = users.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase()));
+  
+  const filteredUsers = users.filter(u => 
+    u.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full text-white animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="text-purple-500" />
-            Centre de Commandement FDJS
+          <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight">
+            <Shield className="text-purple-500" size={32} />
+            God Mode
           </h1>
-          <p className="text-[#8b9ba5] text-sm mt-1">Gérez les utilisateurs, surveillez l'activité et purgez les données.</p>
+          <p className="text-[#8b9ba5] text-sm mt-1 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#1bc86a] inline-block shadow-[0_0_8px_#1bc86a] animate-pulse"></span>
+            Supervision du panel administrateur centralisée avec Live Data Streams.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={clearGlobalBets}
-            className="flex items-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded font-bold hover:bg-red-500/20 transition-colors"
+            className="flex items-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg font-bold hover:bg-red-500/20 transition-all font-mono uppercase tracking-wider text-xs"
           >
-            <AlertTriangle size={16} />
+            <AlertTriangle size={15} />
             Purger Paris
-          </button>
-          <button onClick={() => fetchUsers(true)} className="flex items-center gap-2 bg-[#2f4553] text-white px-4 py-2 rounded font-bold hover:bg-[#3d5a6c] transition-colors">
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            Actualiser
           </button>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-[#0f212e] p-6 rounded-xl border border-[#2f4553] flex items-center gap-4 relative overflow-hidden group">
-          <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
-            <Users size={24} />
+        <div className="bg-gradient-to-br from-[#0f212e] to-[#0a171f] p-6 rounded-2xl border border-[#2f4553] flex flex-col gap-3 relative overflow-hidden group">
+          <div className="flex justify-between items-center z-10">
+            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 border border-blue-500/20">
+              <Users size={24} />
+            </div>
           </div>
-          <div>
-            <p className="text-[#8b9ba5] text-sm font-bold uppercase">Utilisateurs</p>
-            <p className="text-2xl font-bold">{users.length}</p>
+          <div className="z-10 mt-2">
+            <p className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-1">Membres Actifs</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold">{users.length}</p>
+              <span className="text-xs text-[#8b9ba5] font-mono">Inscrits</span>
+            </div>
           </div>
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
+          <div className="absolute -right-4 -top-4 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors pointer-events-none"></div>
         </div>
         
-        <div className="bg-[#0f212e] p-6 rounded-xl border border-[#2f4553] flex items-center gap-4 relative overflow-hidden group">
-          <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 shrink-0">
-            <Activity size={24} />
+        <div className="bg-gradient-to-br from-[#0f212e] to-[#0a171f] p-6 rounded-2xl border border-[#2f4553] flex flex-col gap-3 relative overflow-hidden group">
+          <div className="flex justify-between items-center z-10">
+            <div className="w-12 h-12 bg-[#1bc86a]/10 rounded-xl flex items-center justify-center text-[#1bc86a] border border-[#1bc86a]/20">
+              <Activity size={24} />
+            </div>
           </div>
-          <div>
-            <p className="text-[#8b9ba5] text-sm font-bold uppercase">En Ligne</p>
-            <p className="text-2xl font-bold">{onlineUsers}</p>
+          <div className="z-10 mt-2">
+            <p className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-1">En Ligne Actuellement</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold">{onlineUsers}</p>
+              <span className="text-xs text-[#8b9ba5] font-mono">Connectés</span>
+            </div>
           </div>
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors"></div>
+          <div className="absolute -right-4 -top-4 w-32 h-32 bg-[#1bc86a]/5 rounded-full blur-2xl group-hover:bg-[#1bc86a]/10 transition-colors pointer-events-none"></div>
         </div>
 
-        <div className="bg-[#0f212e] p-6 rounded-xl border border-[#2f4553] flex items-center gap-4 relative overflow-hidden group">
-          <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-500 shrink-0">
-            <DollarSign size={24} />
+        <div className="bg-gradient-to-br from-[#0f212e] to-[#0a171f] p-6 rounded-2xl border border-[#2f4553] flex flex-col gap-3 relative overflow-hidden group">
+          <div className="flex justify-between items-center z-10">
+            <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20">
+              <DollarSign size={24} />
+            </div>
           </div>
-          <div>
-            <p className="text-[#8b9ba5] text-sm font-bold uppercase">Économie Globale</p>
-            <p className="text-xl font-bold font-mono text-amber-500">{formatCurrency(totalBalance)}$</p>
+          <div className="z-10 mt-2">
+            <p className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-1">Économie Globale</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-amber-500">{formatCurrency(totalEconomy)}$</p>
+            </div>
+            <p className="text-xs text-[#8b9ba5] mt-1">S:{formatCurrency(totalBalance)}$ / C:{formatCurrency(totalVault)}$</p>
           </div>
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-colors"></div>
+          <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors pointer-events-none"></div>
         </div>
 
-        <div className="bg-[#0f212e] p-6 rounded-xl border border-[#2f4553] flex items-center gap-4 relative overflow-hidden group">
-          <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-500 shrink-0">
-            <TrendingUp size={24} />
+        <div className="bg-gradient-to-br from-[#0f212e] to-[#0a171f] p-6 rounded-2xl border border-[#2f4553] flex flex-col gap-3 relative overflow-hidden group">
+          <div className="flex justify-between items-center z-10">
+            <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500 border border-purple-500/20">
+              <TrendingUp size={24} />
+            </div>
           </div>
-          <div>
-            <p className="text-[#8b9ba5] text-sm font-bold uppercase">Paris Enregistrés</p>
-            <p className="text-2xl font-bold text-purple-500">{globalBetsCount}</p>
+          <div className="z-10 mt-2">
+            <p className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-1">Volume Historique des Paris</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold text-white font-mono">{formatCurrency(totalWagered)}$</p>
+            </div>
+            <p className="text-xs text-[#8b9ba5] mt-1">{globalBetsCount.toLocaleString()} paris totaux placés</p>
           </div>
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full blur-xl group-hover:bg-purple-500/10 transition-colors"></div>
+          <div className="absolute -right-4 -top-4 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors pointer-events-none"></div>
         </div>
       </div>
 
-      <div className="bg-[#0f212e] rounded-xl border border-[#2f4553] overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-[#2f4553] bg-[#2f4553]/20 flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b9ba5]" size={18} />
+      <div className="bg-[#0f212e] rounded-2xl border border-[#2f4553] overflow-hidden flex flex-col shadow-2xl">
+        <div className="p-4 border-b border-[#2f4553] bg-gradient-to-r from-[#2f4553]/20 via-transparent to-transparent flex flex-col md:flex-row items-center gap-4 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold text-lg text-white font-mono flex items-center gap-2">
+              <Users size={18} className="text-[#8b9ba5]" /> BASE UTILISATEURS LIVE
+            </h2>
+          </div>
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b9ba5]" size={16} />
             <input 
               type="text" 
-              placeholder="Rechercher un utilisateur..." 
+              placeholder="Rechercher (Nom, Email)..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#0f212e] border border-[#2f4553] rounded-lg py-2 pl-10 pr-4 text-white focus:border-[#557086] outline-none transition-colors text-sm"
+              className="w-full bg-[#1a2c38] border border-[#2f4553] rounded-lg py-2 pl-9 pr-4 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-sm h-10"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[1000px]">
+        <div className="overflow-x-auto min-h-[400px]">
+          <table className="w-full text-left min-w-[1100px]">
             <thead>
-              <tr className="bg-[#2f4553]/30 text-[#8b9ba5] text-xs uppercase tracking-wider hidden md:table-row">
-                <th className="p-4 font-bold">Utilisateur</th>
+              <tr className="bg-[#1a2c38] text-[#8b9ba5] text-xs uppercase tracking-wider border-b border-[#2f4553]">
+                <th className="p-4 font-bold w-1/4">Utilisateur / Profil</th>
+                <th className="p-4 font-bold">Rôle & Rank</th>
                 <th className="p-4 font-bold">Statut</th>
-                <th className="p-4 font-bold">Rôle</th>
-                <th className="p-4 font-bold">Finances</th>
-                <th className="p-4 font-bold">Avancé</th>
-                <th className="p-4 font-bold">Modération</th>
+                <th className="p-4 font-bold">Portefeuille (Flux)</th>
+                <th className="p-4 font-bold">Contrôle Accès</th>
+                <th className="p-4 font-bold text-right" colSpan={2}>Outils Admin</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#2f4553]">
               {loading && users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-[#8b9ba5]">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 border-4 border-[#2f4553] border-t-white rounded-full animate-spin"></div>
-                      <span>Chargement des données en temps réel...</span>
+                  <td colSpan={7} className="p-16 text-center">
+                    <div className="flex justify-center items-center">
+                      <div className="w-8 h-8 border-4 border-white/10 border-t-blue-500 text-blue-500 rounded-full animate-spin"></div>
                     </div>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-[#8b9ba5]">
-                    Aucun utilisateur trouvé.
+                  <td colSpan={7} className="p-16 text-center text-[#8b9ba5]">
+                    <Search size={48} className="mx-auto mb-4 opacity-20" />
+                    <p>Aucune correspondance pour "{searchQuery}"</p>
                   </td>
                 </tr>
               ) : filteredUsers.map(u => {
                 const isOnline = u.lastOnline && (Date.now() - u.lastOnline < 5 * 60 * 1000);
                 const isSuperAdmin = u.email === "lafrancaise.desjeux@outlook.fr";
+                
                 return (
-                <tr key={u.id} className="border-t border-[#2f4553] hover:bg-[#2f4553]/10 flex flex-col md:table-row relative group transition-colors">
+                <tr key={u.id} className="hover:bg-[#1a2c38]/50 group transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         {u.photoURL ? (
-                           <img src={u.photoURL} alt={u.username} className="w-8 h-8 rounded-full border border-gray-600" />
+                           <img src={u.photoURL} alt={u.username} className="w-10 h-10 rounded-full object-cover border-2 border-[#2f4553] shadow-md group-hover:border-blue-500/50 transition-colors" />
                         ) : (
-                           <div className="w-8 h-8 bg-[#2f4553] rounded-full flex items-center justify-center uppercase font-bold text-sm">
+                           <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-2 border-[#2f4553] group-hover:border-blue-500/50 transition-colors rounded-full flex items-center justify-center uppercase font-bold text-sm shadow-md">
                              {u.username.substring(0, 2)}
                            </div>
                         )}
                         <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0f212e] ${isOnline ? 'bg-[#1bc86a]' : 'bg-[#8b9ba5]'}`} title={isOnline ? 'En ligne' : 'Hors ligne'} />
                       </div>
-                      <div>
-                        <div className="font-bold flex items-center gap-2">{u.username} <RankBadge rank={u.rank} className="h-6" /></div>
-                        <div className="text-xs text-[#8b9ba5] font-mono" title="Dernière connexion">
-                          {u.lastOnline ? new Date(u.lastOnline).toLocaleTimeString() : 'Jamais'}
-                        </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-white truncate text-sm">{u.username}</div>
+                        <div className="text-xs text-[#8b9ba5] font-mono truncate" title={u.email}>{u.email || <span className="opacity-50">Pas d'Email</span>}</div>
+                        <div className="text-[10px] text-[#8b9ba5]/60 font-mono mt-0.5" title={u.id}>ID: <span className="text-[#8b9ba5]">{u.id.substring(0, 8)}</span>...</div>
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider
+                     <div className="flex flex-col gap-2 items-start">
+                        <div className="flex items-center gap-2">
+                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${u.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-[0_0_8px_rgba(168,85,247,0.2)]' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                             {u.role === 'admin' && <Shield size={10} />}
+                             {u.role || 'user'}
+                           </span>
+                           <RankBadge rank={u.rank} className="h-5" />
+                        </div>
+                     </div>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-1 rounded text-xs font-bold flex items-center w-max gap-1.5
                       ${u.status === 'approved' ? 'bg-[#1bc86a]/10 text-[#1bc86a] border border-[#1bc86a]/20' : 
-                        u.status === 'suspended' ? 'bg-[#f6c722]/10 text-[#f6c722] border border-[#f6c722]/20' :
-                        u.status === 'banned' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                        u.status === 'suspended' ? 'bg-[#f6c722]/10 text-[#f6c722] border border-[#f6c722]/20 shadow-[0_0_8px_rgba(246,199,34,0.2)]' :
+                        u.status === 'banned' ? 'bg-red-500/10 text-red-500 border border-red-500/20 shadow-[0_0_8px_rgba(239,68,68,0.2)]' :
                         'bg-gray-500/10 text-gray-400 border border-gray-500/20'}`}>
+                      {u.status === 'approved' && <div className="w-1.5 h-1.5 rounded-full bg-[#1bc86a]"></div>}
+                      {u.status === 'suspended' && <div className="w-1.5 h-1.5 rounded-full bg-[#f6c722] animate-pulse"></div>}
+                      {u.status === 'banned' && <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>}
+                      {u.status === 'pending' && <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>}
                       {u.status || 'pending'}
                     </span>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                       <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
-                         {u.role || 'user'}
-                       </span>
-                       {!isSuperAdmin && (
-                         <button
-                           onClick={() => updateUser(u.id, { role: u.role === "admin" ? "user" : "admin" })}
-                           disabled={actionLoading?.startsWith(u.id)}
-                           className="text-[#8b9ba5] hover:text-white p-1 rounded hover:bg-[#2f4553] transition-colors"
-                           title={u.role === "admin" ? "Rétrograder" : "Promouvoir"}
-                         >
-                           <Shield size={14} />
-                         </button>
-                       )}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-mono text-[#1bc86a] text-sm font-bold">{formatCurrency(u.balance)}$</div>
-                      <div className="text-xs text-[#8b9ba5]">
-                        Coffre: <span className="font-mono text-white">{formatCurrency((u.vault || 0))}$</span>
+                    <div className="flex flex-col gap-1 w-full max-w-[180px]">
+                      <div className="font-mono text-[#1bc86a] text-sm font-bold flex justify-between w-full">
+                        <span className="opacity-70 text-[10px] font-sans mt-0.5">Solde</span>
+                        <span>{formatCurrency(u.balance)}$</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEditClick(u)}
-                        disabled={actionLoading?.startsWith(u.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-[#2f4553] text-white hover:bg-[#3d5a6c] rounded transition-colors text-xs font-bold"
-                      >
-                         <Edit3 size={14} /> Éditer
-                      </button>
-                      {!isSuperAdmin && (
-                        <button
-                          onClick={() => deleteUser(u)}
-                          disabled={actionLoading?.startsWith(u.id)}
-                          className="px-2 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded transition-colors"
-                          title="Supprimer Utilisateur"
-                        >
-                           <Trash2 size={14} />
-                        </button>
-                      )}
+                      <div className="w-full h-px bg-[#2f4553]/50 my-1"></div>
+                      <div className="font-mono text-white text-sm flex items-center justify-between gap-4">
+                        <span className="opacity-70 text-[10px] font-sans">Coffre</span>
+                        <span>{formatCurrency((u.vault || 0))}$</span>
+                      </div>
                     </div>
                   </td>
                   <td className="p-4">
@@ -367,27 +364,48 @@ export function AdminPanel() {
                         <button 
                           onClick={() => updateUser(u.id, { status: "approved", suspensionEndsAt: undefined })} 
                           disabled={actionLoading === u.id + "status"}
-                          className="bg-[#1bc86a]/10 text-[#1bc86a] hover:bg-[#1bc86a]/20 border border-[#1bc86a]/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
+                          className="bg-[#1a2c38] hover:bg-[#1bc86a]/20 text-[#1bc86a] border border-[#1bc86a]/20 px-3 py-1.5 rounded text-[11px] font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1"
                         >
-                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Approuver
+                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/>} Approuver
                         </button>
                       )}
                       {u.status !== 'suspended' && !isSuperAdmin && (
                         <button 
                           onClick={() => updateUser(u.id, { status: "suspended" })} 
                           disabled={actionLoading === u.id + "status"}
-                          className="bg-[#f6c722]/10 text-[#f6c722] hover:bg-[#f6c722]/20 border border-[#f6c722]/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
+                          className="bg-[#1a2c38] hover:bg-[#f6c722]/20 text-[#f6c722] border border-[#f6c722]/20 px-3 py-1.5 rounded text-[11px] font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1"
                         >
-                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Suspendre
+                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/>} Suspendre
                         </button>
                       )}
                       {u.status !== 'banned' && !isSuperAdmin && (
                         <button 
                           onClick={() => updateUser(u.id, { status: "banned" })} 
                           disabled={actionLoading === u.id + "status"}
-                          className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 px-2 py-1 rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1 transition-colors"
+                          className="bg-[#1a2c38] hover:bg-red-500/20 text-red-500 border border-red-500/20 px-3 py-1.5 rounded text-[11px] font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1"
                         >
-                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>} Bannir
+                          {actionLoading === u.id + "status" && <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/>} Bannir Def.
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => handleEditClick(u)}
+                        disabled={actionLoading?.startsWith(u.id)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-all text-xs font-bold"
+                      >
+                         <Settings size={14} /> Gérer
+                      </button>
+                      {!isSuperAdmin && (
+                        <button
+                          onClick={() => deleteUser(u)}
+                          disabled={actionLoading?.startsWith(u.id)}
+                          className="px-3 py-2 bg-[#1a2c38] text-[#8b9ba5] hover:text-red-500 hover:bg-red-500/10 border border-[#2f4553] hover:border-red-500/30 rounded-lg transition-all"
+                          title="Supprimer Utilisateur"
+                        >
+                           <Trash2 size={16} />
                         </button>
                       )}
                     </div>
@@ -398,232 +416,222 @@ export function AdminPanel() {
             </tbody>
           </table>
         </div>
+        <div className="p-3 border-t border-[#2f4553] bg-[#1a2c38] text-xs text-[#8b9ba5] text-center font-mono flex items-center justify-center gap-2">
+           <Activity size={12} className="text-[#1bc86a]" /> Mode Watcher: Synchronisation WebSocket Interne
+        </div>
       </div>
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0f212e] border border-[#2f4553] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="p-4 md:p-6 border-b border-[#2f4553] flex items-center justify-between bg-gradient-to-r from-[#2f4553]/40 to-transparent">
+      {/* Extreme Power Edit Modal */}
+      {editingUser ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0f212e] border border-[#2f4553] rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-[#2f4553] flex items-center justify-between bg-gradient-to-r from-[#2f4553]/30 via-transparent to-transparent flex-shrink-0">
               <div className="flex items-center gap-4">
                 <div className="relative">
                    {editingUser.photoURL ? (
-                      <img src={editingUser.photoURL} alt={editingUser.username} className="w-12 h-12 rounded-full border border-gray-600" />
+                      <img src={editingUser.photoURL} alt={editingUser.username} className="w-14 h-14 rounded-full border border-gray-600 shadow-xl" />
                    ) : (
-                      <div className="w-12 h-12 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center uppercase font-bold text-xl border border-blue-500/30">
+                      <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-emerald-500 text-white rounded-full flex items-center justify-center uppercase font-bold text-xl shadow-xl border-2 border-white/10">
                         {editingUser.username.substring(0, 2)}
                       </div>
                    )}
                    {editingUser.lastOnline && (Date.now() - editingUser.lastOnline < 5 * 60 * 1000) && (
-                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#1bc86a] border-2 border-[#0f212e] rounded-full"></div>
+                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#1bc86a] border-2 border-[#0f212e] rounded-full shadow-[0_0_8px_#1bc86a]"></div>
                    )}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold flex items-center gap-2 text-white tracking-tight">
                     {editingUser.username}
                   </h2>
-                  <div className="flex gap-2 mt-1 items-center">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                      ${editForm.status === 'approved' ? 'bg-[#1bc86a]/10 text-[#1bc86a] border border-[#1bc86a]/20' : 
-                        editForm.status === 'suspended' ? 'bg-[#f6c722]/10 text-[#f6c722] border border-[#f6c722]/20' :
-                        editForm.status === 'banned' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                        'bg-gray-500/10 text-gray-400 border border-gray-500/20'}`}>
-                      {editForm.status || 'pending'}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${editForm.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
-                      {editForm.role || 'user'}
-                    </span>
-                    <RankBadge rank={editForm.rank} className="h-8 ml-2" />
+                  <div className="flex gap-2 mt-1.5 items-center font-mono text-xs">
+                    <span className="text-[#8b9ba5]"><span className="text-[#2f4553]">MAILSYS: </span>{editingUser.email}</span>
+                    <span className="text-[#2f4553] hidden md:inline">•</span>
+                    <span className="text-[#8b9ba5] hidden md:inline" title={editingUser.id}><span className="text-[#2f4553]">UID: </span>{editingUser.id}</span>
                   </div>
                 </div>
               </div>
               <button 
                 onClick={() => setEditingUser(null)}
-                className="text-[#8b9ba5] hover:text-white p-2 rounded-lg hover:bg-[#2f4553] transition-colors"
+                className="text-[#8b9ba5] hover:text-rose-400 bg-[#1a2c38] hover:bg-[#2f4553] p-2.5 rounded-xl transition-all"
               >
-                <X size={24} />
+                <X size={20} className="stroke-[3]" />
               </button>
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="flex border-b border-[#2f4553] px-2 overflow-x-auto custom-scrollbar">
-              <button onClick={() => setEditTab("general")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "general" ? "border-blue-500 text-blue-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Général</button>
-              <button onClick={() => setEditTab("finances")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "finances" ? "border-amber-500 text-amber-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Finances</button>
-              <button onClick={() => setEditTab("permissions")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${editTab === "permissions" ? "border-green-500 text-green-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>Droits</button>
-              <button onClick={() => setEditTab("history")} className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${editTab === "history" ? "border-purple-500 text-purple-500" : "border-transparent text-[#8b9ba5] hover:text-white"}`}>
-                Historique <span className="bg-[#2f4553] text-[#8b9ba5] px-1.5 py-0.5 rounded text-[10px]">{userBets.length}</span>
+            {/* Powerful Navigation */}
+            <div className="flex border-b border-[#2f4553] px-2 bg-[#0a171f] overflow-x-auto custom-scrollbar flex-shrink-0">
+              <button onClick={() => setEditTab("general")} className={`px-6 py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap flex items-center gap-2 ${editTab === "general" ? "border-blue-500 text-blue-500 bg-blue-500/5" : "border-transparent text-[#8b9ba5] hover:text-white hover:bg-white/5"}`}>
+                <Settings size={16} /> Configuration Base
+              </button>
+              <button onClick={() => setEditTab("finances")} className={`px-6 py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap flex items-center gap-2 ${editTab === "finances" ? "border-amber-500 text-amber-500 bg-amber-500/5" : "border-transparent text-[#8b9ba5] hover:text-white hover:bg-white/5"}`}>
+                <DollarSign size={16} /> Économie & Soldes
+              </button>
+              <button onClick={() => setEditTab("permissions")} className={`px-6 py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap flex items-center gap-2 ${editTab === "permissions" ? "border-emerald-500 text-emerald-500 bg-emerald-500/5" : "border-transparent text-[#8b9ba5] hover:text-white hover:bg-white/5"}`}>
+                <Shield size={16} /> Blocages / Droits
+              </button>
+              <button onClick={() => setEditTab("history")} className={`px-6 py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap flex items-center gap-2 ${editTab === "history" ? "border-purple-500 text-purple-500 bg-purple-500/5" : "border-transparent text-[#8b9ba5] hover:text-white hover:bg-white/5"}`}>
+                <History size={16} /> Live Logs Paris (<span className="text-[10px] bg-[#2f4553] px-1 rounded text-white">{recentBets.filter(b => b.userId === editingUser.id).length}</span>)
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative bg-[#0a171f]">
-              <form id="edit-user-form" onSubmit={handleSaveEdit}>
+            {/* Editing Body */}
+            <div className="overflow-y-auto flex-1 bg-[#1a242d] custom-scrollbar">
+              <form id="edit-user-form" onSubmit={handleSaveEdit} className="p-6">
                 
                 {editTab === "general" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Rôle de l'utilisateur</label>
-                        <select 
-                          value={editForm.role}
-                          onChange={e => setEditForm({...editForm, role: e.target.value as "admin"|"user"})}
-                          disabled={editingUser.email === "lafrancaise.desjeux@outlook.fr"}
-                          className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:opacity-50 transition-all"
-                        >
-                          <option value="user">Utilisateur Standard</option>
-                          <option value="admin">Administrateur</option>
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Statut du compte</label>
-                        <div className="relative">
+                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-4 border-b border-[#2f4553] pb-2 flex items-center gap-2">
+                        <Users size={18} className="text-blue-500" /> Gestion des Rôles & Statut
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold text-[#8b9ba5]">Niveau d'Administration</label>
+                          <select 
+                            value={editForm.role}
+                            onChange={e => setEditForm({...editForm, role: e.target.value as "admin"|"user"})}
+                            disabled={editingUser.email === "lafrancaise.desjeux@outlook.fr"}
+                            className="bg-[#0f212e] text-white p-3 rounded-lg border border-[#2f4553] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none w-full appearance-none disabled:opacity-50 hover:border-[#557086] transition-all cursor-pointer"
+                          >
+                            <option value="user">Utilisateur Standard</option>
+                            <option value="admin">Administrateur Total (Accès Panel)</option>
+                          </select>
+                        </div>
+                        
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold text-[#8b9ba5]">Verrouillage Serveur</label>
                           <select 
                             value={editForm.status}
                             onChange={e => setEditForm({...editForm, status: e.target.value as "pending"|"approved"|"suspended"|"banned"})}
                             disabled={editingUser.email === "lafrancaise.desjeux@outlook.fr"}
-                            className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:opacity-50 transition-all w-full appearance-none pr-10"
+                            className="bg-[#0f212e] text-white p-3 rounded-lg border border-[#2f4553] focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none w-full appearance-none disabled:opacity-50 hover:border-[#557086] transition-all cursor-pointer"
                           >
-                            <option value="approved">✅ Actif / Approuvé</option>
-                            <option value="pending">⏳ En attente de validation</option>
-                            <option value="suspended">⚠️ Suspendu temporairement</option>
-                            <option value="banned">❌ Banni définitivement</option>
+                            <option value="approved">✅ Approuvé / Jeu Autorisé</option>
+                            <option value="pending">⏳ En attente de Validation</option>
+                            <option value="suspended">⚠️ Suspendu (Exclusion tempo)</option>
+                            <option value="banned">❌ Bannissement Définitif</option>
                           </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#8b9ba5]">
-                            ▼
+                        </div>
+                        
+                        {editForm.status === "suspended" && editingUser.email !== "lafrancaise.desjeux@outlook.fr" && (
+                          <div className="flex flex-col gap-2 md:col-span-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-in zoom-in-95 duration-200">
+                            <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
+                              <ShieldAlert size={16} /> Durée de suspension (Heures)
+                            </label>
+                            <input 
+                              type="number" min="1" step="1"
+                              placeholder="Ex: 24 (Laisser vide pour permanent)"
+                              value={suspensionHours} 
+                              onChange={e => setSuspensionHours(e.target.value !== "" ? Number(e.target.value) : "")}
+                              className="bg-[#0f212e] text-amber-500 font-mono text-lg p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none placeholder:text-amber-500/30 w-full md:w-1/2"
+                            />
+                            <p className="text-xs text-amber-500/70 mt-1">
+                              {suspensionHours ? `Fin prévue dans: ${suspensionHours} heure(s). L'utilisateur reprendra ses droits automatiquement.` : "Sans durée spécifiée, la suspension est manuelle (indéterminée)."}
+                            </p>
                           </div>
+                        )}
+                        
+                        <div className="flex flex-col gap-2 md:col-span-2">
+                          <label className="text-sm font-bold text-[#8b9ba5]">Échelon VIP Forcé</label>
+                          <select 
+                            value={editForm.rank || "None"}
+                            onChange={e => setEditForm({...editForm, rank: e.target.value as UserRank})}
+                            className="bg-[#0f212e] text-white p-3 rounded-lg border border-[#2f4553] focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none w-full appearance-none hover:border-[#557086] transition-all cursor-pointer"
+                          >
+                            <option value="None">Pionnier (Aucun)</option>
+                            <option value="Bronze">Niveau Bronze</option>
+                            <option value="Silver">Niveau Argent</option>
+                            <option value="Gold">Niveau Or</option>
+                            <option value="Platinum">Niveau Platine</option>
+                            <option value="Diamond">Niveau Diamant 💎</option>
+                          </select>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 md:col-span-2">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Rang VIP</label>
-                        <select 
-                          value={editForm.rank || "None"}
-                          onChange={e => setEditForm({...editForm, rank: e.target.value as UserRank})}
-                          className="bg-[#2f4553] text-white p-3 rounded-lg border border-[#0f212e] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                        >
-                          <option value="None">Aucun</option>
-                          <option value="Bronze">Bronze</option>
-                          <option value="Silver">Argent (Silver)</option>
-                          <option value="Gold">Or (Gold)</option>
-                          <option value="Platinum">Platine (Platinum)</option>
-                          <option value="Diamond">Diamant (Diamond)</option>
-                        </select>
-                      </div>
                     </div>
-
-                    {editForm.status === "suspended" && editingUser.email !== "lafrancaise.desjeux@outlook.fr" && (
-                      <div className="flex flex-col gap-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-in zoom-in-95 duration-200">
-                        <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
-                          <ShieldAlert size={16} /> Durée de suspension (Heures)
-                        </label>
-                        <input 
-                          type="number" min="1" step="1"
-                          placeholder="Ex: 24 (Laisser vide pour permanent)"
-                          value={suspensionHours} 
-                          onChange={e => setSuspensionHours(e.target.value !== "" ? Number(e.target.value) : "")}
-                          className="bg-[#0f212e] text-amber-500 font-mono text-lg p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none placeholder:text-amber-500/30 w-full md:w-1/2"
-                        />
-                        <p className="text-xs text-amber-500/70 mt-1">
-                          {suspensionHours ? `Le compte sera automatiquement débanni dans ${suspensionHours} heure(s).` : "Sans durée spécifiée, la suspension est manuelle (indéterminée)."}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
 
                 {editTab === "finances" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex flex-col gap-2 relative group">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Solde Courant</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1bc86a] font-bold">$</span>
-                          <input 
-                            type="number" step="0.01" 
-                            value={editForm.balance ?? ''} 
-                            onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})}
-                            className="bg-[#2f4553] text-[#1bc86a] font-mono text-lg p-3 pl-8 rounded-lg border border-[#0f212e] focus:border-[#1bc86a] outline-none w-full"
-                          />
+                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-4 border-b border-[#2f4553] pb-2 flex items-center gap-2">
+                         <DollarSign size={18} className="text-[#1bc86a]" /> Manipulation Fiducière
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold text-[#8b9ba5] uppercase tracking-wider">Solde Liquide</label>
+                          <div className="relative group">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1bc86a] font-bold text-lg pointer-events-none">$</span>
+                            <input 
+                              type="number" step="0.01" 
+                              value={editForm.balance ?? ''} 
+                              onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})}
+                              className="bg-[#0f212e] text-[#1bc86a] font-mono text-2xl p-4 pl-10 rounded-xl border border-[#2f4553] focus:border-[#1bc86a] outline-none w-full shadow-inner transition-all group-hover:border-[#557086]"
+                            />
+                          </div>
+                          <p className="text-xs text-[#8b9ba5]">Fonds immédiatement jouables.</p>
                         </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Coffre Fort</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white font-bold">$</span>
-                          <input 
-                            type="number" step="0.01" 
-                            value={editForm.vault ?? ''} 
-                            onChange={e => setEditForm({...editForm, vault: Number(e.target.value)})}
-                            className="bg-[#2f4553] text-white font-mono text-lg p-3 pl-8 rounded-lg border border-[#0f212e] focus:border-white outline-none w-full"
-                          />
+                        
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-bold text-[#8b9ba5] uppercase tracking-wider flex items-center gap-2">
+                            <span>Coffre-Fort Crypté</span> <Shield size={12} className="text-blue-400" />
+                          </label>
+                          <div className="relative group">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-lg pointer-events-none">$</span>
+                            <input 
+                              type="number" step="0.01" 
+                              value={editForm.vault ?? ''} 
+                              onChange={e => setEditForm({...editForm, vault: Number(e.target.value)})}
+                              className="bg-[#0f212e] text-white font-mono text-2xl p-4 pl-10 rounded-xl border border-[#2f4553] focus:border-white outline-none w-full shadow-inner transition-all group-hover:border-[#557086]"
+                            />
+                          </div>
+                          <p className="text-xs text-[#8b9ba5]">Fonds épargnés, non jouables.</p>
                         </div>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#2f4553]">
-                       <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Total Misé (Statistique)</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 font-bold">$</span>
-                          <input 
-                            type="number" step="0.01" 
-                            value={editForm.totalWagered ?? ''} 
-                            onChange={e => setEditForm({...editForm, totalWagered: Number(e.target.value)})}
-                            className="bg-[#0f212e] text-blue-400 font-mono p-3 pl-8 rounded-lg border border-[#2f4553] focus:border-blue-400 outline-none w-full"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-bold text-[#8b9ba5]">Total Gagné (Statistique)</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400 font-bold">$</span>
-                          <input 
-                            type="number" step="0.01" 
-                            value={editForm.totalWon ?? ''} 
-                            onChange={e => setEditForm({...editForm, totalWon: Number(e.target.value)})}
-                            className="bg-[#0f212e] text-purple-400 font-mono p-3 pl-8 rounded-lg border border-[#2f4553] focus:border-purple-400 outline-none w-full"
-                          />
-                        </div>
+                    
+                    <div className="pt-6 border-t border-[#2f4553]/50">
+                      <h3 className="text-lg font-bold text-white mb-4 border-b border-[#2f4553] pb-2 flex items-center gap-2">
+                         <Activity size={18} className="text-amber-500" /> Statistiques Overrides
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                         <div className="flex flex-col gap-2">
+                           <label className="text-xs font-bold text-[#8b9ba5]">Totaux Misés Forcés</label>
+                           <input 
+                             type="number" step="0.01" 
+                             value={editForm.totalWagered ?? ''} 
+                             onChange={e => setEditForm({...editForm, totalWagered: Number(e.target.value)})}
+                             className="bg-[#0f212e] text-gray-300 font-mono p-3 rounded-lg border border-[#2f4553] outline-none w-full focus:border-amber-500"
+                           />
+                         </div>
+                         <div className="flex flex-col gap-2">
+                           <label className="text-xs font-bold text-[#8b9ba5]">Totaux Gagnés Forcés</label>
+                           <input 
+                             type="number" step="0.01" 
+                             value={editForm.totalWon ?? ''} 
+                             onChange={e => setEditForm({...editForm, totalWon: Number(e.target.value)})}
+                             className="bg-[#0f212e] text-gray-300 font-mono p-3 rounded-lg border border-[#2f4553] outline-none w-full focus:border-amber-500"
+                           />
+                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {editTab === "permissions" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex flex-col gap-4 p-4 bg-[#2f4553]/20 rounded-xl border border-[#2f4553]">
-                      <h3 className="text-white font-bold mb-2">Actions Financières</h3>
-                      <label className="flex items-center gap-3 text-white cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          className="w-5 h-5 accent-green-500 bg-[#0f212e] border-[#2f4553] rounded"
-                          checked={editForm.permissions?.canDeposit !== false}
-                          onChange={e => setEditForm({
-                            ...editForm, 
-                            permissions: { ...(editForm.permissions || {}), canDeposit: e.target.checked }
-                          })}
-                        />
-                        <span className="group-hover:text-green-400 transition-colors">Autoriser les Dépôts</span>
-                      </label>
-                      <label className="flex items-center gap-3 text-white cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          className="w-5 h-5 accent-green-500 bg-[#0f212e] border-[#2f4553] rounded"
-                          checked={editForm.permissions?.canWithdraw !== false}
-                          onChange={e => setEditForm({
-                            ...editForm, 
-                            permissions: { ...(editForm.permissions || {}), canWithdraw: e.target.checked }
-                          })}
-                        />
-                        <span className="group-hover:text-green-400 transition-colors">Autoriser les Retraits</span>
-                      </label>
-                    </div>
-
-                    <div className="flex flex-col gap-4 p-4 bg-[#2f4553]/20 rounded-xl border border-[#2f4553]">
-                      <h3 className="text-white font-bold mb-2">Accès par jeu (Coché = Autorisé)</h3>
+                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
+                      <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                         <AlertTriangle className="text-red-500" size={18}/> Banissements de Jeux Précis
+                      </h3>
+                      <p className="text-sm text-[#8b9ba5] mb-6">Décochez un jeu pour empêcher ce joueur d'y jouer.</p>
                       
                       {/* Originaux / Classiques */}
-                      <div className="mb-2">
-                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Originaux / Classiques</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="mb-6">
+                        <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-4 border-b border-[#2f4553] pb-2">Jeux Originaux Moteur</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {[
                             { id: "crash", name: "Crash" },
                             { id: "dice", name: "Dice" },
@@ -636,10 +644,10 @@ export function AdminPanel() {
                             { id: "slide", name: "Slide" },
                             { id: "wheel", name: "Wheel" }
                           ].map(game => (
-                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                            <label key={game.id} className="flex items-center gap-3 text-sm text-white bg-[#0f212e] border border-[#2f4553] p-3 rounded-lg cursor-pointer hover:border-emerald-500/50 transition-colors">
                               <input 
                                 type="checkbox" 
-                                className="w-4 h-4 accent-green-500 rounded"
+                                className="w-4 h-4 accent-[#1bc86a] rounded cursor-pointer"
                                 checked={!editForm.permissions?.blockedGames?.[game.id]}
                                 onChange={e => {
                                   const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
@@ -654,25 +662,25 @@ export function AdminPanel() {
                                   });
                                 }}
                               />
-                              <span>{game.name}</span>
+                              <span className="font-medium">{game.name}</span>
                             </label>
                           ))}
                         </div>
                       </div>
 
                       {/* Cartes */}
-                      <div className="mb-2 mt-4">
-                        <h4 className="text-[#8b9ba5] text-xs font-bold uppercase tracking-wider mb-3">Cartes</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div>
+                        <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-4 border-b border-[#2f4553] pb-2">Jeux de Cartes</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {[
                             { id: "baccarat", name: "Baccarat" },
                             { id: "blackjack", name: "Blackjack" },
                             { id: "video-poker", name: "Video Poker" }
                           ].map(game => (
-                            <label key={game.id} className="flex items-center gap-2 text-sm text-[#8b9ba5] hover:text-white cursor-pointer">
+                            <label key={game.id} className="flex items-center gap-3 text-sm text-white bg-[#0f212e] border border-[#2f4553] p-3 rounded-lg cursor-pointer hover:border-emerald-500/50 transition-colors">
                               <input 
                                 type="checkbox" 
-                                className="w-4 h-4 accent-green-500 rounded"
+                                className="w-4 h-4 accent-[#1bc86a] rounded cursor-pointer"
                                 checked={!editForm.permissions?.blockedGames?.[game.id]}
                                 onChange={e => {
                                   const newBlockedGames = { ...(editForm.permissions?.blockedGames || {}) };
@@ -687,7 +695,7 @@ export function AdminPanel() {
                                   });
                                 }}
                               />
-                              <span>{game.name}</span>
+                              <span className="font-medium">{game.name}</span>
                             </label>
                           ))}
                         </div>
@@ -698,77 +706,87 @@ export function AdminPanel() {
 
                 {editTab === "history" && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                    {userBets.length === 0 ? (
-                      <div className="text-center p-8 bg-[#2f4553]/20 rounded-xl border border-[#2f4553] border-dashed">
-                        <p className="text-[#8b9ba5]">Aucun pari récent trouvé dans le cache global pour {editingUser.username}.</p>
-                      </div>
-                    ) : (
-                      <div className="bg-[#0f212e] rounded-xl border border-[#2f4553] overflow-hidden">
-                        <table className="w-full text-left font-mono text-sm">
-                          <thead className="bg-[#2f4553]/50 text-[#8b9ba5]">
+                    <div className="flex justify-between items-center bg-[#2f4553]/20 p-4 border border-[#2f4553] rounded-xl">
+                      <span className="text-[#8b9ba5] text-sm font-bold flex items-center gap-2"><History size={16}/> Logs de paris en temps réel (100 derniers du réseau)</span>
+                      <span className="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-xs font-bold uppercase tracking-widest">{recentBets.filter(b => b.userId === editingUser.id).length} Récents</span>
+                    </div>
+
+                    <div className="bg-[#0f212e] border border-[#2f4553] rounded-xl overflow-hidden">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-[#1a2c38] text-[#8b9ba5] font-mono text-[10px] uppercase">
+                          <tr>
+                            <th className="p-3">Horodatage</th>
+                            <th className="p-3">Game</th>
+                            <th className="p-3">Investissement</th>
+                            <th className="p-3">Multiplicateur</th>
+                            <th className="p-3 text-right">Profit Brut</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#2f4553]">
+                          {recentBets.filter(b => b.userId === editingUser.id).length === 0 ? (
                             <tr>
-                              <th className="p-3">Jeu</th>
-                              <th className="p-3">Mise</th>
-                              <th className="p-3">Mult.</th>
-                              <th className="p-3">Profit</th>
+                              <td colSpan={5} className="p-8 text-center text-[#8b9ba5]">Aucun pari de ce joueur dans l'historique récent global.</td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {userBets.slice(0, 15).map((bet, i) => (
-                              <tr key={i} className="border-t border-[#2f4553] hover:bg-[#2f4553]/20">
-                                <td className="p-3 text-white">{bet.game}</td>
-                                <td className="p-3 text-[#8b9ba5]">{bet.betAmount?.toFixed(2)}$</td>
-                                <td className="p-3 text-[#8b9ba5]">{bet.multiplier?.toFixed(2)}x</td>
-                                <td className={`p-3 font-bold ${bet.payout - bet.betAmount > 0 ? "text-[#1bc86a]" : "text-rose-500"}`}>
-                                  {bet.payout - bet.betAmount > 0 ? "+" : ""}{(bet.payout - bet.betAmount)?.toFixed(2)}$
+                          ) : recentBets.filter(b => b.userId === editingUser.id).map(bet => {
+                            const profit = bet.payout - bet.betAmount;
+                            const isWin = profit > 0;
+                            return (
+                              <tr key={bet.id} className="hover:bg-[#2f4553]/20">
+                                <td className="p-3 text-[#8b9ba5] font-mono">{new Date(bet.timestamp).toLocaleTimeString()}</td>
+                                <td className="p-3 font-bold text-white capitalize">{bet.game}</td>
+                                <td className="p-3 text-[#8b9ba5] font-mono">{formatCurrency(bet.betAmount)}$</td>
+                                <td className="p-3 text-white font-mono">{bet.multiplier.toFixed(2)}x</td>
+                                <td className={`p-3 font-mono font-bold text-right ${isWin ? 'text-[#1bc86a]' : 'text-[#8b9ba5]'}`}>
+                                  {isWin ? '+' : ''}{formatCurrency(profit)}$
                                 </td>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {userBets.length > 15 && (
-                          <div className="p-3 text-center text-xs text-[#8b9ba5] bg-[#2f4553]/10 border-t border-[#2f4553]">
-                            + {userBets.length - 15} paris plus anciens
-                          </div>
-                        )}
-                      </div>
-                    )}
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
-
               </form>
             </div>
-            <div className="p-4 border-t border-[#2f4553] bg-[#0f212e] flex justify-between items-center">
-              <span className="text-sm font-mono text-[#8b9ba5]">
-                Dernière co: {editingUser.lastOnline ? new Date(editingUser.lastOnline).toLocaleString() : 'Inconnue'}
-              </span>
-              <div className="flex items-center gap-3">
+            
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-[#2f4553] bg-[#0a171f] flex justify-between items-center flex-shrink-0">
+               <div className="text-sm font-mono text-[#8b9ba5] flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> Sauvegarde Immédiate Force Majeure
+               </div>
+              <div className="flex justify-end gap-4">
                 <button 
                   type="button"
                   onClick={() => setEditingUser(null)}
                   disabled={editLoading}
-                  className="px-5 py-2.5 bg-transparent text-[#8b9ba5] font-bold hover:text-white hover:bg-[#2f4553] rounded-lg transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-transparent text-[#8b9ba5] font-bold hover:text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  Annuler
+                  Annuler & Quitter
                 </button>
                 <button 
                   type="submit"
                   form="edit-user-form"
                   disabled={editLoading}
-                  className="px-8 py-2.5 bg-[#1bc86a] text-black font-bold rounded-lg hover:bg-[#1bc86a]/90 transition-all disabled:opacity-50 flex items-center gap-2 min-w-[160px] justify-center shadow-lg shadow-[#1bc86a]/20"
+                  className="px-8 py-3 bg-[#1bc86a] text-black font-bold text-lg rounded-lg hover:bg-[#1bc86a]/90 hover:scale-[1.02] shadow-[0_0_20px_rgba(27,200,106,0.3)] transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   {editLoading ? (
-                     <div className="flex items-center gap-2">
-                       <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                       Enregistrement...
-                     </div>
-                  ) : <><Save size={20} /> Appliquer les modifs</>}
+                     <>
+                        <div className="w-5 h-5 border-2 border-black border-t-transparent flex items-center justify-center rounded-full animate-spin"></div>
+                        Enregistrement Overload...
+                     </>
+                  ) : (
+                     <>
+                       <Save size={20} /> Force Save Action
+                     </>
+                  )}
                 </button>
               </div>
             </div>
+
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

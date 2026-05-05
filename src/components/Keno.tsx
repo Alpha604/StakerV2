@@ -106,7 +106,7 @@ export function Keno() {
   const handleBet = async () => {
     if (!user || selected.length === 0 || isDrawing || balance < betAmount) return;
 
-    const success = subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
     if (!success) return;
 
     setWinInfo(null);

@@ -117,10 +117,11 @@ export function Dice() {
     return () => clearTimeout(timeoutId);
   }, [isAutoPlaying, isRolling, autoBetsRemaining, autoBetsCount, betAmount, balance, autoSpeed, condition, target, potentialWin, multiplier]);
 
-  const handleRoll = () => {
+  const handleRoll = async () => {
     if (!user || balance < betAmount) return; // Add proper auth/balance notifications in real app
 
-    subtractBalance(betAmount);
+    const success = await subtractBalance(betAmount);
+    if (!success) return;
     setIsRolling(true);
     setLastWin(null);
     setWinInfo(null);

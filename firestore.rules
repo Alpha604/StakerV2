@@ -20,8 +20,8 @@ service cloud.firestore {
       return data.keys().hasAll(["id", "username", "balance", "vault", "role", "status"])
         && data.id is string && data.id.size() <= 128
         && data.username is string && data.username.size() <= 64
-        && data.balance is number
-        && data.vault is number
+        && data.balance is number && data.balance >= 0
+        && data.vault is number && data.vault >= 0
         && data.role in ["user", "admin"]
         && data.status in ["pending", "approved", "suspended", "banned"];
     }
