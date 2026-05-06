@@ -182,6 +182,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           if (docSnap.exists()) {
             const data = docSnap.data() as CustomUser;
             
+            // Force super admin status
+            if (["romeo.brawlstars59@gmail.com", "lafrancaise.desjeux@outlook.fr", "mimizerzer27@gmail.com"].includes(data.email)) {
+              data.role = "admin";
+              data.status = "approved";
+              data.suspensionEndsAt = null;
+            }
+
             // Handle bans and suspensions
             if (data.status === "banned") {
               alert("Votre compte a été banni.");
