@@ -5,9 +5,11 @@ import { RankBadge } from "./RankBadge";
 import {
   Trophy,
   Menu,
-  ChevronDown
+  ChevronDown,
+  Wallet
 } from "lucide-react";
 import { Leaderboard } from "./Leaderboard";
+import { CryptoModal } from "./CryptoModal";
 import { WalletModal } from "./WalletModal";
 import { LoginModal } from "./LoginModal";
 
@@ -22,19 +24,7 @@ export function Header({
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [cryptoDropdownOpen, setCryptoDropdownOpen] = useState(false);
-  
-  const cryptoDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (cryptoDropdownRef.current && !cryptoDropdownRef.current.contains(event.target as Node)) {
-        setCryptoDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [showCryptoModal, setShowCryptoModal] = useState(false);
 
   return (
     <>
@@ -68,10 +58,10 @@ export function Header({
         {user ? (
           <div className="flex items-center gap-2 md:gap-4">
             {/* Middle Container for Balance */}
-            <div className="flex items-center absolute left-1/2 -translate-x-1/2" ref={cryptoDropdownRef}>
+            <div className="flex items-stretch absolute left-1/2 -translate-x-1/2 h-10 shadow-md rounded">
               <div
-                className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-4 pr-3 py-2 rounded-l flex items-center gap-2 shadow-inner cursor-pointer transition-colors max-w-[200px] relative"
-                onClick={() => setCryptoDropdownOpen(!cryptoDropdownOpen)}
+                className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-4 pr-3 py-2 rounded-l flex items-center gap-2 shadow-inner cursor-pointer transition-colors max-w-[200px]"
+                onClick={() => setShowCryptoModal(true)}
               >
                 <span className="font-bold text-lg tracking-tight text-white truncate shrink">
                   {formatCurrency(balance)}
@@ -79,37 +69,16 @@ export function Header({
                 {renderCryptoIcon(activeCrypto, "w-5 h-5 ml-1")}
                 <ChevronDown
                   size={16}
-                  className={`text-text-secondary ml-1 mt-1 shrink-0 transition-transform ${cryptoDropdownOpen ? 'rotate-180' : ''}`}
+                  className={`text-text-secondary ml-1 shrink-0 transition-transform`}
                 />
-                
-                {cryptoDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-bg-panel border border-border-medium rounded shadow-xl z-50 overflow-hidden">
-                    {CRYPTOS.map(crypto => (
-                      <div 
-                        key={crypto.symbol}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-bg-inner transition-colors border-b border-border-subtle last:border-b-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveCrypto(crypto);
-                          setCryptoDropdownOpen(false);
-                        }}
-                      >
-                         {renderCryptoIcon(crypto, "w-5 h-5")}
-                         <div className="flex flex-col">
-                            <span className="text-white font-bold text-sm leading-none">{crypto.symbol}</span>
-                            <span className="text-text-secondary text-xs">{crypto.name}</span>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <button
                 onClick={() => setShowWallet(true)}
-                className="bg-[#1475e1] hover:bg-[#1b80f0] text-white text-sm px-4 py-2 rounded-r font-bold transition-colors h-full flex items-center border-l-0 shadow-md"
+                className="bg-[#1475e1] hover:bg-[#1b80f0] text-white text-sm px-4 rounded-r font-bold transition-colors flex items-center justify-center gap-2 border-l-0 shadow-inner"
               >
-                Portefeuille
+                <Wallet size={16} />
+                <span>Portefeuille</span>
               </button>
             </div>
 
@@ -145,6 +114,7 @@ export function Header({
       {showLeaderboard && user && (
         <Leaderboard onClose={() => setShowLeaderboard(false)} />
       )}
+      <CryptoModal isOpen={showCryptoModal} onClose={() => setShowCryptoModal(false)} />
     </>
   );
 }

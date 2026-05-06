@@ -15,17 +15,20 @@ export function AdminPanel() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [globalBetsCount, setGlobalBetsCount] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
   // Edit Modal State
   const [editingUser, setEditingUser] = useState<CustomUser | null>(null);
   const [editForm, setEditForm] = useState<Partial<CustomUser>>({});
   const [editLoading, setEditLoading] = useState(false);
-  const [suspensionHours, setSuspensionHours] = useState<number | "">("");
+  const [suspensionMinutes, setSuspensionMinutes] = useState<number | "">("");
   const [editTab, setEditTab] = useState<"general"|"finances"|"permissions"|"history">("general");
 
   useEffect(() => {
     let unsubUsers: () => void;
     let unsubBets: () => void;
+
+    const clockInterval = setInterval(() => setNow(Date.now()), 10000);
 
     if (user?.role === "admin") {
       unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
@@ -46,8 +49,11 @@ export function AdminPanel() {
         if (unsubUsers) unsubUsers();
         if (unsubBets) unsubBets();
         clearInterval(countInterval);
+        clearInterval(clockInterval);
       };
     }
+
+    return () => clearInterval(clockInterval);
   }, [user]);
 
   const fetchGlobalBetsCount = async () => {
@@ -102,7 +108,7 @@ export function AdminPanel() {
       rank: u.rank || "None",
       permissions: u.permissions || {},
     });
-    setSuspensionHours("");
+    setSuspensionMinutes("");
     setEditTab("general");
   };
 
@@ -114,8 +120,8 @@ export function AdminPanel() {
     try {
       const finalUpdates: Partial<CustomUser> = { ...editForm };
       
-      if (finalUpdates.status === 'suspended' && suspensionHours !== "") {
-        finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionHours) * 3600 * 1000;
+      if (finalUpdates.status === 'suspended' && suspensionMinutes !== "") {
+        finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionMinutes) * 60 * 1000;
       } else if (finalUpdates.status !== 'suspended') {
         finalUpdates.suspensionEndsAt = null as any;
       }
@@ -286,7 +292,7 @@ export function AdminPanel() {
                   </td>
                 </tr>
               ) : filteredUsers.map(u => {
-                const isOnline = u.lastOnline && (Date.now() - u.lastOnline < 5 * 60 * 1000);
+                const isOnline = u.lastOnline && (now - u.lastOnline < 2 * 60 * 1000);
                 const isProtectedAdmin = ["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(u.email || "");
                 const isSelf = user?.id === u.id;
                 
@@ -530,17 +536,17 @@ export function AdminPanel() {
                            {editForm.status === "suspended" && !(["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(editingUser.email || "")) && user?.id !== editingUser.id && (
                              <div className="md:col-span-2 p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-3">
                                <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
-                                 <AlertTriangle size={16} /> Durée d'isolation (Heures)
+                                 <AlertTriangle size={16} /> Durée d'isolation (Minutes)
                                </label>
                                <input 
                                  type="number" min="1" step="1"
-                                 placeholder="Ex: 24 (Laisser vide pour permanent)"
-                                 value={suspensionHours} 
-                                 onChange={e => setSuspensionHours(e.target.value !== "" ? Number(e.target.value) : "")}
+                                 placeholder="Ex: 60 (Laisser vide pour permanent)"
+                                 value={suspensionMinutes} 
+                                 onChange={e => setSuspensionMinutes(e.target.value !== "" ? Number(e.target.value) : "")}
                                  className="bg-black text-amber-500 font-mono text-lg p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none placeholder:text-amber-500/30 w-full max-w-sm"
                                />
                                <p className="text-xs text-amber-500/70">
-                                 {suspensionHours ? `Reprise d'activité prévue après ${suspensionHours}h de quarantaine.` : "Quarantaine à durée indéterminée (intervention manuelle requise)."}
+                                 {suspensionMinutes ? `Reprise d'activité prévue après ${suspensionMinutes} min de quarantaine.` : "Quarantaine à durée indéterminée (intervention manuelle requise)."}
                                </p>
                              </div>
                            )}
@@ -556,7 +562,10 @@ export function AdminPanel() {
                                  {value: "Silver", label: "Niveau Argent"},
                                  {value: "Gold", label: "Niveau Or"},
                                  {value: "Platinum", label: "Niveau Platine"},
-                                 {value: "Diamond", label: "Niveau Diamant 💎"}
+                                 {value: "Diamond", label: "Niveau Diamant 💎"},
+                                 {value: "Champion", label: "Champion 🏆"},
+                                 {value: "Grand Champion", label: "Grand Champion 🎖️"},
+                                 {value: "Supersonic Legend", label: "Supersonic Legend ⚡"}
                                ]}
                              />
                            </div>
@@ -617,6 +626,14 @@ export function AdminPanel() {
                             </div>
                          </div>
                        </FormSection>
+
+                       <FormSection title="Opérations Rapides" icon={<TrendingUp className="text-emerald-400" />}>
+                         <div className="flex flex-wrap gap-3">
+                           <button type="button" onClick={() => setEditForm({...editForm, balance: (editForm.balance || 0) + 1000})} className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors text-sm font-bold truncate">+ 1 000 $</button>
+                           <button type="button" onClick={() => setEditForm({...editForm, balance: (editForm.balance || 0) + 100000})} className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors text-sm font-bold truncate">+ 100 000 $</button>
+                           <button type="button" onClick={() => setEditForm({...editForm, balance: 0, vault: 0})} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors text-sm font-bold truncate">Vider les comptes (0$)</button>
+                         </div>
+                       </FormSection>
                      </div>
                    )}
 
@@ -659,7 +676,7 @@ export function AdminPanel() {
                            <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Cartes & Divers</h4>
                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                              {[
-                               "baccarat", "blackjack", "video-poker"
+                               "baccarat", "blackjack", "video-poker", "scarab-spin"
                              ].map(gameId => {
                                const isBlocked = !!editForm.permissions?.blockedGames?.[gameId];
                                return (

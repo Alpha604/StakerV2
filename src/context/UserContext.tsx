@@ -19,7 +19,7 @@ import {
   increment
 } from "firebase/firestore";
 
-export type UserRank = "None" | "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
+export type UserRank = "None" | "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Champion" | "Grand Champion" | "Supersonic Legend";
 
 export interface CryptoType {
   symbol: string;
@@ -39,8 +39,16 @@ export const renderCryptoIcon = (crypto: CryptoType, className: string = "w-4 h-
   return <div className={className} style={{color: crypto.color, display: 'flex', alignItems: 'center'}}>{crypto.icon}</div>;
 };
 
+const createCryptoIcon = (symbol: string, color: string) => (
+  <svg viewBox="0 0 24 24" className="w-full h-full" style={{minWidth: '24px'}}>
+    <circle cx="12" cy="12" r="12" fill={color} />
+    <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fontSize="6.5" fill="#ffffff" fontWeight="bold" fontFamily="sans-serif">
+      {symbol}
+    </text>
+  </svg>
+);
+
 export const CRYPTOS: CryptoType[] = [
-  // ... (keeping Bitcoin here for brevity, I will re-add all in a moment, let me just add BTC to not hit token limit on this tool call, wait actually I must keep them to not break the UI)
   { 
     symbol: "BTC", 
     name: "Bitcoin", 
@@ -62,24 +70,104 @@ export const CRYPTOS: CryptoType[] = [
       </svg>
     )
   },
-  { 
-    symbol: "LTC", 
-    name: "Litecoin", 
-    color: "#fc2a02", 
+  {
+    symbol: "AGRS",
+    name: "Agoras",
+    color: "#f49e00",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full" style={{minWidth: '24px'}}>
+      <svg width="800px" height="800px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{minWidth: '24px'}}>
+        <g fill="none" fillRule="evenodd">
+          <circle cx="16" cy="16" fill="#f49e00" r="16"/>
+          <path d="M19.755 17.334C22.001 13.815 23.75 8 23.75 8l-3.745.849-1.371 4.85c-.129-3.636-2.622-4.967-2.622-4.967-1.997-.973-3.777-.545-5.06.124-1.588.826-2.743 2.266-3.296 3.924-.786 2.359-.69 5.006-.586 6.204.042.562.166 1.115.37 1.643 1.378 3.573 5.195 3.37 5.195 3.37 3.497-.124 5.622-4.242 5.622-4.242l1.002 3.028c.898 1.519 2.887.95 3.296.865.072-.016.136-.024.209-.04L25 23.267v-.973c-4.868.132-5.245-4.959-5.245-4.959m-4.739 3.659a2.369 2.369 0 01-1.098.638c-.907.226-1.604-.155-2.085-.622a3.937 3.937 0 01-1.059-1.978c-.882-4.99.337-7.177 1.147-8.182a2.258 2.258 0 011.868-.864c3.144.164 3.85 6.742 3.85 6.742-.89 2.335-2.037 3.69-2.623 4.266" fill="#ffffff" fillRule="nonzero"/>
+        </g>
+      </svg>
+    )
+  },
+  {
+    symbol: "AEUR",
+    name: "Anchored Coins EUR",
+    color: "#051D2D",
+    icon: (
+      <svg width="800px" height="800px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{minWidth: '24px'}}>
         <defs>
-          <linearGradient id="a_ltc" x1=".5" x2=".5" y2="1" gradientUnits="objectBoundingBox">
-            <stop offset="0" stopColor="#ffb508"></stop>
-            <stop offset="1" stopColor="#fc2a02"></stop>
+          <linearGradient x1="50%" y1="0%" x2="50%" y2="143.239%" id="aeur-grad">
+            <stop stopColor="#FFF" offset="0%"/>
+            <stop stopColor="#FFF" stopOpacity=".83" offset="3%"/>
+            <stop stopColor="#FFF" stopOpacity=".66" offset="7%"/>
+            <stop stopColor="#FFF" stopOpacity=".5" offset="11%"/>
+            <stop stopColor="#FFF" stopOpacity=".37" offset="15%"/>
+            <stop stopColor="#FFF" stopOpacity=".25" offset="19%"/>
+            <stop stopColor="#FFF" stopOpacity=".16" offset="25%"/>
+            <stop stopColor="#FFF" stopOpacity=".09" offset="30%"/>
+            <stop stopColor="#FFF" stopOpacity=".04" offset="37%"/>
+            <stop stopColor="#FFF" stopOpacity=".01" offset="47%"/>
+            <stop stopColor="#FFF" stopOpacity="0" offset="100%"/>
           </linearGradient>
         </defs>
-        <g transform="translate(-14902 -1402)">
-          <circle cx="256" cy="256" r="256" fill="url(#a_ltc)" transform="translate(14902 1402)"></circle>
-          <g>
-            <path fill="#fff" d="m15141.51 1741.616 17.916-67.463 42.417-15.5 10.551-39.648-.36-.984-41.754 15.254 30.084-113.275h-85.319l-39.34 147.831-32.849 12L15032 1720.7l32.823-11.99-23.187 87.124h227.069l14.557-54.223h-141.752"></path>
+        <g fill="none">
+          <circle cx="16" cy="16" r="16" fill="#051D2D"/>
+          <g transform="translate(9 6)" fill="url(#aeur-grad)">
+            <path d="M6.993 13.986a6.993 6.993 0 116.993-6.993 7.002 7.002 0 01-6.993 6.993zM7 6.951A.049.049 0 107.049 7a.055.055 0 00-.05-.05z"/>
+            <path d="M6.993 20.986a6.993 6.993 0 116.993-6.993 7.002 7.002 0 01-6.993 6.993zM7 13.951a.049.049 0 10.049.049.055.055 0 00-.05-.05z"/>
           </g>
         </g>
+      </svg>
+    )
+  },
+  {
+    symbol: "BCC",
+    name: "BitConnect",
+    color: "#F79226",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" viewBox="0 0 128 128" id="bitconnect" className="w-full h-full" style={{minWidth: '24px'}}>
+        <linearGradient id="bcc-grad" x1="11.85" x2="116.15" y1="116.15" y2="11.85" gradientTransform="matrix(1 0 0 -1 0 128)" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#F79226"></stop>
+          <stop offset="1" stopColor="#D77328"></stop>
+        </linearGradient>
+        <path fill="url(#bcc-grad)" d="M87.5 128h-47C18.1 128 0 109.9 0 87.5v-47C0 18.1 18.1 0 40.5 0h47C109.9 0 128 18.1 128 40.5v47c0 22.4-18.1 40.5-40.5 40.5z" style={{fill: 'url(#bcc-grad)'}}></path>
+        <path d="M46.9 51V38.9c0-.3-.5-.8-.8-1-2.7-1.9-4-4.4-3.6-7.6.4-3.3 2.2-5.6 5.3-6.8 3.9-1.4 8.2.4 10 4.2 1.7 3.8.4 8.2-3.2 10.3-.7.4-.9.8-.9 1.5 0 3.4 0 6.8-.1 10.2V51s.8.2 1.2.2c1.4.3 2.8.7 4.1 1.2l.8.4s.6-.5.8-.6c6.2-5.3 12.5-10.6 18.7-15.9 2.7-2.3 5.3-4.5 8-6.8.4-.4.7-.7.5-1.4-.9-3.8.2-7.1 3.2-9.5s6.3-2.8 9.8-1.1c3.4 1.7 5.2 4.5 5.3 8.3.2 6.6-6.8 11.3-12.9 8.7-.7-.3-1.1-.2-1.6.3-8.5 7-16.9 13.8-25.3 20.6-.3.3-.6.6-1 .9 10.1 8.4 11.6 23.3 3.3 33.9 2.4 2.9 4.8 5.7 7.3 8.6.2.2.8.3 1.2.2 4.3-.8 8.5 1.9 9.5 6.2 1.1 4.3-1.4 8.7-5.7 9.9-3.2.9-6 .2-8.3-2.2-2.3-2.3-2.9-5.2-1.9-8.3.2-.6.2-1-.3-1.5-2-2.4-4-4.9-6-7.3-.3-.3-.6-.7-.8-1C50 103.7 33 97.3 27.8 83.9c-2.8-7.3-2.4-14.4 1.6-21.1 4-6.9 10-10.6 17.5-11.8z" opacity=".2" style={{opacity: .2}}></path>
+        <path fill="#FFF" d="M44.9 49V36.9c0-.3-.5-.8-.8-1-2.7-1.9-4-4.4-3.6-7.6.4-3.3 2.2-5.6 5.3-6.8 3.9-1.4 8.2.4 10 4.2 1.7 3.8.4 8.2-3.2 10.3-.7.4-.9.8-.9 1.5 0 3.4 0 6.8-.1 10.2V49s.8.2 1.2.2c1.4.3 2.8.7 4.1 1.2l.8.4s.6-.5.8-.6c6.2-5.3 12.5-10.6 18.7-15.9 2.7-2.3 5.3-4.5 8-6.8.4-.4.7-.7.5-1.4-.9-3.8.2-7.1 3.2-9.5s6.3-2.8 9.8-1.1c3.4 1.7 5.2 4.5 5.3 8.3.2 6.6-6.8 11.3-12.9 8.7-.7-.3-1.1-.2-1.6.3-8.5 7-16.9 13.8-25.3 20.6-.3.3-.6.6-1 .9 10.1 8.4 11.6 23.3 3.3 33.9 2.4 2.9 4.8 5.7 7.3 8.6.2.2.8.3 1.2.2 4.3-.8 8.5 1.9 9.5 6.2 1.1 4.3-1.4 8.7-5.7 9.9-3.2.9-6 .2-8.3-2.2-2.3-2.3-2.9-5.2-1.9-8.3.2-.6.2-1-.3-1.5-2-2.4-4-4.9-6-7.3-.3-.3-.6-.7-.8-1C48 101.7 31 95.3 25.8 81.9c-2.8-7.3-2.4-14.4 1.6-21.1 4-6.9 10-10.6 17.5-11.8z" style={{fill: '#fff'}}></path>
+      </svg>
+    )
+  },
+  {
+    symbol: "STEEM",
+    name: "Steem",
+    color: "#195199",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" id="steem" x="0" y="0" version="1.1" viewBox="0 0 128 128" className="w-full h-full" style={{minWidth: '24px'}}>
+        <linearGradient id="steem-grad" x1="11.862" x2="116.138" y1="11.862" y2="116.138" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#195199"></stop>
+          <stop offset="1" stopColor="#1F417E"></stop>
+        </linearGradient>
+        <path fill="url(#steem-grad)" d="M87.5 128h-47C18.1 128 0 109.9 0 87.5v-47C0 18.1 18.1 0 40.5 0h47C109.9 0 128 18.1 128 40.5v47c0 22.4-18.1 40.5-40.5 40.5z" style={{fill: 'url(#steem-grad)'}}></path>
+        <g opacity=".2" style={{opacity: .2}}>
+          <path d="M64.2 19.8c-.3 2.4-.5 4.4-.7 6.4-.9 6.7-.3 13.2 2.8 19.3 4.1 8.3 8 16.7 11.9 25.1 2.4 5.1 4.6 10.4 5.7 16 .5 2.6.3 5.1-1 7.5-3.9 6.8-9 12.5-15 17.4-.6.4-1.4.6-2.1.8 0-.7-.1-1.5.1-2.2.8-3.2 1.8-6.4 2.5-9.6.9-4.1.5-8.2-1.2-12.1-3.2-7-6.5-14-9.8-21C54.2 60.7 51 54.1 49 47c-1-3.7-1.8-7.4 0-11.1 3.1-6.5 7.9-11.4 13.7-15.5.3-.2.7-.3 1.5-.6zM35 29.7c0 .7.1 1.2 0 1.7-.5 4.1-1.1 8.2-.3 12.3.3 1.8.9 3.5 1.7 5.1 3.2 7 6.7 13.9 9.8 20.9 1.8 4 3.1 8.2 4.4 12.4.6 2 .3 4-.7 5.9-3 5.3-7.1 9.9-11.8 13.7-.4.4-1 .6-1.5.9-.1-.1-.2-.1-.4-.2.1-.6.1-1.3.3-1.9.6-2.5 1.4-5 1.9-7.6.7-3.1.4-6.3-1-9.2-2.9-6.4-5.9-12.8-8.9-19.2-2.3-4.9-4.5-9.8-5.7-15.2-.7-3.1-.3-5.9 1.3-8.5 2.4-4.1 5.6-7.4 9.4-10.2.3-.3.8-.5 1.5-.9zM94.1 30.1c-.1 1.3-.3 2.5-.4 3.8-.5 3.6-.8 7.3.2 10.9.8 2.7 2 5.4 3.2 8 3.4 7.5 7 14.9 10.3 22.5 1.1 2.5 1.7 5.3 2.2 8 .2 1.3 0 2.9-.6 4.1-2.9 5.8-7.2 10.4-12.3 14.5-.4.3-.9.5-1.7.9.1-.9.1-1.5.3-2.1.7-3 1.5-6 2.1-9 .6-2.8 0-5.6-1.2-8.2-3-6.4-6-12.8-9-19.3-2.3-4.9-4.4-9.8-5.6-15.1-.7-3.1-.1-5.9 1.5-8.5 2.4-3.9 5.6-7.2 9.3-9.9.4-.3.9-.5 1.3-.7.2-.1.3 0 .4.1z"></path>
+        </g>
+        <path d="M62.2 17.8c-.3 2.4-.5 4.4-.7 6.4-.9 6.7-.3 13.2 2.8 19.3 4.1 8.3 8 16.7 11.9 25.1 2.4 5.1 4.6 10.4 5.7 16 .5 2.6.3 5.1-1 7.5-3.9 6.8-9 12.5-15 17.4-.6.4-1.4.6-2.1.8 0-.7-.1-1.5.1-2.2.8-3.2 1.8-6.4 2.5-9.6.9-4.1.5-8.2-1.2-12.1-3.2-7-6.5-14-9.8-21C52.2 58.7 49 52.1 47 45c-1-3.7-1.8-7.4 0-11.1 3.1-6.5 7.9-11.4 13.7-15.5.3-.2.7-.3 1.5-.6zM33 27.7c0 .7.1 1.2 0 1.7-.5 4.1-1.1 8.2-.3 12.3.3 1.8.9 3.5 1.7 5.1 3.2 7 6.7 13.9 9.8 20.9 1.8 4 3.1 8.2 4.4 12.4.6 2 .3 4-.7 5.9-3 5.3-7.1 9.9-11.8 13.7-.4.4-1 .6-1.5.9-.1-.1-.2-.1-.4-.2.1-.6.1-1.3.3-1.9.6-2.5 1.4-5 1.9-7.6.7-3.1.4-6.3-1-9.2-2.9-6.4-5.9-12.8-8.9-19.2-2.3-4.9-4.5-9.8-5.7-15.2-.7-3.1-.3-5.9 1.3-8.5 2.4-4.1 5.6-7.4 9.4-10.2.3-.3.8-.5 1.5-.9zM92.1 28.1c-.1 1.3-.3 2.5-.4 3.8-.5 3.6-.8 7.3.2 10.9.8 2.7 2 5.4 3.2 8 3.4 7.5 7 14.9 10.3 22.5 1.1 2.5 1.7 5.3 2.2 8 .2 1.3 0 2.9-.6 4.1-2.9 5.8-7.2 10.4-12.3 14.5-.4.3-.9.5-1.7.9.1-.9.1-1.5.3-2.1.7-3 1.5-6 2.1-9 .6-2.8 0-5.6-1.2-8.2-3-6.4-6-12.8-9-19.3-2.3-4.9-4.4-9.8-5.6-15.1-.7-3.1-.1-5.9 1.5-8.5 2.4-3.9 5.6-7.2 9.3-9.9.4-.3.9-.5 1.3-.7.2-.1.3 0 .4.1z" style={{fill: '#fff'}}></path>
+      </svg>
+    )
+  },
+  {
+    symbol: "MAID",
+    name: "MaidSafeCoin",
+    color: "#5592d7",
+    icon: (
+      <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1984.3 2209.8" className="w-full h-full" style={{minWidth: '24px'}}>
+        <path fill="#99bee7" d="M1598.1 730.3V2209L348.5 1483.4C-18.4 1272.2 9.1 1134.4 0 840.5l1285.5 744V904.8l312.3-174.5h.3z"/>
+        <path fill="#5592d7" d="M1285.5 1584.5L0 840.5 1249.1 124c367.1-211.1 468.4-119.2 734.7 28.2L698 895.6l587.5 339.9v349z"/>
+        <path fill="#29578a" d="M698 895.6l1286.3-743.5v1433.1c0 431.7-129 468.4-385.8 624.5V730.3L1013 1078.2 698 895.6z"/>
+      </svg>
+    )
+  },
+  {
+    symbol: "USDT",
+    name: "Tether",
+    color: "#50af95",
+    icon: (
+      <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 339.43 295.27" className="w-full h-full" style={{minWidth: '24px'}}>
+        <path d="M62.15,1.45l-61.89,130a2.52,2.52,0,0,0,.54,2.94L167.95,294.56a2.55,2.55,0,0,0,3.53,0L338.63,134.4a2.52,2.52,0,0,0,.54-2.94l-61.89-130A2.5,2.5,0,0,0,275,0H64.45a2.5,2.5,0,0,0-2.3,1.45h0Z" style={{fill: '#50af95', fillRule: 'evenodd'}}/>
+        <path d="M191.19,144.8v0c-1.2.09-7.4,0.46-21.23,0.46-11,0-18.81-.33-21.55-0.46v0c-42.51-1.87-74.24-9.27-74.24-18.13s31.73-16.25,74.24-18.15v28.91c2.78,0.2,10.74.67,21.74,0.67,13.2,0,19.81-.55,21-0.66v-28.9c42.42,1.89,74.08,9.29,74.08,18.13s-31.65,16.24-74.08,18.12h0Zm0-39.25V79.68h59.2V40.23H89.21V79.68H148.4v25.86c-48.11,2.21-84.29,11.74-84.29,23.16s36.18,20.94,84.29,23.16v82.9h42.78V151.83c48-2.21,84.12-11.73,84.12-23.14s-36.09-20.93-84.12-23.15h0Zm0,0h0Z" style={{fill: '#fff', fillRule: 'evenodd'}}/>
       </svg>
     )
   }
@@ -166,6 +254,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | null = null;
+    let pingInterval: NodeJS.Timeout | null = null;
 
     // Auth state observer
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -173,8 +262,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         unsubscribeSnapshot();
         unsubscribeSnapshot = null;
       }
+      
+      if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+      }
 
       if (firebaseUser) {
+        // Ping online status every 1 minute
+        pingInterval = setInterval(() => {
+           updateDoc(doc(db, "users", firebaseUser.uid), { lastOnline: Date.now() }).catch(() => {});
+        }, 60000);
+
         // Setup real-time listener for user profile
         const userRef = doc(db, "users", firebaseUser.uid);
         
@@ -265,6 +364,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       if (unsubscribeSnapshot) unsubscribeSnapshot();
+      if (pingInterval) clearInterval(pingInterval);
       unsubscribeAuth();
     };
   }, []);

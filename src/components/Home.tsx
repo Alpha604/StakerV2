@@ -83,6 +83,11 @@ const ALL_GAMES = [
     name: "Blue Samurai", category: "slots", link: "slots-game",
     releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     img: "https://mediumrare.imgix.net/3a6fa5d49d31f11ce131acb64d8cbbe6cc5d8f916bd0afacaeb1fc5976aa4fdf?w=180&h=236&fit=min&auto=format",
+  },
+  {
+    name: "Scarab Spin", category: "slots", link: "scarab-spin",
+    releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    img: "https://mediumrare.imgix.net/7a2cc695cad10b097220f0c5c81858075c3ec4ee4235d8211cbbdbbd389c6d6c?w=180&h=236&fit=min&auto=format"
   }
 ];
 

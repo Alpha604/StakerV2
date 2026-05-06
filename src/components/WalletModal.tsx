@@ -1,6 +1,6 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState } from "react";
-import { useUser } from "../context/UserContext";
+import { useUser, CRYPTOS, renderCryptoIcon } from "../context/UserContext";
 import {
   X,
   ArrowRightLeft,
@@ -25,6 +25,8 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
     transferFromVault,
     addBalance,
     subtractBalance,
+    activeCrypto,
+    setActiveCrypto,
   } = useUser();
   const [amount, setAmount] = useState("100");
   const [tab, setTab] = useState<"buy" | "cashout" | "vault_in" | "vault_out">(
@@ -196,24 +198,49 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
           </div>
 
           {(tab === "buy" || tab === "cashout") && (
-            <div className="flex gap-2">
-              {(["crypto", "card", "bank"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMethod(m)}
-                  className={cn(
-                    "flex-1 py-3 rounded-xl flex flex-col items-center gap-2 border transition-all",
-                    method === m
-                      ? "bg-accent/10 border-accent text-accent"
-                      : "bg-bg-inner border-border-medium text-text-secondary hover:text-white",
-                  )}
-                >
-                  {m === "crypto" && <Bitcoin size={20} />}
-                  {m === "card" && <CreditCard size={20} />}
-                  {m === "bank" && <Landmark size={20} />}
-                  <span className="text-xs font-bold uppercase">{m}</span>
-                </button>
-              ))}
+            <div className="flex flex-col gap-4">
+               <div className="flex gap-2">
+                 {(["crypto", "card", "bank"] as const).map((m) => (
+                   <button
+                     key={m}
+                     onClick={() => setMethod(m)}
+                     className={cn(
+                       "flex-1 py-3 rounded-xl flex flex-col items-center gap-2 border transition-all",
+                       method === m
+                         ? "bg-accent/10 border-accent text-accent"
+                         : "bg-bg-inner border-border-medium text-text-secondary hover:text-white",
+                     )}
+                   >
+                     {m === "crypto" && <Bitcoin size={20} />}
+                     {m === "card" && <CreditCard size={20} />}
+                     {m === "bank" && <Landmark size={20} />}
+                     <span className="text-xs font-bold uppercase">{m}</span>
+                   </button>
+                 ))}
+               </div>
+
+               {method === "crypto" && (
+                  <div className="bg-bg-base border border-border-medium rounded-xl p-3 flex flex-wrap gap-2">
+                     <div className="w-full text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
+                        Sélectionner une crypto
+                     </div>
+                     {CRYPTOS.map(crypto => (
+                        <button
+                          key={crypto.symbol}
+                          onClick={() => setActiveCrypto(crypto)}
+                          className={cn(
+                             "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
+                             activeCrypto.symbol === crypto.symbol
+                               ? "bg-bg-panel border-accent"
+                               : "bg-bg-inner border-border-medium hover:border-text-secondary"
+                          )}
+                        >
+                           {renderCryptoIcon(crypto, "w-5 h-5")}
+                           <span className="text-sm font-bold text-white">{crypto.symbol}</span>
+                        </button>
+                     ))}
+                  </div>
+               )}
             </div>
           )}
 
