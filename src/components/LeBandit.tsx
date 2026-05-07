@@ -18,19 +18,19 @@ const WEIGHTS = [
 const W_TOTAL = WEIGHTS.reduce((a, b) => a + b, 0);
 
 const SYMBOLS = [
-  { id: 0, type: "low", char: "10", color: "text-[#6b583e] font-black drop-shadow-sm" },
-  { id: 1, type: "low", char: "J", color: "text-[#2e4c6b] font-black drop-shadow-sm" },
-  { id: 2, type: "low", char: "Q", color: "text-[#4c2e6b] font-black drop-shadow-sm" },
-  { id: 3, type: "low", char: "K", color: "text-[#3e6b4c] font-black drop-shadow-sm" },
-  { id: 4, type: "low", char: "A", color: "text-[#8a3324] font-black drop-shadow-sm" },
+  { id: 0, type: "low", char: "10", color: "text-[#8d7c67] font-black drop-shadow-sm" },
+  { id: 1, type: "low", char: "J", color: "text-[#446a8b] font-black drop-shadow-sm" },
+  { id: 2, type: "low", char: "Q", color: "text-[#6b4a8b] font-black drop-shadow-sm" },
+  { id: 3, type: "low", char: "K", color: "text-[#5a8b5e] font-black drop-shadow-sm" },
+  { id: 4, type: "low", char: "A", color: "text-[#a64a3d] font-black drop-shadow-sm" },
   { id: 5, type: "med", char: "🪤", color: "" },
   { id: 6, type: "med", char: "🧀", color: "" },
   { id: 7, type: "med", char: "🍺", color: "" },
   { id: 8, type: "med", char: "🥖", color: "" },
   { id: 9, type: "hat", char: "🎩", color: "" },
-  { id: 10, type: "wild", char: "WILD", text: "Wanted", color: "text-red-600 font-bold tracking-tighter drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]" },
-  { id: 11, type: "rainbow", char: "🌈", color: "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" },
-  { id: 12, type: "scatter", char: "📷", color: "drop-shadow-[0_0_8px_rgba(202,138,4,1)]" },
+  { id: 10, type: "wild", char: "WILD", text: "Wanted", color: "text-red-700 font-black tracking-tighter drop-shadow-[0_0_2px_rgba(0,0,0,0.5)] bg-yellow-400 border border-yellow-200 px-1 rounded-sm" },
+  { id: 11, type: "rainbow", char: "🌈", color: "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] scale-125" },
+  { id: 12, type: "scatter", char: "📷", color: "drop-shadow-[0_0_8px_rgba(202,138,4,1)] scale-125" },
 ];
 
 const PAYOUTS = {
@@ -73,10 +73,7 @@ function getPayout(symbolIndex: number, count: number) {
   return table[Math.min(count, table.length - 1)];
 }
 
-function getRandomSymbol(isFreeSpin = false) {
-  let rainbowW = isFreeSpin ? 3 : 1.5;
-  let scatterW = isFreeSpin ? 1.5 : 2;
-  
+function getRandomSymbol(rainbowW: number, scatterW: number) {
   let wTotal = W_TOTAL + rainbowW + scatterW;
   let r = Math.random() * wTotal;
   
@@ -88,12 +85,14 @@ function getRandomSymbol(isFreeSpin = false) {
   return 12;
 }
 
-function generateBoard(isFreeSpin = false) {
-  const board: number[][] = [];
+let globalTileId = 0;
+
+function generateBoard(rainbowW = 1.5, scatterW = 2) {
+  const board: {id: number, symbolIdx: number}[][] = [];
   for (let x = 0; x < COLS; x++) {
-    const col: number[] = [];
+    const col: {id: number, symbolIdx: number}[] = [];
     for (let y = 0; y < ROWS; y++) {
-      col.push(getRandomSymbol(isFreeSpin));
+      col.push({ id: globalTileId++, symbolIdx: getRandomSymbol(rainbowW, scatterW) });
     }
     board.push(col);
   }
@@ -110,7 +109,7 @@ type ClusterInfo = {
 export function LeBandit() {
   const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
   const [betAmount, setBetAmount] = useState<number>(1);
-  const [board, setBoard] = useState<number[][]>(() => generateBoard());
+  const [board, setBoard] = useState<{id: number, symbolIdx: number}[][]>(() => generateBoard());
   const [goldenSquares, setGoldenSquares] = useState<boolean[][]>(() => Array(COLS).fill(0).map(() => Array(ROWS).fill(false)));
   const [revealedCoins, setRevealedCoins] = useState<{x: number, y: number, coin: ReturnType<typeof getRandomCoin>}[]>([]);
   
@@ -126,22 +125,31 @@ export function LeBandit() {
   const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
 
   // Bonus
+  type BonusMode = null | "luck" | "glitters" | "treasure";
   const [freeSpins, setFreeSpins] = useState<number>(0);
   const [isFreeSpinMode, setIsFreeSpinMode] = useState<boolean>(false);
+  const [activeBonusMode, setActiveBonusMode] = useState<BonusMode>(null);
   const [totalFreeSpinWin, setTotalFreeSpinWin] = useState<number>(0);
-  const [bonusTriggered, setBonusTriggered] = useState<{ spins: number } | null>(null);
+  const [bonusTriggered, setBonusTriggered] = useState<{ spins: number, mode: BonusMode } | null>(null);
   const [bonusEnded, setBonusEnded] = useState<{ payout: number } | null>(null);
+  
+  // Bonus Buy UI
+  const [isBonusBuyOpen, setIsBonusBuyOpen] = useState(false);
+  const [activeFeature, setActiveFeature] = useState<"none" | "bonushunt" | "rainbow">("none");
 
   // Helper
-  const findClusters = (currentBoard: number[][]): ClusterInfo[] => {
+  const findClusters = (currentBoard: ({id: number, symbolIdx: number} | null)[][]): ClusterInfo[] => {
     const clusters: ClusterInfo[] = [];
     const visited = Array(COLS).fill(0).map(() => Array(ROWS).fill(false));
 
     const dfs = (x: number, y: number, targetSymbol: number, currentCluster: Position[]) => {
       if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
       if (visited[x][y]) return;
+      
+      const tile = currentBoard[x][y];
+      if (!tile) return;
 
-      const sym = currentBoard[x][y];
+      const sym = tile.symbolIdx;
       // 10 is wildcard
       if (sym !== targetSymbol && sym !== 10) return;
 
@@ -156,8 +164,10 @@ export function LeBandit() {
 
     for (let x = 0; x < COLS; x++) {
       for (let y = 0; y < ROWS; y++) {
-        const sym = currentBoard[x][y];
-        if (!visited[x][y] && sym !== 10 && sym !== 11 && sym !== 12 && sym !== -1) {
+        const tile = currentBoard[x][y];
+        if (!tile) continue;
+        const sym = tile.symbolIdx;
+        if (!visited[x][y] && sym !== 10 && sym !== 11 && sym !== 12) {
           const currentCluster: Position[] = [];
           dfs(x, y, sym, currentCluster);
 
@@ -170,7 +180,7 @@ export function LeBandit() {
           }
           
           for (let pos of currentCluster) {
-            if (currentBoard[pos.x][pos.y] === 10) {
+            if (currentBoard[pos.x][pos.y]?.symbolIdx === 10) {
                visited[pos.x][pos.y] = false;
             }
           }
@@ -180,14 +190,27 @@ export function LeBandit() {
     return clusters;
   };
 
-  const executeSpin = async () => {
+  const executeSpin = async (buyFeature?: "tier1" | "tier2") => {
     if (isSpinning) return;
+    
+    let betCost = betAmount;
+    let actualBet = betAmount;
+    if (buyFeature === "tier1") {
+       betCost = betAmount * 100;
+    } else if (buyFeature === "tier2") {
+       betCost = betAmount * 250;
+    } else if (activeFeature === "bonushunt") {
+       betCost = betAmount * 3;
+    } else if (activeFeature === "rainbow") {
+       betCost = betAmount * 50;
+    }
+
     if (!isFreeSpinMode) {
-      if (!user || balance < betAmount || betAmount <= 0) {
+      if (!user || balance < betCost || betCost <= 0) {
          if (isAutoPlaying) setIsAutoPlaying(false);
          return;
       }
-      const success = await subtractBalance(betAmount);
+      const success = await subtractBalance(betCost);
       if (!success) return;
     }
     
@@ -200,7 +223,45 @@ export function LeBandit() {
        setGoldenSquares(Array(COLS).fill(0).map(() => Array(ROWS).fill(false)));
     }
 
-    let currentBoard = generateBoard(isFreeSpinMode);
+    let rbW = isFreeSpinMode ? 3 : 1.5;
+    let scW = isFreeSpinMode ? 1.5 : 2;
+    if (!isFreeSpinMode) {
+       if (activeFeature === "bonushunt") scW = 10;
+       else if (activeFeature === "rainbow") rbW = 1000;
+    }
+    let currentBoard = generateBoard(rbW, scW);
+    
+    if (buyFeature === "tier1") {
+       let placed = 0;
+       while(placed < 3) {
+          const rx = Math.floor(Math.random()*COLS);
+          const ry = Math.floor(Math.random()*ROWS);
+          if (currentBoard[rx][ry].symbolIdx !== 12) {
+             currentBoard[rx][ry] = { id: globalTileId++, symbolIdx: 12 };
+             placed++;
+          }
+       }
+    } else if (buyFeature === "tier2") {
+       let placed = 0;
+       while(placed < 4) {
+          const rx = Math.floor(Math.random()*COLS);
+          const ry = Math.floor(Math.random()*ROWS);
+          if (currentBoard[rx][ry].symbolIdx !== 12) {
+             currentBoard[rx][ry] = { id: globalTileId++, symbolIdx: 12 };
+             placed++;
+          }
+       }
+    }
+    
+    if (isFreeSpinMode && activeBonusMode === "treasure" || (!isFreeSpinMode && activeFeature === "rainbow")) {
+       let hasRainbow = currentBoard.some(col => col.some(t => t?.symbolIdx === 11));
+       if (!hasRainbow) {
+          const rx = Math.floor(Math.random()*COLS);
+          const ry = Math.floor(Math.random()*ROWS);
+          currentBoard[rx][ry] = { id: globalTileId++, symbolIdx: 11 };
+       }
+    }
+    
     setBoard(currentBoard);
     let currentGolden = isFreeSpinMode ? [...goldenSquares.map(row => [...row])] : Array(COLS).fill(0).map(() => Array(ROWS).fill(false));
     
@@ -237,7 +298,7 @@ export function LeBandit() {
           let newBoard = currentBoard.map(col => [...col]);
           for (const cl of clusters) {
              for (const p of cl.positions) {
-               newBoard[p.x][p.y] = -1;
+               newBoard[p.x][p.y] = null;
              }
           }
           setBoard(newBoard);
@@ -245,13 +306,13 @@ export function LeBandit() {
           
           // Gravity
           for (let x = 0; x < COLS; x++) {
-             let newCol = newBoard[x].filter(s => s !== -1);
+             let newCol = newBoard[x].filter(s => s !== null);
              while (newCol.length < ROWS) {
-                newCol.unshift(getRandomSymbol(isFreeSpinMode));
+                newCol.unshift({ id: globalTileId++, symbolIdx: getRandomSymbol(rbW, scW) });
              }
-             newBoard[x] = newCol;
+             newBoard[x] = newCol as {id: number, symbolIdx: number}[];
           }
-          currentBoard = newBoard;
+          currentBoard = newBoard as {id: number, symbolIdx: number}[][];
           setBoard(currentBoard);
           setHighlightedCells(new Set());
           await new Promise(r => setTimeout(r, 500));
@@ -262,7 +323,7 @@ export function LeBandit() {
     let hasRainbow = false;
     for (let x=0; x<COLS; x++) {
        for (let y=0; y<ROWS; y++) {
-          if (currentBoard[x][y] === 11) hasRainbow = true;
+          if (currentBoard[x][y]?.symbolIdx === 11) hasRainbow = true;
        }
     }
 
@@ -287,7 +348,9 @@ export function LeBandit() {
 
        if (coinWin > 0) {
           totalWinMultiplier += coinWin;
-          if (!isFreeSpinMode) {
+          // In base game or 'luck' mode, rainbow resets the golden squares.
+          // In 'glitters' or 'treasure' mode, they never reset.
+          if (!isFreeSpinMode || activeBonusMode === "luck") {
             setGoldenSquares(Array(COLS).fill(0).map(() => Array(ROWS).fill(false)));
           }
        }
@@ -297,18 +360,18 @@ export function LeBandit() {
     let scatterCount = 0;
     for (let x=0; x<COLS; x++) {
        for (let y=0; y<ROWS; y++) {
-          if (currentBoard[x][y] === 12) scatterCount++;
+          if (currentBoard[x][y]?.symbolIdx === 12) scatterCount++;
        }
     }
     
     // Evaluate payouts
-    const payout = betAmount * totalWinMultiplier;
+    const payout = betAmount * totalWinMultiplier; // Payout is always based on base bet amount
     
     if (totalWinMultiplier > 0) {
        setWinInfo({ multiplier: totalWinMultiplier, payout });
        if (!isFreeSpinMode) {
          await addBalance(payout);
-         recordBet("LeBandit", betAmount, totalWinMultiplier, payout - betAmount);
+         recordBet("LeBandit", betCost, totalWinMultiplier, payout - betCost);
        } else {
          await addBalance(payout);
          setTotalFreeSpinWin(prev => prev + payout);
@@ -316,18 +379,26 @@ export function LeBandit() {
        }
        await new Promise(r => setTimeout(r, 1500)); // Win display time
     } else if (!isFreeSpinMode) {
-       recordBet("LeBandit", betAmount, 0, -betAmount);
+       recordBet("LeBandit", betCost, 0, -betCost);
     }
 
-    if (scatterCount >= 3) {
+    if (!isFreeSpinMode && scatterCount >= 3) {
        const spins = scatterCount === 3 ? 8 : 12;
-       setBonusTriggered({ spins });
+       let mode: BonusMode = "luck";
+       if (scatterCount === 4) mode = "glitters";
+       if (scatterCount >= 5) mode = "treasure";
+       
+       setActiveBonusMode(mode);
+       setBonusTriggered({ spins, mode });
        setTimeout(() => setBonusTriggered(null), 3000);
        setFreeSpins(prev => prev + spins);
-       if (!isFreeSpinMode) {
-         setIsFreeSpinMode(true);
-       }
+       setIsFreeSpinMode(true);
        await new Promise(r => setTimeout(r, 4000));
+    } else if (isFreeSpinMode && scatterCount >= 2) {
+       // Re-trigger
+       const extraSpins = scatterCount === 2 ? 2 : 4;
+       setFreeSpins(prev => prev + extraSpins);
+       // Show small notification for extra spins maybe
     }
 
     setIsSpinning(false);
@@ -406,7 +477,7 @@ export function LeBandit() {
         <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col h-full">
-              {!isFreeSpinMode && (
+              {!isFreeSpinMode && !isBonusBuyOpen && (
                 <>
                   <div className="bg-[#0f212e] rounded-full p-1 flex mb-4">
                     <button 
@@ -437,26 +508,57 @@ export function LeBandit() {
                         onChange={handleBetChange}
                         className="w-full bg-transparent text-white font-bold pl-7 pr-2 py-2.5 outline-none font-mono text-[13px]"
                         placeholder="0.00"
-                        disabled={isSpinning || isAutoPlaying}
+                        disabled={isSpinning || isAutoPlaying || activeFeature !== "none"}
                       />
                       <div className="flex pr-1 gap-1">
                         <button
                           onClick={halfBet}
-                          disabled={isSpinning || isAutoPlaying}
-                          className="px-2.5 py-1.5 bg-[#2f4553] hover:bg-[#3d5a6a] rounded text-xs font-bold text-white transition-colors"
+                          disabled={isSpinning || isAutoPlaying || activeFeature !== "none"}
+                          className="px-2.5 py-1.5 bg-[#2f4553] hover:bg-[#3d5a6a] rounded text-xs font-bold text-white transition-colors disabled:opacity-50"
                         >
                           ½
                         </button>
                         <button
                           onClick={doubleBet}
-                          disabled={isSpinning || isAutoPlaying}
-                          className="px-2.5 py-1.5 bg-[#2f4553] hover:bg-[#3d5a6a] rounded text-xs font-bold text-white transition-colors"
+                          disabled={isSpinning || isAutoPlaying || activeFeature !== "none"}
+                          className="px-2.5 py-1.5 bg-[#2f4553] hover:bg-[#3d5a6a] rounded text-xs font-bold text-white transition-colors disabled:opacity-50"
                         >
                           2×
                         </button>
                       </div>
                     </div>
                   </div>
+
+                  {/* Active Feature Indicator */}
+                  {activeFeature !== "none" && (
+                    <div className="mb-4 bg-yellow-500/10 border border-yellow-500/20 rounded p-3 flex items-center justify-between">
+                       <div>
+                          <div className="text-yellow-500 font-bold text-xs uppercase tracking-wider">
+                             {activeFeature === "bonushunt" ? "BonusHunt FeatureSpins" : "Rainbow FeatureSpins"}
+                          </div>
+                          <div className="text-white font-black">
+                             {formatCurrency(betAmount * (activeFeature === "bonushunt" ? 3 : 50))} / tour
+                          </div>
+                       </div>
+                       <button 
+                         onClick={() => setActiveFeature("none")}
+                         disabled={isSpinning || isAutoPlaying}
+                         className="text-[#8b9ba5] hover:text-white disabled:opacity-50"
+                         title="Désactiver la fonctionnalité"
+                       >
+                         ✕
+                       </button>
+                    </div>
+                  )}
+
+                  {/* Buy Bonus Toggle */}
+                  <button
+                    onClick={() => setIsBonusBuyOpen(true)}
+                    disabled={isSpinning || isAutoPlaying}
+                    className="w-full py-3 bg-[#2f4553] hover:bg-[#3d5a6a] text-white font-bold rounded flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mb-6"
+                  >
+                    <span className="text-yellow-500 font-black">★</span> ACHETER BONUS
+                  </button>
 
                   {mode === "auto" && (
                     <div className="mb-6 flex flex-col gap-4">
@@ -503,6 +605,85 @@ export function LeBandit() {
                 </>
               )}
 
+              {!isFreeSpinMode && isBonusBuyOpen && (
+                <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-200">
+                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2f4553]">
+                    <button 
+                      onClick={() => setIsBonusBuyOpen(false)}
+                      className="w-8 h-8 rounded bg-[#2f4553] hover:bg-[#3d5a6a] text-white flex items-center justify-center transition-colors"
+                    >
+                      ←
+                    </button>
+                    <span className="text-white font-black tracking-widest uppercase">Acheter Bonus</span>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 custom-scrollbar">
+                     
+                     {/* BonusHunt FeatureSpins */}
+                     <div className="bg-[#0f212e] rounded p-3 border-l-4 border-emerald-500">
+                        <div className="text-white font-black mb-1">BonusHunt FeatureSpins™</div>
+                        <div className="text-[#8b9ba5] text-[11px] mb-3 leading-tight">Chaque tour a 5 fois plus de chance de déclencher le jeu bonus.</div>
+                        <div className="flex gap-2 items-center">
+                           <div className="flex-1 bg-[#213743] rounded p-2 text-center text-white font-bold">
+                              {formatCurrency(betAmount * 3)}
+                           </div>
+                           <button 
+                             onClick={() => { setActiveFeature(activeFeature === "bonushunt" ? "none" : "bonushunt"); setIsBonusBuyOpen(false); }}
+                             className={cn("px-4 py-2 rounded font-bold transition-colors", activeFeature === "bonushunt" ? "bg-red-500 hover:bg-red-600 text-white" : "bg-emerald-500 hover:bg-emerald-600 text-black")}
+                           >
+                              {activeFeature === "bonushunt" ? "Désactiver" : "Activer"}
+                           </button>
+                        </div>
+                     </div>
+
+                     {/* Rainbow FeatureSpins */}
+                     <div className="bg-[#0f212e] rounded p-3 border-l-4 border-purple-500">
+                        <div className="text-white font-black mb-1">Rainbow FeatureSpins™</div>
+                        <div className="text-[#8b9ba5] text-[11px] mb-3 leading-tight">Chaque tour garantit la présence d'un symbole Arc-en-ciel.</div>
+                        <div className="flex gap-2 items-center">
+                           <div className="flex-1 bg-[#213743] rounded p-2 text-center text-white font-bold">
+                              {formatCurrency(betAmount * 50)}
+                           </div>
+                           <button 
+                             onClick={() => { setActiveFeature(activeFeature === "rainbow" ? "none" : "rainbow"); setIsBonusBuyOpen(false); }}
+                             className={cn("px-4 py-2 rounded font-bold transition-colors", activeFeature === "rainbow" ? "bg-red-500 hover:bg-red-600 text-white" : "bg-purple-500 hover:bg-purple-600 text-white")}
+                           >
+                              {activeFeature === "rainbow" ? "Désactiver" : "Activer"}
+                           </button>
+                        </div>
+                     </div>
+
+                     {/* Luck of the Bandit */}
+                     <div className="bg-[#0f212e] rounded p-3 border-l-4 border-amber-500">
+                        <div className="text-white font-black mb-1 text-sm">Luck Of The Bandit</div>
+                        <div className="text-[#8b9ba5] text-[11px] mb-3 leading-tight">Achète 8 tours gratuits où les cases dorées restent actives jusqu'à l'atterrissage d'un Arc-en-ciel.</div>
+                        <button 
+                          onClick={() => { setIsBonusBuyOpen(false); executeSpin("tier1"); }}
+                          disabled={isSpinning || balance < betAmount * 100}
+                          className="w-full py-2.5 rounded font-black transition-colors bg-amber-500 hover:bg-amber-400 text-black disabled:opacity-50 disabled:hover:bg-amber-500 flex justify-between px-4 items-center"
+                        >
+                          <span>ACHETER</span>
+                          <span>{formatCurrency(betAmount * 100)}</span>
+                        </button>
+                     </div>
+
+                     {/* All That Glitters */}
+                     <div className="bg-[#0f212e] rounded p-3 border-l-4 border-yellow-400">
+                        <div className="text-white font-black mb-1 text-sm">All That Glitters Is Gold</div>
+                        <div className="text-[#8b9ba5] text-[11px] mb-3 leading-tight">Achète 12 tours gratuits où les cases dorées ne se réinitialisent jamais.</div>
+                        <button 
+                          onClick={() => { setIsBonusBuyOpen(false); executeSpin("tier2"); }}
+                          disabled={isSpinning || balance < betAmount * 250}
+                          className="w-full py-2.5 rounded font-black transition-colors bg-yellow-400 hover:bg-yellow-300 text-black disabled:opacity-50 disabled:hover:bg-yellow-400 flex justify-between px-4 items-center"
+                        >
+                          <span>ACHETER</span>
+                          <span>{formatCurrency(betAmount * 250)}</span>
+                        </button>
+                     </div>
+                  </div>
+                </div>
+              )}
+
               {isFreeSpinMode && (
                 <div className="mb-6 bg-yellow-500/10 border border-yellow-500/20 p-4 rounded text-center">
                   <h3 className="text-yellow-500 font-black text-xl mb-2">BONUS ACTIF</h3>
@@ -517,19 +698,20 @@ export function LeBandit() {
               )}
             </div>
 
-            {/* Bet Button */}
-            <button
-              onClick={executeSpin}
-              disabled={isSpinning || (!isFreeSpinMode && (betAmount <= 0 || betAmount > balance || user == null || isAutoPlaying))}
-              className={cn(
-                "w-full py-3.5 rounded font-bold text-[14px] transition-all active:scale-95 flex items-center justify-center gap-2",
-                isSpinning || (!isFreeSpinMode && (betAmount <= 0 || betAmount > balance || user == null || isAutoPlaying))
-                  ? "bg-[#00e701]/40 text-black/50 cursor-not-allowed"
-                  : "bg-[#00e701] hover:bg-[#00e701]/80 text-black"
-              )}
-            >
-              {isSpinning ? "En cours..." : isFreeSpinMode ? "TOUR GRATUIT" : isAutoPlaying ? "AUTO EN COURS..." : "Pari"}
-            </button>
+            {!isBonusBuyOpen && (
+              <button
+                onClick={() => executeSpin()}
+                disabled={isSpinning || (!isFreeSpinMode && (betAmount <= 0 || (activeFeature === "bonushunt" ? betAmount * 3 : activeFeature === "rainbow" ? betAmount * 50 : betAmount) > balance || user == null || isAutoPlaying))}
+                className={cn(
+                  "w-full py-4 rounded-xl font-black text-xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg border-b-4",
+                  isSpinning || (!isFreeSpinMode && (betAmount <= 0 || (activeFeature === "bonushunt" ? betAmount * 3 : activeFeature === "rainbow" ? betAmount * 50 : betAmount) > balance || user == null || isAutoPlaying))
+                    ? "bg-[#00e701]/40 text-black/50 border-[#00e701]/20 cursor-not-allowed"
+                    : "bg-[#00e701] hover:bg-[#00c700] text-[#0a2e0a] border-[#009b00]"
+                )}
+              >
+                {isSpinning ? "EN COURS..." : isFreeSpinMode ? "TOUR GRATUIT" : isAutoPlaying ? "AUTO EN COURS..." : "PARIER"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -545,52 +727,74 @@ export function LeBandit() {
 
           <div className="flex-1 flex items-center justify-center p-4 z-20 relative">
              {/* 6x5 Grid */}
-             <div className="grid grid-cols-6 gap-1 md:gap-2 p-3 bg-[#b5a995] rounded-xl border border-black/5 relative shadow-inner">
+             <div className="relative p-3 bg-[#b5a995] rounded-xl border border-black/5 shadow-inner">
+                {/* Background Grid Cells (Golden Squares) */}
+                <div className="absolute inset-3 grid grid-cols-6 gap-1 md:gap-2">
+                   {Array.from({ length: COLS }).map((_, x) => (
+                      <div key={`bg-col-${x}`} className="flex flex-col gap-1 md:gap-2">
+                         {Array.from({ length: ROWS }).map((_, y) => {
+                            const isGolden = goldenSquares[x]?.[y] || false;
+                            return (
+                               <div key={`bg-cell-${x}-${y}`} className={cn(
+                                  "w-10 h-10 md:w-16 md:h-16 rounded transition-colors duration-500",
+                                  isGolden ? "bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_15px_rgba(250,204,21,0.5)] border border-yellow-200" : "bg-[#c5b8a5] border border-white/20"
+                               )}>
+                                  {isGolden && <div className="w-full h-full bg-white opacity-20 animate-pulse"></div>}
+                               </div>
+                            );
+                         })}
+                      </div>
+                   ))}
+                </div>
+
+                {/* Foreground Moving Symbols */}
+                <div className="grid grid-cols-6 gap-1 md:gap-2 relative z-10">
                 {Array.from({ length: COLS }).map((_, x) => (
-                  <div key={x} className="flex flex-col gap-1 md:gap-2">
-                     {Array.from({ length: ROWS }).map((_, y) => {
+                  <div key={x} className="flex flex-col gap-1 md:gap-2 relative">
+                     <AnimatePresence mode="popLayout">
+                     {board[x].map((tile, y) => {
                         const cellId = `${x},${y}`;
                         const isHighlighted = highlightedCells.has(cellId);
-                        const isGolden = goldenSquares[x]?.[y] || false;
-                        const symbolIdx = board[x]?.[y] ?? -1;
+                        const symbolIdx = tile?.symbolIdx ?? -1;
                         const sym = SYMBOLS.find(s => s.id === symbolIdx);
                         const revealedCoin = revealedCoins.find(c => c.x === x && c.y === y);
 
                         return (
                            <motion.div 
-                              key={`${x}-${y}`}
+                              key={tile?.id ?? `empty-${x}-${y}`}
+                              layout
+                              initial={{ y: -50, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 25 }}
                               className={cn(
-                                 "w-10 h-10 md:w-16 md:h-16 rounded flex items-center justify-center text-2xl md:text-4xl shadow-sm transition-all duration-300 relative border overflow-hidden",
-                                 isGolden && !revealedCoin ? "bg-gradient-to-br from-yellow-300 to-yellow-500 border-yellow-200 shadow-[0_0_15px_rgba(250,204,21,0.5)] text-black" : "bg-[#c5b8a5] border-white/20",
-                                 isHighlighted && "scale-110 z-10",
+                                 "w-10 h-10 md:w-16 md:h-16 flex items-center justify-center text-2xl md:text-4xl transition-colors duration-300 relative rounded",
+                                 isHighlighted && "scale-110 z-10 drop-shadow-2xl",
                                  sym?.id === 12 && !isSpinning && "animate-pulse" // Scatter pulse
                               )}
-                              animate={sym === undefined ? { y: -50, opacity: 0 } : { y: 0, opacity: 1 }}
                            >
-                              {isGolden && !sym && !revealedCoin && (
-                                 <div className="absolute inset-0 bg-yellow-400 opacity-20 animate-pulse"></div>
-                              )}
-                              
                               {revealedCoin ? (
                                  <motion.div 
                                    initial={{ scale: 0, rotateY: 180 }}
                                    animate={{ scale: 1, rotateY: 0 }}
                                    className={cn(
-                                     "absolute inset-0 m-1 md:m-2 rounded-full border-2 flex items-center justify-center font-black text-xs md:text-sm drop-shadow-md",
+                                     "absolute inset-0 m-1 md:m-2 rounded-full border-2 flex items-center justify-center font-black text-xs md:text-sm drop-shadow-md z-30",
                                      revealedCoin.coin.type === "bronze" && "bg-gradient-to-br from-amber-700 to-amber-900 border-amber-600 text-amber-200",
                                      revealedCoin.coin.type === "silver" && "bg-gradient-to-br from-slate-300 to-slate-500 border-slate-200 text-white",
-                                     revealedCoin.coin.type === "gold"   && "bg-gradient-to-br from-yellow-300 to-yellow-600 border-yellow-200 text-white"
+                                     revealedCoin.coin.type === "gold"   && "bg-gradient-to-br from-yellow-300 to-yellow-600 border-yellow-200 text-black"
                                    )}
                                  >
                                     {revealedCoin.coin.value}x
                                  </motion.div>
                               ) : (
                                  <>
-                                    <span className={cn("relative z-10", sym?.color)}>
-                                       {sym?.char || ""}
-                                    </span>
+                                    {sym && (
+                                       <span className={cn("relative z-20", sym.color)}>
+                                          {sym.char}
+                                       </span>
+                                    )}
                                     {sym?.text && (
-                                       <span className="absolute bottom-1 right-1 text-[8px] md:text-[10px] font-black text-white tracking-widest uppercase drop-shadow z-20">
+                                       <span className="absolute bottom-1 right-1 text-[8px] md:text-[10px] font-black text-white tracking-widest uppercase drop-shadow z-30">
                                           {sym.text}
                                        </span>
                                     )}
@@ -599,8 +803,10 @@ export function LeBandit() {
                            </motion.div>
                         );
                      })}
+                     </AnimatePresence>
                   </div>
                 ))}
+                </div>
              </div>
           </div>
         </div>
