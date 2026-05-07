@@ -29,6 +29,7 @@ import { AdminPanel } from "./components/AdminPanel";
 import { VerifyBet } from "./components/VerifyBet";
 import { ApprovalGuard } from "./components/ApprovalGuard";
 import { Profile } from "./components/Profile";
+import { Stats } from "./components/Stats";
 import { Leaderboard } from "./components/Leaderboard";
 
 export type ViewType =
@@ -37,6 +38,7 @@ export type ViewType =
   | "originals"
   | "slots"
   | "leaderboard"
+  | "stats"
   | "mines"
   | "roulette"
   | "keno"
@@ -155,6 +157,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
                   </div>
               )}
               {view === "verify" && <VerifyBet />}
+              {view === "stats" && <Stats />}
               {view === "admin" && <AdminPanel />}
               {view === "profile" && <Profile />}
               {view === "mines" && <ApprovalGuard gameName="mines"><Mines /></ApprovalGuard>}

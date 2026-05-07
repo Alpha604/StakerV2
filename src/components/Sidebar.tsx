@@ -111,6 +111,14 @@ export function Sidebar({
         <User size={20} />
       </button>
 
+      <button
+        onClick={() => setView("stats")}
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "stats" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+        title="Stats Détaillées"
+      >
+        <Activity size={20} />
+      </button>
+
       {useUser().user?.role === "admin" && (
         <button
           onClick={() => setView("admin")}

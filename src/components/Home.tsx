@@ -90,7 +90,7 @@ const ALL_GAMES = [
     img: "https://mediumrare.imgix.net/7a2cc695cad10b097220f0c5c81858075c3ec4ee4235d8211cbbdbbd389c6d6c?w=180&h=236&fit=min&auto=format"
   },
   {
-    name: "Le Bandit", category: "slots", link: "le-bandit",
+    name: "Le Bandit", category: "slots", link: "le-bandit", provider: "Hacksaw Gaming",
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://mediumrare.imgix.net/8ade942d35d2cdbddf7888f303be4cf4bda8c650a112b3c53f7c6f3ccad81254?&dpr=2&format=auto&auto=format&q=50"
   }
@@ -309,6 +309,29 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
           </div>
           {renderGameGrid(filteredGames.filter(g => g.category === "slots"))}
         </>
+      ) : view === "slots" ? (
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between mb-4 mt-2">
+             <h2 className="text-white font-bold text-xl flex items-center gap-2">
+                <Grid className="text-accent" size={24} />
+                <span>Machines à sous</span>
+             </h2>
+          </div>
+          
+          <div className="mt-4 mb-6">
+             <h3 className="text-white font-bold text-lg mb-4 flex items-center justify-between">
+                <div>Hacksaw Gaming <span className="text-sm font-normal text-text-secondary ml-2">{filteredGames.filter(g => g.provider === "Hacksaw Gaming").length} jeux</span></div>
+             </h3>
+             {renderGameGrid(filteredGames.filter(g => g.provider === "Hacksaw Gaming"))}
+          </div>
+
+          <div className="mt-4 mb-6">
+             <h3 className="text-white font-bold text-lg mb-4 flex items-center justify-between">
+                <div>Autres Fournisseurs</div>
+             </h3>
+             {renderGameGrid(filteredGames.filter(g => g.provider !== "Hacksaw Gaming"))}
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col">
           {view !== "leaderboard" && (
