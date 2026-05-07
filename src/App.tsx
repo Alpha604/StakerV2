@@ -24,6 +24,7 @@ import { Chicken } from "./components/Chicken";
 import { Moles } from "./components/Moles";
 import { Slots } from "./components/Slots";
 import { ScarabSpin } from "./components/ScarabSpin";
+import { LeBandit } from "./components/LeBandit";
 import { AdminPanel } from "./components/AdminPanel";
 import { VerifyBet } from "./components/VerifyBet";
 import { ApprovalGuard } from "./components/ApprovalGuard";
@@ -56,6 +57,7 @@ export type ViewType =
   | "moles"
   | "slots-game"
   | "scarab-spin"
+  | "le-bandit"
   | "verify"
   | "admin"
   | "profile";
@@ -175,6 +177,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "chicken" && <ApprovalGuard gameName="chicken"><Chicken /></ApprovalGuard>}
               {view === "moles" && <ApprovalGuard gameName="moles"><Moles /></ApprovalGuard>}
               {view === "scarab-spin" && <ApprovalGuard gameName="scarab-spin"><ScarabSpin /></ApprovalGuard>}
+              {view === "le-bandit" && <ApprovalGuard gameName="le-bandit"><LeBandit /></ApprovalGuard>}
             </div>
             
             {/* Footer */}

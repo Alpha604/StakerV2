@@ -676,7 +676,7 @@ export function AdminPanel() {
                            <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Cartes & Divers</h4>
                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                              {[
-                               "baccarat", "blackjack", "video-poker", "scarab-spin"
+                               "baccarat", "blackjack", "video-poker", "scarab-spin", "le-bandit"
                              ].map(gameId => {
                                const isBlocked = !!editForm.permissions?.blockedGames?.[gameId];
                                return (

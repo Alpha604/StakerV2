@@ -88,6 +88,11 @@ const ALL_GAMES = [
     name: "Scarab Spin", category: "slots", link: "scarab-spin",
     releaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     img: "https://mediumrare.imgix.net/7a2cc695cad10b097220f0c5c81858075c3ec4ee4235d8211cbbdbbd389c6d6c?w=180&h=236&fit=min&auto=format"
+  },
+  {
+    name: "Le Bandit", category: "slots", link: "le-bandit",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://mediumrare.imgix.net/8ade942d35d2cdbddf7888f303be4cf4bda8c650a112b3c53f7c6f3ccad81254?&dpr=2&format=auto&auto=format&q=50"
   }
 ];
 

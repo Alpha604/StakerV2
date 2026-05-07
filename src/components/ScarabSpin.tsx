@@ -9,14 +9,14 @@ const COLS = 5;
 const ROWS = 4;
 
 const SYMBOLS = [
-  { id: "grape", char: "🍇", class: "text-purple-500", mults: [0, 0, 0.2, 0.8, 3] },
-  { id: "banana", char: "🍌", class: "text-yellow-400", mults: [0, 0, 0.3, 1.2, 5] },
-  { id: "carrot", char: "🥕", class: "text-orange-500", mults: [0, 0, 0.5, 1.8, 8] },
-  { id: "airplane", char: "✈️", class: "text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]", mults: [0, 0, 0.8, 2.5, 15] },
-  { id: "scale", char: "⚖️", class: "text-slate-300 drop-shadow-[0_0_8px_rgba(203,213,225,0.5)]", mults: [0, 0, 1.2, 4, 30] },
-  { id: "castle", char: "🏯", class: "text-amber-700 drop-shadow-[0_0_8px_rgba(180,83,9,0.5)]", mults: [0, 0, 2.5, 8, 60] },
-  { id: "trident", char: "🔱", class: "text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]", mults: [0, 0, 5, 20, 150] },
-  { id: "wild", char: null, img: "https://i.imgur.com/DBVd8Kd.png", class: "drop-shadow-[0_0_8px_rgba(255,100,0,0.8)]", mults: [0, 0, 10, 40, 400] },
+  { id: "grape", char: "🍇", class: "text-purple-500", mults: [0, 0, 0.2, 1.0, 3] },
+  { id: "banana", char: "🍌", class: "text-yellow-400", mults: [0, 0, 0.4, 1.5, 4] },
+  { id: "carrot", char: "🥕", class: "text-orange-500", mults: [0, 0, 0.5, 2.0, 6] },
+  { id: "airplane", char: "✈️", class: "text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]", mults: [0, 0, 0.8, 3.0, 10] },
+  { id: "scale", char: "⚖️", class: "text-slate-300 drop-shadow-[0_0_8px_rgba(203,213,225,0.5)]", mults: [0, 0, 1.5, 5.0, 20] },
+  { id: "castle", char: "🏯", class: "text-amber-700 drop-shadow-[0_0_8px_rgba(180,83,9,0.5)]", mults: [0, 0, 3.0, 10.0, 40] },
+  { id: "trident", char: "🔱", class: "text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]", mults: [0, 0, 5.0, 20.0, 100] },
+  { id: "wild", char: null, img: "https://i.imgur.com/DBVd8Kd.png", class: "drop-shadow-[0_0_8px_rgba(255,100,0,0.8)]", mults: [0, 0, 10.0, 40.0, 250] },
   { id: "scatter", char: null, img: "https://i.imgur.com/NasC9LL.png", class: "drop-shadow-[0_0_12px_rgba(202,138,4,1)]", mults: [0, 0, 0, 0, 0] },
 ];
 
@@ -29,7 +29,7 @@ const PAYLINES = [
   [1, 1, 0, 1, 1], [2, 2, 3, 2, 2], [1, 0, 0, 0, 1], [2, 3, 3, 3, 2], 
 ];
 
-const WEIGHTS = [30, 20, 15, 12, 8, 5, 2, 1, 2.2]; // Total approx 95.2. Calibrated for 0.99 RTP
+const WEIGHTS = [35, 25, 20, 15, 10, 6, 3, 1.3, 3.0]; // Calibrated for 0.985 RTP
 
 export function ScarabSpin() {
   const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
@@ -42,6 +42,14 @@ export function ScarabSpin() {
       Array.from({ length: ROWS }, () => Math.floor(Math.random() * 8))
     );
   });
+  
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [autoBetsCount, setAutoBetsCount] = useState<number>(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
+  const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
+  
+  const [bonusTriggered, setBonusTriggered] = useState<{spins: number} | null>(null);
+  const [bonusEnded, setBonusEnded] = useState<{payout: number} | null>(null);
   
   const [winInfo, setWinInfo] = useState<{
     multiplier: number;
@@ -181,10 +189,16 @@ export function ScarabSpin() {
     // Trigger Free Spins
     if (scattersCount >= 3) {
        const newSpins = scattersCount === 3 ? 10 : scattersCount === 4 ? 15 : 20;
+       
+       setBonusTriggered({ spins: newSpins });
+       setTimeout(() => setBonusTriggered(null), 3000);
+       
        setFreeSpins(prev => prev + newSpins);
        setIsFreeSpinMode(true);
        totalMultiplier += scattersCount * 2; 
     }
+
+    const willBeFreeSpins = isFreeSpinMode || scattersCount >= 3;
 
     if (totalMultiplier > 0) {
       // In free spins, the betAmount used for payout is the triggering bet, but here betAmount is just the state
@@ -192,7 +206,7 @@ export function ScarabSpin() {
       await addBalance(payout);
       setWinInfo({ multiplier: totalMultiplier, payout });
       
-      if (isFreeSpinMode) {
+      if (willBeFreeSpins) {
           setTotalFreeSpinWin(prev => prev + payout);
       }
     }
@@ -201,15 +215,41 @@ export function ScarabSpin() {
        recordBet("ScarabSpin", betAmount, totalMultiplier, payout - betAmount);
     } else if (!isFreeSpinMode) {
        recordBet("ScarabSpin", betAmount, 0, -betAmount);
+    } else if (willBeFreeSpins && totalMultiplier > 0) {
+       recordBet("ScarabSpin(Free)", 0, totalMultiplier, payout);
     }
 
     setIsSpinning(false);
   };
 
+  // Normal Auto Play effect
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    if (isAutoPlaying && !isSpinning && !isFreeSpinMode && !bonusEnded) {
+      if (autoBetsCount === 0 || autoBetsRemaining > 0) {
+        timeoutId = setTimeout(() => {
+          if (balance < betAmount || betAmount <= 0) {
+             setIsAutoPlaying(false);
+          } else {
+             if (autoBetsCount > 0) {
+                setAutoBetsRemaining(prev => prev - 1);
+             }
+             performSpin();
+          }
+        }, 1000);
+      } else if (autoBetsCount > 0 && autoBetsRemaining === 0) {
+         setIsAutoPlaying(false);
+      }
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [isAutoPlaying, isSpinning, isFreeSpinMode, autoBetsRemaining, autoBetsCount, balance, betAmount, bonusEnded]);
+
   // Process auto free spins
   useEffect(() => {
      let timer: ReturnType<typeof setTimeout>;
-     if (isFreeSpinMode && !isSpinning) {
+     if (isFreeSpinMode && !isSpinning && !bonusTriggered) {
        if (freeSpins > 0) {
          timer = setTimeout(() => {
            setFreeSpins(prev => prev - 1);
@@ -218,13 +258,19 @@ export function ScarabSpin() {
        } else {
          // Free spins over
          timer = setTimeout(() => {
+           setBonusEnded({ payout: totalFreeSpinWin });
            setIsFreeSpinMode(false);
            setTotalFreeSpinWin(0);
-         }, 2000);
+           
+           // Dismiss bonus ended popup after some time
+           setTimeout(() => {
+              setBonusEnded(null);
+           }, 4000);
+         }, 1500);
        }
      }
      return () => clearTimeout(timer);
-  }, [freeSpins, isFreeSpinMode, isSpinning]);
+  }, [freeSpins, isFreeSpinMode, isSpinning, bonusTriggered, totalFreeSpinWin]);
 
 
   return (
@@ -234,6 +280,17 @@ export function ScarabSpin() {
         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col h-full">
           {!isFreeSpinMode && (
             <>
+              <div className="bg-[#0f212e] rounded-full p-1 flex mb-4">
+                <button 
+                  onClick={() => { if(!isAutoPlaying && !isSpinning) setMode("manual"); }}
+                  className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "manual" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+                >Manuel</button>
+                <button 
+                  onClick={() => { if(!isAutoPlaying && !isSpinning) setMode("auto"); }}
+                  className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "auto" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+                >Auto</button>
+              </div>
+
               {/* Bet Amount */}
               <div className="mb-6">
                 <div className="flex justify-between mb-2">
@@ -248,21 +305,21 @@ export function ScarabSpin() {
                     type="number"
                     value={betAmount === 0 ? "" : betAmount}
                     onChange={handleBetChange}
-                    className="w-full bg-transparent text-white font-bold px-2 py-2.5 outline-none font-mono"
+                    className="w-full bg-transparent text-white font-bold px-2 py-2.5 outline-none font-mono text-[13px]"
                     placeholder="0.00000000"
-                    disabled={isSpinning}
+                    disabled={isSpinning || isAutoPlaying}
                   />
                   <div className="flex pr-1 gap-1">
                     <button
                       onClick={halfBet}
-                      disabled={isSpinning}
+                      disabled={isSpinning || isAutoPlaying}
                       className="px-2.5 py-1.5 bg-[#2f4553] hover:bg-[#3d5a6a] rounded text-xs font-bold text-white transition-colors"
                     >
                       ½
                     </button>
                     <button
                       onClick={doubleBet}
-                      disabled={isSpinning}
+                      disabled={isSpinning || isAutoPlaying}
                       className="px-2.5 py-1.5 bg-[#2f4553] hover:bg-[#3d5a6a] rounded text-xs font-bold text-white transition-colors"
                     >
                       2×
@@ -270,6 +327,49 @@ export function ScarabSpin() {
                   </div>
                 </div>
               </div>
+
+              {mode === "auto" && (
+                <div className="mb-6 flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#8b9ba5] text-[13px] font-bold">
+                      Nombre de paris
+                    </label>
+                    <input
+                      type="number"
+                      value={autoBetsCount}
+                      onChange={(e) => setAutoBetsCount(Number(e.target.value))}
+                      disabled={isAutoPlaying || isSpinning}
+                      className="w-full bg-[#0f212e] rounded border border-[#2f4553] p-2.5 text-white font-bold outline-none focus:border-[#557086] disabled:opacity-50 text-[13px]"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div className="mt-2 flex items-center justify-between">
+                    <label className="text-[#8b9ba5] text-[13px] font-bold">Autobet</label>
+                    <input
+                      className="toggle-input"
+                      id="toggle"
+                      name="toggle"
+                      type="checkbox"
+                      checked={isAutoPlaying}
+                      disabled={!isAutoPlaying && (betAmount > balance || betAmount <= 0)}
+                      onChange={(e) => {
+                        if (isAutoPlaying) {
+                          setIsAutoPlaying(false);
+                        } else {
+                          setIsAutoPlaying(true);
+                          setAutoBetsRemaining(autoBetsCount);
+                        }
+                      }}
+                    />
+                    <label className="toggle-label !w-12 !h-6" htmlFor="toggle" title={isAutoPlaying ? "Arrêter Autobet" : "Démarrer Autobet"}>
+                      <div className="cont-label-play">
+                        <span className="label-play"></span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -291,15 +391,15 @@ export function ScarabSpin() {
             {/* Bet Button */}
             <button
               onClick={performSpin}
-              disabled={isSpinning || (!isFreeSpinMode && (betAmount <= 0 || betAmount > balance || user == null))}
+              disabled={isSpinning || (!isFreeSpinMode && (betAmount <= 0 || betAmount > balance || user == null || isAutoPlaying))}
               className={cn(
                 "w-full py-3.5 rounded font-bold text-[14px] transition-all active:scale-95 flex items-center justify-center gap-2",
-                isSpinning || (!isFreeSpinMode && (betAmount <= 0 || betAmount > balance || user == null))
+                isSpinning || (!isFreeSpinMode && (betAmount <= 0 || betAmount > balance || user == null || isAutoPlaying))
                   ? "bg-[#00e701]/40 text-black/50 cursor-not-allowed"
                   : "bg-[#00e701] hover:bg-[#00e701]/80 text-black"
               )}
             >
-              {isSpinning ? "En cours..." : isFreeSpinMode ? "TOUR GRATUIT EN COURS" : "Pari"}
+              {isSpinning ? "En cours..." : isFreeSpinMode ? "TOUR GRATUIT EN COURS" : isAutoPlaying ? "AUTO EN COURS..." : "Pari"}
             </button>
           </div>
         </div>
@@ -375,7 +475,86 @@ export function ScarabSpin() {
         </div>
 
         <AnimatePresence>
-          {winInfo && winInfo.payout > 0 && !isSpinning && !isFreeSpinMode && (
+          {bonusTriggered && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            >
+              <div className="text-center font-black drop-shadow-[0_0_30px_rgba(202,138,4,1)]">
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-4xl md:text-6xl text-white mb-4 uppercase tracking-widest"
+                >
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-200 to-yellow-500">Bonus</span> Dévérouillé!
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.6, type: "spring", bounce: 0.5 }}
+                  className="text-6xl md:text-8xl text-yellow-500 font-mono tracking-tighter"
+                >
+                  {bonusTriggered.spins}
+                </motion.div>
+                <motion.div
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="text-2xl md:text-3xl text-amber-200 mt-2 tracking-widest uppercase"
+                >
+                  Tours Gratuits
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
+          {bonusEnded && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            >
+              <div className="text-center font-black drop-shadow-[0_0_30px_rgba(0,231,1,0.5)]">
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-3xl md:text-5xl text-white mb-4 uppercase tracking-widest"
+                >
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-200 to-green-500">Fin du Bonus</span>
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.4, type: "spring", bounce: 0.5 }}
+                  className="text-6xl md:text-8xl text-[#00e701] font-mono tracking-tighter drop-shadow-[0_0_20px_rgba(0,231,1,0.8)]"
+                >
+                  {formatCurrency(bonusEnded.payout)}
+                </motion.div>
+                <motion.div
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex flex-col items-center mt-4"
+                >
+                  <span className="text-xl md:text-2xl text-green-200 tracking-widest uppercase mb-1">
+                    Gains Totaux
+                  </span>
+                  <span className="text-sm font-normal text-green-100 opacity-60">
+                    Gains déjà ajoutés à votre solde à chaque tour
+                  </span>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
+          {winInfo && winInfo.payout > 0 && !isSpinning && !isFreeSpinMode && !bonusEnded && (
             <WinPopup multiplier={winInfo.multiplier} payout={winInfo.payout} />
           )}
         </AnimatePresence>

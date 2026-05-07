@@ -1,17 +1,17 @@
 function simulateRTP() {
-  const WEIGHTS = [30, 20, 15, 12, 8, 5, 2, 1, 2.5]; // total ~ 95.5
+  const WEIGHTS = [35, 25, 20, 15, 10, 6, 3, 1.3, 3.0]; // total
   const W_TOTAL = WEIGHTS.reduce((a, b) => a + b, 0);
   const p = WEIGHTS.map((w) => w / W_TOTAL);
 
   const mults = [
-    [0.2, 0.8, 3], // grape 
-    [0.3, 1.2, 5], // banana 
-    [0.5, 1.8, 8], // carrot 
-    [0.8, 2.5, 15], // airplane 
-    [1.2, 4, 30], // scale 
-    [2.5, 8, 60], // castle 
-    [5.0, 20, 150], // trident 
-    [10, 40, 400], // wild
+    [0.2, 1.0, 3], // grape 
+    [0.4, 1.5, 4], // banana 
+    [0.5, 2.0, 6], // carrot 
+    [0.8, 3.0, 10], // airplane 
+    [1.5, 5.0, 20], // scale 
+    [3.0, 10.0, 40], // castle 
+    [5.0, 20.0, 100], // trident 
+    [10.0, 40.0, 250], // wild
   ];
   const p_wild = p[7];
 
