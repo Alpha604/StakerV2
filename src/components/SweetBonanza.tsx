@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from "../context/UserContext";
 import { cn } from "../lib/utils";
 
 export function SweetBonanza() {
@@ -59,11 +59,11 @@ export function SweetBonanza() {
                     Montant du Pari
                   </label>
                   <span className="text-[#8b9ba5] text-[13px] font-bold flex items-center gap-1">
-                    {balance.toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-3 h-3" />
+                    {balance.toFixed(4)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
                   </span>
                 </div>
                 <div className="flex items-center bg-[#0f212e] rounded border border-[#2f4553] focus-within:border-[#557086] transition-colors relative">
-                  <span className="absolute left-3 text-white font-bold"><img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-4 h-4" /></span>
+                  <span className="absolute left-3 text-white font-bold">{renderCryptoIcon(activeCrypto, "w-4 h-4")}</span>
                   <input
                     type="number"
                     value={betAmount === 0 ? "" : betAmount}
@@ -108,7 +108,7 @@ export function SweetBonanza() {
                  {winAmount > 0 ? (
                    <>
                      <span>Gagné</span>
-                     <span className="flex items-center gap-1">{winAmount.toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-4 h-4" /></span>
+                     <span className="flex items-center gap-1">{winAmount.toFixed(4)} {renderCryptoIcon(activeCrypto, "w-4 h-4")}</span>
                    </>
                  ) : "Perdu"}
                </div>

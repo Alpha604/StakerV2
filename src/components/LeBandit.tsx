@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useUser } from "../context/UserContext";
+import { useUser, renderCryptoIcon } from "../context/UserContext";
 import { cn } from "../lib/utils";
 import { WinPopup } from "./WinPopup";
 
@@ -18,19 +18,19 @@ const WEIGHTS = [
 const W_TOTAL = WEIGHTS.reduce((a, b) => a + b, 0);
 
 const SYMBOLS = [
-  { id: 0, type: "low", char: "10", color: "text-[#8d7c67] font-black drop-shadow-sm" },
-  { id: 1, type: "low", char: "J", color: "text-[#446a8b] font-black drop-shadow-sm" },
-  { id: 2, type: "low", char: "Q", color: "text-[#6b4a8b] font-black drop-shadow-sm" },
-  { id: 3, type: "low", char: "K", color: "text-[#5a8b5e] font-black drop-shadow-sm" },
-  { id: 4, type: "low", char: "A", color: "text-[#a64a3d] font-black drop-shadow-sm" },
-  { id: 5, type: "med", char: "🪤", color: "" },
-  { id: 6, type: "med", char: "🧀", color: "" },
-  { id: 7, type: "med", char: "🍺", color: "" },
-  { id: 8, type: "med", char: "🥖", color: "" },
-  { id: 9, type: "hat", char: "🎩", color: "" },
-  { id: 10, type: "wild", char: "WILD", text: "Wanted", color: "text-red-700 font-black tracking-tighter drop-shadow-[0_0_2px_rgba(0,0,0,0.5)] bg-yellow-400 border border-yellow-200 px-1 rounded-sm" },
-  { id: 11, type: "rainbow", char: "🌈", color: "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] scale-125" },
-  { id: 12, type: "scatter", char: "📷", color: "drop-shadow-[0_0_8px_rgba(202,138,4,1)] scale-125" },
+  { id: 0, type: "low", char: "10", color: "text-[#a0907e] font-black drop-shadow-sm filter" },
+  { id: 1, type: "low", char: "J", color: "text-[#5e81a0] font-black drop-shadow-sm filter" },
+  { id: 2, type: "low", char: "Q", color: "text-[#976ea4] font-black drop-shadow-sm filter" },
+  { id: 3, type: "low", char: "K", color: "text-[#629d68] font-black drop-shadow-sm filter" },
+  { id: 4, type: "low", char: "A", color: "text-[#c25141] font-black drop-shadow-sm filter" },
+  { id: 5, type: "med", char: "🪤", color: "drop-shadow-lg filter sepia-[0.3]" },
+  { id: 6, type: "med", char: "🧀", color: "drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] filter sepia-[0.3]" },
+  { id: 7, type: "med", char: "🍺", color: "drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] filter sepia-[0.3]" },
+  { id: 8, type: "med", char: "🥖", color: "drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] filter sepia-[0.3]" },
+  { id: 9, type: "hat", char: "🎩", color: "drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] filter sepia-[0.3]" },
+  { id: 10, type: "wild", char: "WANTED", text: "Wanted", color: "text-[#4a2411] font-black tracking-tighter drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] bg-[#d2b68c] border-2 border-[#8b4513] px-1 rounded-sm shadow-inner text-xl md:text-3xl" },
+  { id: 11, type: "rainbow", char: "🌈", color: "drop-shadow-[0_0_15px_rgba(255,255,255,1)] scale-125 saturate-150 animate-pulse" },
+  { id: 12, type: "scatter", char: "📷", color: "drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] scale-110 sepia-[0.2]" },
 ];
 
 const PAYOUTS = {
@@ -454,7 +454,7 @@ export function LeBandit() {
   const formatCurrency = (amount: number) => {
     return (
       <span className="inline-flex items-center gap-1">
-        {amount.toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-[1em] h-[1em]" />
+        {amount.toFixed(4)} {renderCryptoIcon(activeCrypto, "w-[1em] h-[1em]")}
       </span>
     );
   };
@@ -498,11 +498,11 @@ export function LeBandit() {
                         Montant du Pari
                       </label>
                       <span className="text-[#8b9ba5] text-[13px] font-bold flex items-center gap-1">
-                        {balance.toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-3 h-3" />
+                        {balance.toFixed(4)} {renderCryptoIcon(activeCrypto, "w-3 h-3")}
                       </span>
                     </div>
                     <div className="flex items-center bg-[#0f212e] rounded border border-[#2f4553] focus-within:border-[#557086] transition-colors relative">
-                      <span className="absolute left-3 text-white font-bold"><img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-4 h-4" /></span>
+                      <span className="absolute left-3 text-white font-bold">{renderCryptoIcon(activeCrypto, "w-4 h-4")}</span>
                       <input
                         type="number"
                         value={betAmount === 0 ? "" : betAmount}
@@ -538,7 +538,7 @@ export function LeBandit() {
                              {activeFeature === "bonushunt" ? "BonusHunt FeatureSpins" : "Rainbow FeatureSpins"}
                           </div>
                           <div className="text-white font-black flex items-center gap-1">
-                             {(betAmount * (activeFeature === "bonushunt" ? 3 : 50)).toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-3 h-3" /> / tour
+                             {(betAmount * (activeFeature === "bonushunt" ? 3 : 50)).toFixed(4)} {renderCryptoIcon(activeCrypto, "w-3 h-3")} / tour
                           </div>
                        </div>
                        <button 
@@ -717,18 +717,19 @@ export function LeBandit() {
         </div>
 
         {/* Right Side: Game */}
-        <div className="flex-1 bg-[#dcd0bd] lg:rounded-r-lg lg:rounded-l-none rounded-b-lg relative overflow-hidden flex flex-col order-1 lg:order-2 self-stretch min-h-[500px]">
+        <div className="flex-1 bg-[#bcaaa4] lg:rounded-r-lg lg:rounded-l-none rounded-b-lg relative overflow-hidden flex flex-col order-1 lg:order-2 self-stretch min-h-[500px] border border-[#3e2723]">
           {/* Noise/Vignette Overlay */}
-          <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(60,40,20,0.8)_100%)] z-10 mix-blend-multiply"></div>
+          <div className="absolute inset-0 pointer-events-none opacity-50 bg-[url('https://www.transparenttextures.com/patterns/stucco.png')] mix-blend-overlay z-10"></div>
+          <div className="absolute inset-0 pointer-events-none opacity-60 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(62,39,35,0.9)_100%)] z-10 mix-blend-multiply"></div>
           
           {/* Game Header */}
-          <div className="absolute top-4 left-0 right-0 flex justify-between px-6 z-20">
-            <div className="text-2xl font-black text-[#5a4a35] tracking-widest uppercase origin-left scale-y-150 opacity-50">LE BANDIT</div>
+          <div className="absolute top-4 left-0 right-0 flex justify-center px-6 z-20">
+            <div className="text-3xl font-black text-[#6d4c41] tracking-widest uppercase origin-left scale-y-125 opacity-70 drop-shadow-[0_2px_1px_rgba(255,255,255,0.3)]">LE BANDIT</div>
           </div>
 
           <div className="flex-1 flex items-center justify-center p-4 z-20 relative">
              {/* 6x5 Grid */}
-             <div className="relative p-3 bg-[#b5a995] rounded-xl border border-black/5 shadow-inner">
+             <div className="relative p-3 bg-[#a1887f] rounded-xl border-4 border-[#5d4037] shadow-[inset_0_4px_15px_rgba(0,0,0,0.3)]">
                 {/* Background Grid Cells (Golden Squares) */}
                 <div className="absolute inset-3 grid grid-cols-6 gap-1 md:gap-2">
                    {Array.from({ length: COLS }).map((_, x) => (
@@ -738,7 +739,7 @@ export function LeBandit() {
                             return (
                                <div key={`bg-cell-${x}-${y}`} className={cn(
                                   "w-10 h-10 md:w-16 md:h-16 rounded transition-colors duration-500",
-                                  isGolden ? "bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_15px_rgba(250,204,21,0.5)] border border-yellow-200" : "bg-[#c5b8a5] border border-white/20"
+                                  isGolden ? "bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_15px_rgba(250,204,21,0.5)] border border-yellow-200" : "bg-[#8d6e63] shadow-inner opacity-70"
                                )}>
                                   {isGolden && <div className="w-full h-full bg-white opacity-20 animate-pulse"></div>}
                                </div>

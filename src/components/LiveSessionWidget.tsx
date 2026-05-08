@@ -161,8 +161,27 @@ export function LiveSessionWidget() {
                       <RechartsTooltip 
                         contentStyle={{ backgroundColor: '#0f212e', borderColor: '#2f4553', borderRadius: '8px', fontSize: '12px' }}
                         itemStyle={{ color: '#fff', fontWeight: 'bold' }}
-                        formatter={(value: number) => [`${value >= 0 ? '+' : ''}${value.toFixed(2)}$`, 'Profit']}
-                        labelFormatter={() => ''}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                             const data = payload[0].payload;
+                             const isGain = data.profit >= 0;
+                             const stepProfit = data.win - data.bet;
+                             return (
+                               <div className="bg-[#0f212e] border border-[#2f4553] p-3 rounded-lg shadow-xl shadow-black/50">
+                                  <div className="text-white font-black mb-1">{data.game === "Start" ? "Début" : data.game}</div>
+                                  {data.game !== "Start" && (
+                                     <div className={cn("text-sm font-black mb-1", stepProfit >= 0 ? "text-[#00e701]" : "text-rose-500")}>
+                                        {stepProfit >= 0 ? "Gain: +" : "Perte: "}{stepProfit.toFixed(2)}$
+                                     </div>
+                                  )}
+                                  <div className="text-[#8b9ba5] text-xs font-bold border-t border-[#2f4553] pt-1 mt-1">
+                                     Profit Total: <span className={isGain ? "text-[#00e701]" : "text-rose-500"}>{isGain ? "+" : ""}{data.profit.toFixed(2)}$</span>
+                                  </div>
+                               </div>
+                             );
+                          }
+                          return null;
+                        }}
                       />
                       <Area
                         type="monotone"
