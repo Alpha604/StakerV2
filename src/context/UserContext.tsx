@@ -188,6 +188,9 @@ export interface CustomUser {
   rank?: UserRank;
   suspensionEndsAt?: number;
   suspensionReason?: string;
+  banAppealRequested?: boolean;
+  lastRankAppealTime?: number;
+  canAppealRank?: boolean;
   permissions?: {
     canDeposit?: boolean;
     canWithdraw?: boolean;
@@ -227,11 +230,14 @@ interface UserContextType {
   resetSession: () => void;
   showSessionStats: boolean;
   setShowSessionStats: (show: boolean) => void;
+  showLogoutConfirm: boolean;
+  setShowLogoutConfirm: (show: boolean) => void;
   activeCrypto: CryptoType;
   setActiveCrypto: (c: CryptoType) => void;
   isLoggingOut: boolean;
   logoutProgress: number;
   logoutMessage: string;
+  globalGameStatus: Record<string, { banned: boolean, reason: string, date: string }>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -243,11 +249,40 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [sessionBets, setSessionBets] = useState<SessionBet[]>([]);
   const [showSessionStats, setShowSessionStats] = useState(false);
-  const [activeCrypto, setActiveCrypto] = useState<CryptoType>(CRYPTOS[0]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [activeCrypto, setActiveCrypto] = useState<CryptoType>(() => {
+    const saved = localStorage.getItem("activeCrypto");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const exists = CRYPTOS.find(c => c.symbol === parsed.symbol);
+        if (exists) return exists;
+      } catch (e) {}
+    }
+    return CRYPTOS[0];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("activeCrypto", JSON.stringify(activeCrypto));
+  }, [activeCrypto]);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutProgress, setLogoutProgress] = useState(0);
   const [logoutMessage, setLogoutMessage] = useState("");
+
+  const [globalGameStatus, setGlobalGameStatus] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
+
+  useEffect(() => {
+    // Listen to global config for games
+    const unsubscribe = onSnapshot(doc(db, "config", "games"), (docSnap) => {
+       if (docSnap.exists()) {
+          setGlobalGameStatus(docSnap.data() as any);
+       }
+    }, (error) => {
+       console.error("Error fetching games config", error);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const balance = user?.balance || 0;
   const vault = user?.vault || 0;
@@ -290,16 +325,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
             // Handle bans and suspensions
             if (data.status === "banned") {
-              alert("Votre compte a été banni.");
-              signOut(auth);
-              setUser(null);
+              setUser({ id: firebaseUser.uid, ...(data as any) });
+              setLoading(false);
               return;
             }
             if (data.status === "suspended") {
               if (data.suspensionEndsAt && Date.now() < data.suspensionEndsAt) {
-                alert(`Votre compte est suspendu jusqu'au ${new Date(data.suspensionEndsAt).toLocaleString()}`);
-                signOut(auth);
-                setUser(null);
+                setUser({ id: firebaseUser.uid, ...(data as any) });
+                setLoading(false);
                 return;
               } else if (data.suspensionEndsAt && Date.now() >= data.suspensionEndsAt) {
                 // Suspension over, update state
@@ -339,6 +372,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               rank: "None" as any,
               createdAt: Date.now(),
               lastOnline: Date.now(),
+              canAppealRank: true,
             } as any;
 
             try {
@@ -548,11 +582,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         resetSession,
         showSessionStats,
         setShowSessionStats,
+        showLogoutConfirm,
+        setShowLogoutConfirm,
         activeCrypto,
         setActiveCrypto,
         isLoggingOut,
         logoutProgress,
         logoutMessage,
+        globalGameStatus,
       }}
     >
       {!loading ? (

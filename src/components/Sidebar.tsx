@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "../lib/utils";
 import { RankBadge } from "./RankBadge";
+import { SupportModal } from "./SupportModal";
 import {
   Home,
   Trophy,
@@ -30,6 +31,7 @@ export function Sidebar({
   isOpen: boolean;
 }) {
   const { user, showSessionStats, setShowSessionStats } = useUser();
+  const [showSupport, setShowSupport] = useState(false);
 
   return (
     <aside 
@@ -145,12 +147,15 @@ export function Sidebar({
       {/* Support at bottom */}
       <div className="mt-auto mb-4">
         <button
+          onClick={() => setShowSupport(true)}
           className="w-10 h-10 bg-bg-inner rounded-full flex items-center justify-center text-text-secondary hover:text-white transition-colors"
           title="Support en direct"
         >
           <Headset size={20} />
         </button>
       </div>
+
+      <SupportModal isOpen={showSupport} onClose={() => setShowSupport(false)} />
     </aside>
   );
 }

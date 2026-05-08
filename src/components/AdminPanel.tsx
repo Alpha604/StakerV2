@@ -1,7 +1,7 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect, useMemo } from "react";
 import { useUser, CustomUser, UserRank } from "../context/UserContext";
-import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye } from "lucide-react";
+import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
 import { collection, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
@@ -23,10 +23,14 @@ export function AdminPanel() {
   const [editLoading, setEditLoading] = useState(false);
   const [suspensionMinutes, setSuspensionMinutes] = useState<number | "">("");
   const [editTab, setEditTab] = useState<"general"|"finances"|"permissions"|"history">("general");
+  const [mainTab, setMainTab] = useState<"users"|"games">("users");
+
+  const [gamesConfig, setGamesConfig] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
 
   useEffect(() => {
     let unsubUsers: () => void;
     let unsubBets: () => void;
+    let unsubGames: () => void;
 
     const clockInterval = setInterval(() => setNow(Date.now()), 10000);
 
@@ -35,12 +39,16 @@ export function AdminPanel() {
         const usersData = snap.docs.map(d => ({ id: d.id, ...d.data() }) as CustomUser);
         setUsers(usersData);
         setLoading(false);
-      });
+      }, (err) => console.error(err));
 
       const betsQ = query(collection(db, "bets"), orderBy("timestamp", "desc"), limit(100));
       unsubBets = onSnapshot(betsQ, (snap) => {
         setRecentBets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      }, (err) => console.error(err));
+
+      unsubGames = onSnapshot(doc(db, "config", "games"), (snap) => {
+        if(snap.exists()) setGamesConfig(snap.data() as any);
+      }, (err) => console.error(err));
 
       fetchGlobalBetsCount();
       const countInterval = setInterval(fetchGlobalBetsCount, 15000);
@@ -48,6 +56,7 @@ export function AdminPanel() {
       return () => {
         if (unsubUsers) unsubUsers();
         if (unsubBets) unsubBets();
+        if (unsubGames) unsubGames();
         clearInterval(countInterval);
         clearInterval(clockInterval);
       };
@@ -74,6 +83,18 @@ export function AdminPanel() {
       alert("Erreur lors de la mise à jour");
     }
     setActionLoading(null);
+  };
+
+  const updateGameBanned = async (gameName: string, isBanned: boolean, reason: string) => {
+    try {
+      await updateDoc(doc(db, "config", "games"), {
+        [`${gameName}`]: {
+          banned: isBanned,
+          reason,
+          date: new Date().toISOString()
+        }
+      });
+    } catch(e) { console.error(e); }
   };
 
   const deleteUser = async (userToDelete: CustomUser) => {
@@ -235,7 +256,24 @@ export function AdminPanel() {
         </div>
       </div>
 
-      {/* Main Table Interface */}
+      {/* Main Interface Tabs */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => setMainTab("users")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "users" ? "bg-white/10 text-white border border-white/20" : "bg-black/40 text-gray-400 border border-transparent hover:bg-white/5"}`}
+        >
+          <Users size={18} /> Registre Utilisateurs
+        </button>
+        <button
+          onClick={() => setMainTab("games")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "games" ? "bg-white/10 text-white border border-white/20" : "bg-black/40 text-gray-400 border border-transparent hover:bg-white/5"}`}
+        >
+          <Gamepad size={18} /> Configuration Jeux
+        </button>
+      </div>
+
+      {mainTab === "users" ? (
+      /* Main Table Interface */
       <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col min-h-[600px]">
         {/* Table Toolbar */}
         <div className="p-6 border-b border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-b from-white/[0.02] to-transparent">
@@ -252,14 +290,14 @@ export function AdminPanel() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
             <input 
               type="text" 
-              placeholder="Identifier un citoyen (UID, Email, Pseudo)..." 
+              placeholder="Identifier un citoyen (UID...)" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-black/50 border border-gray-700 rounded-xl py-3 pl-12 pr-4 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-gray-600 text-sm"
             />
           </div>
         </div>
-
+        
         {/* Data Grid */}
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse min-w-[1200px]">
@@ -443,6 +481,52 @@ export function AdminPanel() {
           </table>
         </div>
       </div>
+      ) : (
+        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col">
+           <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
+              <Gamepad className="text-emerald-500" /> Gestion Globale des Jeux
+           </h2>
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+             {["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash", "Le Bandit"].map(game => {
+                const config = gamesConfig?.[game] || { banned: false, reason: "" };
+                const isBanned = config.banned;
+                
+                return (
+                   <div key={game} className="bg-black/40 border border-gray-800 rounded-xl p-5 flex flex-col gap-4">
+                      <div className="flex justify-between items-center">
+                         <span className="font-bold text-lg text-white">{game}</span>
+                         <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${isBanned ? 'bg-red-500/20 text-red-500 border border-red-500/20' : 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/20'}`}>
+                           {isBanned ? 'Bloqué' : 'En Ligne'}
+                         </span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Statut / Raison</label>
+                        <select 
+                           value={isBanned ? config.reason || "En construction" : "online"}
+                           onChange={(e) => {
+                              if (e.target.value === "online") {
+                                 updateGameBanned(game, false, "");
+                              } else {
+                                 updateGameBanned(game, true, e.target.value);
+                              }
+                           }}
+                           className="bg-[#0c0c0e] text-white p-3 rounded-lg border border-gray-800 focus:border-emerald-500/50 outline-none w-full"
+                        >
+                           <option value="online">En Ligne (Actif)</option>
+                           <option value="En conclusion">En conclusion</option>
+                           <option value="En construction">En construction</option>
+                           <option value="Maintenance">Maintenance</option>
+                           <option value="Mise à jour">Mise à jour (MAJ)</option>
+                           <option value="Ban Définitif">Ban Définitif</option>
+                        </select>
+                      </div>
+                   </div>
+                )
+             })}
+           </div>
+        </div>
+      )}
 
       {/* Editing Modal (Command Center Style) */}
       {editingUser ? (
@@ -639,7 +723,23 @@ export function AdminPanel() {
 
                    {editTab === "permissions" && (
                       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                       <FormSection title="Restrictions Ludiques" icon={<Settings className="text-rose-400" />}>
+                       <FormSection title="Restrictions Ludiques & Systèmes" icon={<Settings className="text-rose-400" />}>
+                         <div className="mb-8 p-4 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-between">
+                           <div>
+                             <h4 className="font-bold text-white mb-1">Requêtes de Promotion</h4>
+                             <p className="text-xs text-gray-500">Autoriser l'utilisateur à créer des requêtes d'évolution de grade.</p>
+                           </div>
+                           <label className="relative inline-flex items-center cursor-pointer">
+                             <input 
+                               type="checkbox" 
+                               className="sr-only peer"
+                               checked={editForm.canAppealRank !== false}
+                               onChange={e => setEditForm({...editForm, canAppealRank: e.target.checked})}
+                             />
+                             <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                           </label>
+                         </div>
+
                          <p className="text-sm text-gray-500 mb-6">Bloquez l'accès aux modules spécifiés (Rouge = Verrouillé).</p>
                          
                          <div className="mb-8">

@@ -20,7 +20,7 @@ export function Header({
   setView: (view: any) => void;
   toggleSidebar: () => void;
 }) {
-  const { user, balance, logoutUser, activeCrypto, setActiveCrypto } = useUser();
+  const { user, balance, setShowLogoutConfirm, activeCrypto, setActiveCrypto } = useUser() as any;
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -91,7 +91,7 @@ export function Header({
                 <Trophy size={18} />
               </button>
               
-              <button className="connexion-btn ml-2" onClick={logoutUser} title="Déconnexion">
+              <button className="connexion-btn ml-2" onClick={() => setShowLogoutConfirm(true)} title="Déconnexion">
                 Déconnexion
               </button>
             </div>

@@ -3,7 +3,8 @@ import { useUser } from "../context/UserContext";
 import { db } from "../lib/firebase";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { formatCurrency } from "../lib/utils";
-import { BarChart3, TrendingUp, TrendingDown, Target, Activity, Flame, Trophy, Coins, Clock, ListOrdered, Percent, Loader } from "lucide-react";
+import { TruckLoader } from "./TruckLoader";
+import { BarChart3, TrendingUp, TrendingDown, Target, Activity, Flame, Trophy, Coins, Clock, ListOrdered, Percent } from "lucide-react";
 import { cn } from "../lib/utils";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
 
@@ -65,9 +66,9 @@ export function Stats() {
 
     chronologicalBets.forEach((bet: any, i: number) => {
       // Compatibility with localized sessionBets vs global bets
-      const betAmount = bet.betAmount ?? bet.amount ?? 0;
-      const profit = bet.profit ?? (bet.payout ? bet.payout - bet.amount : 0);
-      const multiplier = bet.multiplier ?? 0;
+      const betAmount = Number(bet.betAmount ?? bet.amount ?? 0);
+      const profit = bet.profit !== undefined ? Number(bet.profit) : (bet.payout !== undefined ? Number(bet.payout) - betAmount : 0);
+      const multiplier = Number(bet.multiplier ?? 0);
       const gameName = bet.game || "Unknown";
 
       totalWagered += betAmount;
@@ -130,7 +131,7 @@ export function Stats() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
-        <Loader className="animate-spin text-accent" size={48} />
+        <TruckLoader />
       </div>
     );
   }
@@ -269,7 +270,7 @@ export function Stats() {
                <Trophy className="text-amber-400" size={20} /> Top Jeux
              </h2>
              <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 pr-2">
-                {Object.entries(stats.gameStats).sort((a, b) => b[1].bets - a[1].bets).map(([gameName, gameData], index) => (
+                {(Object.entries(stats.gameStats) as [string, { bets: number, wagered: number, won: number, profit: number }][]).sort((a, b) => b[1].bets - a[1].bets).map(([gameName, gameData], index) => (
                    <div key={gameName} className="bg-[#213743] p-4 rounded-lg border border-[#2f4553] flex flex-col gap-2">
                        <div className="flex justify-between items-center">
                           <div className="font-bold text-white flex items-center gap-2">

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, useAnimation } from "motion/react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn, formatCurrency } from "../lib/utils";
@@ -48,6 +48,11 @@ export function Wheel() {
   const [betAmount, setBetAmount] = useState<number>(10);
   const [risk, setRisk] = useState<"low" | "medium" | "high">("low");
   const [segmentsCount, setSegmentsCount] = useState<10 | 20 | 30 | 40 | 50>(10);
+
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [autoBetsCount, setAutoBetsCount] = useState<number>(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
+  const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
 
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -106,6 +111,70 @@ export function Wheel() {
     setWinInfo({ multiplier: winMultiplier, payout });
   };
 
+  // Auto Play Loop
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const playAutoRound = async () => {
+      // 1. Check conditions
+      if (betAmount > balance) {
+        setIsAutoPlaying(false);
+        return;
+      }
+      
+      const success = await subtractBalance(betAmount);
+      if (!success) {
+        setIsAutoPlaying(false);
+        return;
+      }
+
+      setIsSpinning(true);
+      setWinInfo(null);
+
+      // Pick winning index
+      const winIndex = Math.floor(Math.random() * numSegments);
+      const winMultiplier = segments[winIndex].m;
+
+      const extraSpins = 360 * 5;
+      const targetAngle = -(winIndex * anglePerSegment + anglePerSegment / 2) + extraSpins;
+      const newRotation = rotation + targetAngle - (rotation % 360);
+
+      await controls.start({
+        rotate: newRotation,
+        transition: { duration: 3, ease: [0.2, 0.8, 0.2, 1] },
+      });
+
+      setRotation(newRotation);
+      setIsSpinning(false);
+
+      const payout = betAmount * winMultiplier;
+      if (winMultiplier > 0) {
+        addBalance(payout);
+      }
+
+      recordBet("Wheel", betAmount, winMultiplier, payout - betAmount);
+      setWinInfo({ multiplier: winMultiplier, payout });
+
+      if (autoBetsCount > 0) {
+        setAutoBetsRemaining(prev => {
+           const next = prev - 1;
+           if (next <= 0) setIsAutoPlaying(false);
+           return next;
+        });
+      }
+    };
+
+    if (isAutoPlaying && !isSpinning) {
+      if (autoBetsCount === 0 || autoBetsRemaining > 0) {
+        timeoutId = setTimeout(() => {
+          playAutoRound();
+        }, 800); // Wait between spins
+      }
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [isAutoPlaying, isSpinning, autoBetsRemaining, autoBetsCount, betAmount, balance]);
+
   // Helper to generate SVG pie slices
   const createSlices = () => {
     let paths = [];
@@ -158,8 +227,14 @@ export function Wheel() {
         <div className="w-full lg:w-[320px] shrink-0 bg-[#213743] lg:rounded-l-lg lg:rounded-r-none rounded-t-lg flex flex-col p-4 z-10 relative order-2 lg:order-1 border-r border-[#0f212e]">
           <div className="flex flex-col gap-4 relative w-full h-full">
             <div className="bg-[#0f212e] rounded-full p-1 flex">
-              <button className="flex-1 text-[13px] font-bold text-white bg-[#2f4553] rounded-full py-1.5 transition-colors shadow-sm">Manuel</button>
-              <button className="flex-1 text-[13px] font-bold text-[#8b9ba5] hover:text-white rounded-full py-1.5 transition-colors">Auto</button>
+              <button 
+                onClick={() => { if(!isAutoPlaying && !isSpinning) setMode("manual"); }}
+                className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "manual" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+              >Manuel</button>
+              <button 
+                onClick={() => { if(!isAutoPlaying && !isSpinning) setMode("auto"); }}
+                className={cn("flex-1 text-[13px] font-bold rounded-full py-1.5 transition-colors", mode === "auto" ? "text-white bg-[#2f4553] shadow-sm" : "text-[#8b9ba5] hover:text-white")}
+              >Auto</button>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -212,8 +287,8 @@ export function Wheel() {
                 <select
                   value={risk}
                   onChange={(e) => setRisk(e.target.value as "low" | "medium" | "high")}
-                  disabled={isSpinning}
-                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative"
+                  disabled={isSpinning || isAutoPlaying}
+                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
                 >
                   <option value="low" className="text-black">Faible</option>
                   <option value="medium" className="text-black">Moyen</option>
@@ -233,8 +308,8 @@ export function Wheel() {
                 <select
                   value={segmentsCount}
                   onChange={(e) => setSegmentsCount(Number(e.target.value) as 10 | 20 | 30 | 40 | 50)}
-                  disabled={isSpinning}
-                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative"
+                  disabled={isSpinning || isAutoPlaying}
+                  className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none appearance-none cursor-pointer z-10 relative disabled:opacity-50"
                 >
                   <option value={10} className="text-black">10</option>
                   <option value={20} className="text-black">20</option>
@@ -248,18 +323,71 @@ export function Wheel() {
               </div>
             </div>
 
+            {mode === "auto" && (
+              <div className="flex flex-col gap-1 mt-2">
+                <label className="text-[#8b9ba5] text-[13px] font-bold px-1">
+                  Nombre de paris (0 = infini)
+                </label>
+                <div className="flex bg-[#0f212e] rounded border border-[#2f4553] relative">
+                  <input
+                    type="number"
+                    value={autoBetsCount}
+                    onChange={(e) => setAutoBetsCount(Number(e.target.value))}
+                    disabled={isAutoPlaying || isSpinning}
+                    className="w-full bg-transparent text-white font-bold text-[13px] p-2.5 outline-none disabled:opacity-50"
+                    min="0"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex-1"></div>
 
-            <button
-              onClick={handleSpin}
-              disabled={isSpinning || balance < betAmount || betAmount <= 0}
-              className={cn(
-                "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
-                (isSpinning || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed",
-              )}
-            >
-              Pari
-            </button>
+            {mode === "manual" ? (
+              <button
+                onClick={handleSpin}
+                disabled={isSpinning || balance < betAmount || betAmount <= 0}
+                className={cn(
+                  "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                  (isSpinning || balance < betAmount || betAmount <= 0) && "opacity-50 cursor-not-allowed",
+                )}
+              >
+                Pari
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (isAutoPlaying) {
+                    setIsAutoPlaying(false);
+                  } else {
+                    setIsAutoPlaying(true);
+                    setAutoBetsRemaining(autoBetsCount);
+                  }
+                }}
+                disabled={!isAutoPlaying && (balance < betAmount || betAmount <= 0)}
+                className={cn(
+                  "w-full py-3.5 rounded font-extrabold transition-all text-sm relative overflow-hidden shadow-[0_0_15px_rgba(27,200,106,0.3)]",
+                  isAutoPlaying 
+                    ? "bg-[#ed4163] hover:bg-[#ed4163]/80 text-white shadow-[0_0_15px_rgba(237,65,99,0.3)]" 
+                    : "bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
+                  (!isAutoPlaying && (balance < betAmount || betAmount <= 0)) && "opacity-50 cursor-not-allowed shadow-none"
+                )}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  {isAutoPlaying ? (
+                    <>
+                      <div className="w-2 h-2 rounded-sm bg-white animate-pulse" />
+                      Arrêter l'Autobet
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-black border-b-[5px] border-b-transparent ml-1" />
+                      Démarrer Autobet
+                    </>
+                  )}
+                </div>
+              </button>
+            )}
           </div>
         </div>
 

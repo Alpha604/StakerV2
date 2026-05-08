@@ -38,9 +38,19 @@
         "timestamp": { "type": "number" }
       },
       "required": ["userId", "userName", "game", "betAmount", "multiplier", "payout", "timestamp"]
+    },
+    "Config": {
+      "title": "Config",
+      "description": "Global application configuration.",
+      "type": "object",
+      "properties": {}
     }
   },
   "firestore": {
+    "/config/{configId}": {
+      "schema": "Config",
+      "description": "Global config documents."
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "User profiles and wallet data."

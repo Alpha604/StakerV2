@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { LogOut } from "lucide-react";
 import { UserProvider, useUser } from "./context/UserContext";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -19,18 +20,22 @@ import { VideoPoker } from "./components/VideoPoker";
 import { Baccarat } from "./components/Baccarat";
 import { TomeOfLife } from "./components/TomeOfLife";
 import { LiveSessionWidget } from "./components/LiveSessionWidget";
+import { TruckLoader } from "./components/TruckLoader";
 import { Blackjack } from "./components/Blackjack";
 import { Chicken } from "./components/Chicken";
 import { Moles } from "./components/Moles";
 import { Slots } from "./components/Slots";
 import { ScarabSpin } from "./components/ScarabSpin";
 import { LeBandit } from "./components/LeBandit";
+import { SweetBonanza } from "./components/SweetBonanza";
 import { AdminPanel } from "./components/AdminPanel";
 import { VerifyBet } from "./components/VerifyBet";
 import { ApprovalGuard } from "./components/ApprovalGuard";
 import { Profile } from "./components/Profile";
 import { Stats } from "./components/Stats";
 import { Leaderboard } from "./components/Leaderboard";
+
+import { BannedScreen } from "./components/BannedScreen";
 
 export type ViewType =
   | "home"
@@ -89,31 +94,6 @@ export default function App() {
   );
 }
 
-function HamsterLoader() {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#191a1a]/80 backdrop-blur-sm">
-      <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
-        <div className="wheel"></div>
-        <div className="hamster">
-          <div className="hamster__body">
-            <div className="hamster__head">
-              <div className="hamster__ear"></div>
-              <div className="hamster__eye"></div>
-              <div className="hamster__nose"></div>
-            </div>
-            <div className="hamster__limb hamster__limb--fr"></div>
-            <div className="hamster__limb hamster__limb--fl"></div>
-            <div className="hamster__limb hamster__limb--br"></div>
-            <div className="hamster__limb hamster__limb--bl"></div>
-            <div className="hamster__tail"></div>
-          </div>
-        </div>
-        <div className="spoke"></div>
-      </div>
-    </div>
-  );
-}
-
 function InnerApp() {
   const [view, setView] = useState<ViewType>("home");
   const [sidebarOpen, setSidebarOpen] = useState(true); // Default open
@@ -125,7 +105,7 @@ function InnerApp() {
     setTimeout(() => {
       setView(newView);
       setIsChangingView(false);
-    }, 1000);
+    }, 50); // fast transition
   };
 
   return (
@@ -136,10 +116,40 @@ function InnerApp() {
 }
 
 function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, setSidebarOpen }: any) {
-  const { isLoggingOut } = useUser();
+  const { user, isLoggingOut, showLogoutConfirm, setShowLogoutConfirm, logoutUser } = useUser() as any;
+
+  if (user?.status === "banned" || user?.status === "suspended") {
+    return <BannedScreen user={user} />;
+  }
 
   return (
       <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm transition-opacity duration-300 px-4">
+            <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-sm w-full border border-[#374151] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+              <LogOut className="text-red-500 mb-4 h-12 w-12" />
+              <h2 className="text-2xl font-black text-white mb-2">Déconnexion</h2>
+              <p className="text-text-secondary mb-8 font-medium">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+              <div className="flex gap-4 w-full">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 bg-bg-panel hover:bg-bg-inner border border-border-subtle hover:border-white text-white font-bold rounded-lg transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutConfirm(false);
+                    logoutUser();
+                  }}
+                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors border-b-4 border-red-700 active:border-b-0 active:translate-y-1"
+                >
+                  Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <Header
           setView={handleSetView as any}
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -181,6 +191,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "moles" && <ApprovalGuard gameName="moles"><Moles /></ApprovalGuard>}
               {view === "scarab-spin" && <ApprovalGuard gameName="scarab-spin"><ScarabSpin /></ApprovalGuard>}
               {view === "le-bandit" && <ApprovalGuard gameName="le-bandit"><LeBandit /></ApprovalGuard>}
+              {view === "sweet-bonanza" && <ApprovalGuard gameName="sweet-bonanza"><SweetBonanza /></ApprovalGuard>}
             </div>
             
             {/* Footer */}
@@ -196,7 +207,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           </main>
         </div>
         <LiveSessionWidget />
-        {isChangingView && !isLoggingOut && <HamsterLoader />}
+        {isChangingView && !isLoggingOut && <TruckLoader />}
         {isLoggingOut && <LogoutScreen />}
       </div>
   );

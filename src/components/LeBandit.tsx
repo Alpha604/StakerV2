@@ -107,7 +107,7 @@ type ClusterInfo = {
 };
 
 export function LeBandit() {
-  const { user, balance, subtractBalance, addBalance, recordBet } = useUser();
+  const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
   const [betAmount, setBetAmount] = useState<number>(1);
   const [board, setBoard] = useState<{id: number, symbolIdx: number}[][]>(() => generateBoard());
   const [goldenSquares, setGoldenSquares] = useState<boolean[][]>(() => Array(COLS).fill(0).map(() => Array(ROWS).fill(false)));
@@ -452,10 +452,11 @@ export function LeBandit() {
 
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return (
+      <span className="inline-flex items-center gap-1">
+        {amount.toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-[1em] h-[1em]" />
+      </span>
+    );
   };
 
   const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -496,17 +497,17 @@ export function LeBandit() {
                       <label className="text-[#8b9ba5] text-[13px] font-bold">
                         Montant du Pari
                       </label>
-                      <span className="text-[#8b9ba5] text-[13px] font-bold">
-                        {formatCurrency(balance)}
+                      <span className="text-[#8b9ba5] text-[13px] font-bold flex items-center gap-1">
+                        {balance.toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-3 h-3" />
                       </span>
                     </div>
                     <div className="flex items-center bg-[#0f212e] rounded border border-[#2f4553] focus-within:border-[#557086] transition-colors relative">
-                      <span className="absolute left-3 text-white font-bold">$</span>
+                      <span className="absolute left-3 text-white font-bold"><img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-4 h-4" /></span>
                       <input
                         type="number"
                         value={betAmount === 0 ? "" : betAmount}
                         onChange={handleBetChange}
-                        className="w-full bg-transparent text-white font-bold pl-7 pr-2 py-2.5 outline-none font-mono text-[13px]"
+                        className="w-full bg-transparent text-white font-bold pl-9 pr-2 py-2.5 outline-none font-mono text-[13px]"
                         placeholder="0.00"
                         disabled={isSpinning || isAutoPlaying || activeFeature !== "none"}
                       />
@@ -536,8 +537,8 @@ export function LeBandit() {
                           <div className="text-yellow-500 font-bold text-xs uppercase tracking-wider">
                              {activeFeature === "bonushunt" ? "BonusHunt FeatureSpins" : "Rainbow FeatureSpins"}
                           </div>
-                          <div className="text-white font-black">
-                             {formatCurrency(betAmount * (activeFeature === "bonushunt" ? 3 : 50))} / tour
+                          <div className="text-white font-black flex items-center gap-1">
+                             {(betAmount * (activeFeature === "bonushunt" ? 3 : 50)).toFixed(4)} <img src={activeCrypto.icon} alt={activeCrypto.symbol} className="w-3 h-3" /> / tour
                           </div>
                        </div>
                        <button 

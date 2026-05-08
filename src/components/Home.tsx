@@ -91,8 +91,13 @@ const ALL_GAMES = [
   },
   {
     name: "Le Bandit", category: "slots", link: "le-bandit", provider: "Hacksaw Gaming",
-    releaseDate: new Date(Date.now()).toISOString(),
+    releaseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     img: "https://mediumrare.imgix.net/8ade942d35d2cdbddf7888f303be4cf4bda8c650a112b3c53f7c6f3ccad81254?&dpr=2&format=auto&auto=format&q=50"
+  },
+  {
+    name: "Sweet Bonanza", category: "slots", link: "sweet-bonanza", provider: "Dramatic Play",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://rainbet.com/_next/image?url=https:%2F%2Frainbet-images.nyc3.cdn.digitaloceanspaces.com%2Fslots%2Fpragmatic-play-sweet-bonanza.jpg&w=828&q=75"
   }
 ];
 
@@ -104,10 +109,15 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     } catch { return []; }
   });
 
-  const { sessionBets } = useUser();
+  const { sessionBets, globalGameStatus } = useUser() as any;
 
   const getGameBetsCount = (gameName: string) => {
-    return sessionBets.filter(b => b.game.toLowerCase() === gameName.toLowerCase()).length;
+    return sessionBets.filter((b: any) => b.game.toLowerCase() === gameName.toLowerCase()).length;
+  };
+
+  const isGameBanned = (gameName: string) => {
+    if (globalGameStatus?.[gameName]) return globalGameStatus[gameName].banned;
+    return ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => gameName.toLowerCase() === n.toLowerCase());
   };
 
   const toggleLike = (e: React.MouseEvent, gameName: string) => {
@@ -150,7 +160,8 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
         {gamesToRender.map((game) => {
-          const isBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => game.name.toLowerCase() === n.toLowerCase());
+          const isBanned = isGameBanned(game.name);
+          const banInfo = globalGameStatus?.[game.name] || { reason: "En construction", date: new Date().toISOString() };
           return (
           <div
             key={game.name}
@@ -209,14 +220,33 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
                 <div className="absolute pointer-events-none block w-[180%] -top-24 left-1/2 -translate-x-1/2 z-[100]">
                   <div className="flex flex-col items-center opacity-0 transition-all ease-in duration-300 translate-y-1/2 group-hover/info:opacity-100 group-hover/info:-translate-y-1/4">
                     <div className="flex flex-col justify-start text-left w-full bg-[#0f212e] border border-[#2f4553] rounded-md p-3 drop-shadow-xl shadow-xl">
-                      <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-200 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0">
-                        <span className="text-gray-400 mt-1">Mises totales</span>
-                        <span className="text-gray-100 mt-1">{getGameBetsCount(game.name).toLocaleString('fr-FR')}</span>
-                      </div>
-                      <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-300 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
-                        <span className="text-gray-400">Gain Max.</span>
-                        <span className="text-gray-100">{("badge" in game && game.badge) ? game.badge : "100×"}</span>
-                      </div>
+                      {isBanned ? (
+                        <>
+                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 mb-2 text-red-400">
+                             <span className="font-bold">Statut</span>
+                             <span>{banInfo.reason}</span>
+                          </div>
+                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 text-text-secondary">
+                             <span>Date</span>
+                             <span>{new Date(banInfo.date).toLocaleDateString("fr-FR")}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-200 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0">
+                            <span className="text-gray-400 mt-1">RTP</span>
+                            <span className="text-gray-100 mt-1">{('rtp' in game ? game.rtp : (game.category === 'slots' ? '96.50%' : '99.00%')) as string}</span>
+                          </div>
+                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-300 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
+                            <span className="text-gray-400">Éditeur</span>
+                            <span className="text-gray-100 truncate max-w-[80px] text-right">{('provider' in game) ? game.provider : 'Stake Originals'}</span>
+                          </div>
+                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-400 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
+                            <span className="text-gray-400">Date</span>
+                            <span className="text-gray-100">{('releaseDate' in game && game.releaseDate) ? new Date(game.releaseDate).getFullYear() : '2023'}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                     <div className="h-0 w-fit border-x-[8px] border-t-[8px] border-transparent border-t-[#2f4553] -mt-[0.5px]"></div>
                   </div>
@@ -267,18 +297,53 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             </button>
           );
         })}
-        <button
-          onClick={() => setView("leaderboard")}
-          className={cn(
-            "px-4 py-2.5 rounded-full flex items-center gap-2 text-sm font-bold transition-all shadow-sm cursor-pointer",
-            view === "leaderboard" 
-               ? "bg-white text-black drop-shadow-md"
-               : "bg-bg-panel text-text-secondary hover:bg-bg-inner hover:text-white border border-border-subtle"
-          )}
-        >
-           <Tv size={16} /> <span>Classement</span>
-        </button>
       </div>
+
+      {/* Top Banner (Latest Game) */}
+      {view === "home" && (
+        <div className="bg-gradient-to-r from-[#2a1b38] to-[#121f29] rounded-2xl w-full p-6 md:p-10 mb-8 border border-white/5 relative overflow-hidden group shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-0"></div>
+          <div className="relative z-10 max-w-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-[#1475e1] text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-md">
+                Nouveau Jeu
+              </span>
+              <span className="text-text-secondary text-sm font-bold">Dramatic Play</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md">Sweet Bonanza</h2>
+            <p className="text-text-secondary font-medium mb-6 leading-relaxed">
+              Découvrez la machine à sous sucrée Sweet Bonanza de Dramatic Play ! Profitez de symboles multiplicateurs et d'un mode tours gratuits explosif jusqu'à 21100× votre mise.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+               <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">RTP</span>
+                  <span className="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded">96.48%</span>
+               </div>
+               <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">Gain Max</span>
+                  <span className="text-amber-400 font-mono font-bold bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded">21,100×</span>
+               </div>
+            </div>
+            {isGameBanned("Sweet Bonanza") ? (
+               <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed w-fit">
+                  <Lock size={18} /> Bloqué : {globalGameStatus?.["Sweet Bonanza"]?.reason || "Maintenance"}
+               </div>
+            ) : (
+               <button
+                  onClick={() => setView("sweet-bonanza")}
+                  className="bg-[#00e701] hover:bg-[#00c700] text-[#0a2e0a] font-black px-8 py-3.5 rounded-lg transition-transform active:scale-95 drop-shadow flex items-center gap-2"
+               >
+                  Jouer Maintenant
+               </button>
+            )}
+          </div>
+          <div className="relative z-10 w-full max-w-[200px] md:max-w-[280px]">
+             <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500 border-4 border-[#0f212e]">
+                <img src="https://rainbet.com/_next/image?url=https:%2F%2Frainbet-images.nyc3.cdn.digitaloceanspaces.com%2Fslots%2Fpragmatic-play-sweet-bonanza.jpg&w=828&q=75" alt="Sweet Bonanza" className="w-full h-full object-cover" />
+             </div>
+          </div>
+        </div>
+      )}
 
       {/* Results based on view */}
       {view === "home" ? (
@@ -318,19 +383,18 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
              </h2>
           </div>
           
-          <div className="mt-4 mb-6">
-             <h3 className="text-white font-bold text-lg mb-4 flex items-center justify-between">
-                <div>Hacksaw Gaming <span className="text-sm font-normal text-text-secondary ml-2">{filteredGames.filter(g => g.provider === "Hacksaw Gaming").length} jeux</span></div>
-             </h3>
-             {renderGameGrid(filteredGames.filter(g => g.provider === "Hacksaw Gaming"))}
-          </div>
-
-          <div className="mt-4 mb-6">
-             <h3 className="text-white font-bold text-lg mb-4 flex items-center justify-between">
-                <div>Autres Fournisseurs</div>
-             </h3>
-             {renderGameGrid(filteredGames.filter(g => g.provider !== "Hacksaw Gaming"))}
-          </div>
+          {Array.from(new Set(filteredGames.map(g => g.provider || "Stake Originals"))).map(provider => {
+             const providerGames = filteredGames.filter(g => (g.provider || "Stake Originals") === provider);
+             if (providerGames.length === 0) return null;
+             return (
+               <div key={provider} className="mt-4 mb-6">
+                 <h3 className="text-white font-bold text-lg mb-4 flex items-center justify-between">
+                    <div>{provider} <span className="text-sm font-normal text-text-secondary ml-2">{providerGames.length} jeux</span></div>
+                 </h3>
+                 {renderGameGrid(providerGames)}
+               </div>
+             )
+          })}
         </div>
       ) : (
         <div className="flex flex-col">
