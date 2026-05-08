@@ -743,6 +743,32 @@ export function AdminPanel() {
                          <p className="text-sm text-gray-500 mb-6">Bloquez l'accès aux modules spécifiés (Rouge = Verrouillé).</p>
                          
                          <div className="mb-8">
+                           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Accès Financier</h4>
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                             {[
+                               { id: "canDeposit", label: "Dépôts", value: editForm.permissions?.canDeposit !== false },
+                               { id: "canWithdraw", label: "Retraits", value: editForm.permissions?.canWithdraw !== false },
+                               { id: "canUseVault", label: "Vault (Coffre)", value: editForm.permissions?.canUseVault !== false }
+                             ].map(perm => (
+                               <label key={perm.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${!perm.value ? 'bg-rose-500/5 border-rose-500/30 text-rose-300' : 'bg-[#0c0c0e] border-gray-800 hover:border-gray-600 text-gray-300'}`}>
+                                 <input 
+                                   type="checkbox" 
+                                   className="sr-only"
+                                   checked={perm.value}
+                                   onChange={e => {
+                                     setEditForm({...editForm, permissions: { ...(editForm.permissions||{}), [perm.id]: e.target.checked }});
+                                   }}
+                                 />
+                                 <span className="w-4 h-4 rounded-[4px] border border-gray-600 flex items-center justify-center shrink-0" style={{backgroundColor: perm.value ? '#10b981' : 'transparent', borderColor: perm.value ? '#10b981' : ''}}>
+                                    {perm.value && <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                 </span>
+                                 <span className="text-sm font-medium">{perm.label}</span>
+                               </label>
+                             ))}
+                           </div>
+                         </div>
+
+                         <div className="mb-8">
                            <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Moteur Puits - Classiques</h4>
                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                              {[

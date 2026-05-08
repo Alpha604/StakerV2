@@ -60,6 +60,8 @@ export function ScarabSpin() {
   const [freeSpins, setFreeSpins] = useState(0);
   const [isFreeSpinMode, setIsFreeSpinMode] = useState(false);
   const [totalFreeSpinWin, setTotalFreeSpinWin] = useState(0);
+  const [expandingSymbol, setExpandingSymbol] = useState<number | null>(null);
+  const [expandingReels, setExpandingReels] = useState<boolean[]>([false, false, false, false, false]);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
 
   const getRandomSymbol = () => {
@@ -181,7 +183,41 @@ export function ScarabSpin() {
       }
     }
 
-    setBoard(finalBoard);
+    let expandFoundPos: number[] = [];
+    if (isFreeSpinMode && expandingSymbol !== null) {
+        for (let x = 0; x < COLS; x++) {
+            for (let y = 0; y < ROWS; y++) {
+                if (finalBoard[x][y] === expandingSymbol || SYMBOLS[finalBoard[x][y]].id === "wild") {
+                   expandFoundPos.push(x);
+                   break;
+                }
+            }
+        }
+        
+        const minToExpand = expandingSymbol >= 4 ? 2 : 3; // high tier needs 2, low tier needs 3
+        if (expandFoundPos.length >= minToExpand) {
+             const newReels = [false, false, false, false, false];
+             expandFoundPos.forEach(x => newReels[x] = true);
+             setExpandingReels(newReels);
+
+             await new Promise(resolve => setTimeout(resolve, 800)); // wait a bit before expansion visually
+             
+             // Expand board visually 
+             for(let x of expandFoundPos) {
+                 for(let y=0; y<ROWS; y++) finalBoard[x][y] = expandingSymbol;
+             }
+             
+             // Calculate 20 lines of expansion
+             const expMult = SYMBOLS[expandingSymbol].mults[expandFoundPos.length - 1] || 0;
+             if (expMult > 0) {
+                 totalMultiplier += expMult * 20; // Expanded symbol pays on all lines!
+             }
+        } else {
+             setExpandingReels([false, false, false, false, false]);
+        }
+    }
+
+    setBoard([...finalBoard]);
     setWinningLines(currentWinningLines);
 
     let payout = 0;
@@ -189,6 +225,11 @@ export function ScarabSpin() {
     // Trigger Free Spins
     if (scattersCount >= 3) {
        const newSpins = scattersCount === 3 ? 10 : scattersCount === 4 ? 15 : 20;
+       
+       if (!isFreeSpinMode) {
+          const newExpBoundary = Math.floor(Math.random() * 7); // Pick a random symbol (not wild/scatter)
+          setExpandingSymbol(newExpBoundary);
+       }
        
        setBonusTriggered({ spins: newSpins });
        setTimeout(() => setBonusTriggered(null), 3000);
@@ -201,7 +242,6 @@ export function ScarabSpin() {
     const willBeFreeSpins = isFreeSpinMode || scattersCount >= 3;
 
     if (totalMultiplier > 0) {
-      // In free spins, the betAmount used for payout is the triggering bet, but here betAmount is just the state
       payout = betAmount * totalMultiplier;
       await addBalance(payout);
       setWinInfo({ multiplier: totalMultiplier, payout });
@@ -380,6 +420,18 @@ export function ScarabSpin() {
                       <span className="text-4xl font-black text-white">{freeSpins}</span>
                       <span className="text-sm font-bold text-[#8b9ba5] uppercase">restants</span>
                   </div>
+                  {expandingSymbol !== null && (
+                      <div className="mb-4 flex flex-col items-center">
+                         <span className="text-xs font-bold text-amber-500 uppercase">Symbole Extensible</span>
+                         <div className="text-3xl mt-1 p-2 bg-black/40 rounded-lg border border-amber-500/50">
+                            {SYMBOLS[expandingSymbol].img ? (
+                               <img src={SYMBOLS[expandingSymbol].img!} alt="expand" className="w-10 h-10 object-contain" />
+                            ) : (
+                               <span>{SYMBOLS[expandingSymbol].char}</span>
+                            )}
+                         </div>
+                      </div>
+                  )}
                   <div className="text-center w-full bg-[#0f212e] p-3 rounded-lg border border-[#2f4553]">
                       <span className="text-[#8b9ba5] text-xs font-medium uppercase block mb-1">Gains Totaux</span>
                       <span className="text-xl font-bold text-[#00e701]">{formatCurrency(totalFreeSpinWin)}</span>
@@ -434,8 +486,13 @@ export function ScarabSpin() {
             
             {/* Columns (Reels) */}
             <div className="grid grid-cols-5 gap-1.5 md:gap-3 w-full h-full relative z-10">
-                {Array.from({ length: COLS }).map((_, cIndex) => (
-                    <div key={`col-${cIndex}`} className="flex flex-col gap-1.5 md:gap-3 bg-black/60 rounded-xl overflow-hidden shadow-inner p-1">
+                {Array.from({ length: COLS }).map((_, cIndex) => {
+                    const isExpandedCol = expandingReels[cIndex];
+                    return (
+                    <div key={`col-${cIndex}`} className={cn(
+                        "flex flex-col gap-1.5 md:gap-3 bg-black/60 rounded-xl overflow-hidden shadow-inner p-1 relative transition-all duration-500",
+                        isExpandedCol ? "ring-4 ring-amber-400 bg-amber-900/40 z-20 shadow-[0_0_30px_rgba(251,191,36,0.6)]" : ""
+                    )}>
                         {Array.from({ length: ROWS }).map((_, rIndex) => {
                             const symbolId = board[cIndex][rIndex];
                             const symConfig = SYMBOLS[symbolId];
@@ -470,7 +527,8 @@ export function ScarabSpin() {
                             );
                         })}
                     </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
 

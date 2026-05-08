@@ -191,9 +191,11 @@ export interface CustomUser {
   banAppealRequested?: boolean;
   lastRankAppealTime?: number;
   canAppealRank?: boolean;
+  activeCryptoSymbol?: string;
   permissions?: {
     canDeposit?: boolean;
     canWithdraw?: boolean;
+    canUseVault?: boolean;
     blockedGames?: Record<string, boolean>;
   };
 }
@@ -250,21 +252,40 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [sessionBets, setSessionBets] = useState<SessionBet[]>([]);
   const [showSessionStats, setShowSessionStats] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [activeCrypto, setActiveCrypto] = useState<CryptoType>(() => {
+  const [activeCrypto, setActiveCryptoState] = useState<CryptoType>(CRYPTOS[0]);
+
+  // Load from user document first, fallback to localStorage
+  useEffect(() => {
+    if (user?.activeCryptoSymbol) {
+       const exists = CRYPTOS.find(c => c.symbol === user.activeCryptoSymbol);
+       if (exists) {
+          setActiveCryptoState(exists);
+          return;
+       }
+    }
     const saved = localStorage.getItem("activeCrypto");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         const exists = CRYPTOS.find(c => c.symbol === parsed.symbol);
-        if (exists) return exists;
+        if (exists) setActiveCryptoState(exists);
       } catch (e) {}
     }
-    return CRYPTOS[0];
-  });
+  }, [user?.activeCryptoSymbol]);
 
-  useEffect(() => {
-    localStorage.setItem("activeCrypto", JSON.stringify(activeCrypto));
-  }, [activeCrypto]);
+  const setActiveCrypto = async (c: CryptoType) => {
+    setActiveCryptoState(c);
+    localStorage.setItem("activeCrypto", JSON.stringify(c));
+    if (user) {
+      try {
+        await updateDoc(doc(db, "users", user.id), {
+           activeCryptoSymbol: c.symbol
+        });
+      } catch (e) {
+        console.error("Failed to save active crypto:", e);
+      }
+    }
+  };
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutProgress, setLogoutProgress] = useState(0);
@@ -479,6 +500,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const transferToVault = async (amount: number) => {
     if (!user || user.balance < amount || amount <= 0) return false;
+    if (user.permissions?.canUseVault === false) return false;
     try {
       const userRef = doc(db, "users", user.id);
       await updateDoc(userRef, {
@@ -494,6 +516,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const transferFromVault = async (amount: number) => {
     if (!user || (user.vault || 0) < amount || amount <= 0) return false;
+    if (user.permissions?.canUseVault === false) return false;
     try {
       const userRef = doc(db, "users", user.id);
       await updateDoc(userRef, {

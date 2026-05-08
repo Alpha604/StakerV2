@@ -36,6 +36,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
 
   const handleAction = async () => {
     setError("");
@@ -48,6 +49,11 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
 
     if (tab === "buy" && user?.permissions?.canDeposit === false) {
       setError("Les dépôts sont actuellement désactivés pour votre compte.");
+      return;
+    }
+
+    if (tab === "buy" && !isVerified) {
+      setError("Veuillez vérifier que vous n'êtes pas un robot.");
       return;
     }
 
@@ -316,9 +322,24 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
               )}
             </div>
 
+            {tab === "buy" && (
+              <label className="flex items-center gap-3 p-3 mt-2 mb-2 border border-border-medium rounded-lg bg-bg-inner cursor-pointer hover:border-text-secondary transition-colors">
+                 <input 
+                   type="checkbox"
+                   className="w-5 h-5 accent-accent bg-bg-base border-border-medium rounded"
+                   checked={isVerified}
+                   onChange={(e) => setIsVerified(e.target.checked)}
+                 />
+                 <span className="text-sm font-semibold text-text-secondary">Je ne suis pas un robot</span>
+                 <div className="ml-auto opacity-50">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-secondary"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                 </div>
+              </label>
+            )}
+
             <button
               onClick={handleAction}
-              disabled={loading}
+              disabled={loading || (tab === "buy" && !isVerified)}
               className={cn(
                 "w-full font-bold py-4 rounded-xl mt-2 transition-all flex justify-center items-center gap-2",
                 tab === "buy"
