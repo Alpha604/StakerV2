@@ -1,7 +1,7 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect, useMemo } from "react";
 import { useUser, CustomUser, UserRank } from "../context/UserContext";
-import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad } from "lucide-react";
+import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
 import { collection, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
