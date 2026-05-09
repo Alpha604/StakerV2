@@ -1,17 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { db } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { AlertTriangle, Clock, Mail, ShieldAlert, LogOut } from 'lucide-react';
+import { doc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { AlertTriangle, Clock, Mail, ShieldAlert, LogOut, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function BannedScreen({ user }: { user: any }) {
   const { logoutUser } = useUser();
   const [appealing, setAppealing] = useState(false);
   const [appealRequested, setAppealRequested] = useState(user.banAppealRequested || false);
+  const [lastRequest, setLastRequest] = useState<any>(null);
 
   const isSuspended = user.status === 'suspended';
   const endsAt = isSuspended && user.suspensionEndsAt ? new Date(user.suspensionEndsAt) : null;
+
+  useEffect(() => {
+    async function fetchLastRequest() {
+      if (!user.id) return;
+      const q = query(
+        collection(db, "admin_requests"), 
+        where("userId", "==", user.id), 
+        where("type", "==", "ban_appeal"),
+        orderBy("createdAt", "desc"),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setLastRequest(snap.docs[0].data());
+      }
+    }
+    fetchLastRequest();
+  }, [user.id, appealRequested]);
 
   const handleAppeal = async () => {
     if (!user.id || appealing || appealRequested) return;
@@ -19,6 +38,14 @@ export function BannedScreen({ user }: { user: any }) {
     try {
       await updateDoc(doc(db, "users", user.id), {
         banAppealRequested: true
+      });
+      await addDoc(collection(db, "admin_requests"), {
+        userId: user.id,
+        userEmail: user.email,
+        username: user.username,
+        type: "ban_appeal",
+        status: "pending",
+        createdAt: Date.now()
       });
       setAppealRequested(true);
     } catch (err) {
@@ -50,7 +77,7 @@ export function BannedScreen({ user }: { user: any }) {
         <div className="w-full bg-bg-inner rounded-xl border border-border-subtle p-6 mb-8 text-left space-y-4">
           <div>
             <span className="text-text-secondary text-sm font-bold uppercase block mb-1">Raison</span>
-            <span className="text-white font-medium">{user.suspensionReason || "Aucune raison spécifiée."}</span>
+            <span className="text-white font-medium">{isSuspended ? (user.suspensionReason || "Aucune raison spécifiée.") : (user.banReason || "Aucune raison spécifiée.")}</span>
           </div>
 
           {isSuspended && endsAt && (
@@ -63,6 +90,24 @@ export function BannedScreen({ user }: { user: any }) {
             </div>
           )}
         </div>
+
+        {lastRequest && lastRequest.status !== 'pending' && (
+          <div className="w-full bg-black/30 rounded-xl border border-gray-800 p-6 mb-8 text-left space-y-2">
+             <div className="flex flex-col mb-2">
+                 <span className="text-text-secondary text-sm font-bold uppercase">Résultat de votre dernière demande</span>
+                 <span className={`text-lg font-bold flex items-center gap-2 ${lastRequest.status === 'accepted' ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {lastRequest.status === 'accepted' ? <CheckCircle size={18} /> : <XCircle size={18} />}
+                    {lastRequest.status === 'accepted' ? 'Acceptée' : 'Refusée'}
+                 </span>
+             </div>
+             {lastRequest.adminResponse && (
+               <div>
+                 <span className="text-text-secondary text-xs font-bold uppercase block mb-1">Message d'un Administrateur</span>
+                 <p className="text-gray-300 bg-[#1f2937] p-3 rounded-lg border border-gray-700">{lastRequest.adminResponse}</p>
+               </div>
+             )}
+          </div>
+        )}
 
         {!appealRequested ? (
           <button

@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { db } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { Headset, Trophy, X, Clock, ShieldAlert, CheckCircle } from 'lucide-react';
+import { doc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { Headset, Trophy, X, Clock, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user } = useUser() as any;
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [lastRequest, setLastRequest] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchLastRequest() {
+      if (!user?.id || !isOpen) return;
+      const q = query(
+        collection(db, "admin_requests"), 
+        where("userId", "==", user.id), 
+        where("type", "==", "rank_upgrade"),
+        orderBy("createdAt", "desc"),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setLastRequest(snap.docs[0].data());
+      }
+    }
+    fetchLastRequest();
+  }, [user?.id, isOpen]);
 
   if (!isOpen || !user) return null;
 
@@ -31,6 +50,14 @@ export function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
     try {
       await updateDoc(doc(db, "users", user.id), {
         lastRankAppealTime: Date.now()
+      });
+      await addDoc(collection(db, "admin_requests"), {
+        userId: user.id,
+        userEmail: user.email,
+        username: user.username,
+        type: "rank_upgrade",
+        status: "pending",
+        createdAt: Date.now()
       });
       setSuccessMsg("Votre demande d'augmentation de grade a été envoyée avec succès à nos équipes !");
       setTimeout(() => {
@@ -84,6 +111,18 @@ export function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                    <p className="text-sm text-text-secondary mb-3 leading-relaxed">
                      Pensez-vous remplir les conditions pour atteindre le grade suivant ? Soumettez votre demande pour être promu !
                    </p>
+                   
+                   {lastRequest && lastRequest.status !== 'pending' && (
+                     <div className="mb-4 bg-black/40 border border-gray-700/50 p-3 rounded-lg text-sm">
+                       <span className={`font-bold flex items-center gap-1 mb-1 ${lastRequest.status === 'accepted' ? 'text-emerald-400' : 'text-red-400'}`}>
+                         {lastRequest.status === 'accepted' ? <CheckCircle size={14}/> : <XCircle size={14}/>} 
+                         Dernière demande {lastRequest.status === 'accepted' ? 'acceptée' : 'refusée'}
+                       </span>
+                       {lastRequest.adminResponse && (
+                          <div className="text-gray-300 italic">" {lastRequest.adminResponse} "</div>
+                       )}
+                     </div>
+                   )}
                    
                    {isBannedFromAppeals ? (
                      <div className="text-xs font-bold text-red-500 bg-red-500/10 inline-block px-3 py-1.5 rounded text-center w-full">

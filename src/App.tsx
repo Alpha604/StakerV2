@@ -122,6 +122,30 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
     return <BannedScreen user={user} />;
   }
 
+  if (user?.status === "pending") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-base relative overflow-hidden bg-pattern">
+        <div className="bg-bg-panel border border-border-subtle p-8 md:p-12 rounded-2xl max-w-xl w-full mx-4 relative z-10 flex flex-col items-center text-center shadow-2xl">
+          <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6">
+            <svg className="text-yellow-500 w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2">Compte en attente de vérification</h1>
+          <p className="text-text-secondary mb-8">
+            Votre compte vient d'être créé. Un administrateur doit l'approuver avant que vous puissiez commencer à jouer, déposer ou retirer des fonds. Merci de votre patience.
+          </p>
+          <button
+            onClick={() => logoutUser()}
+            className="w-full py-4 rounded-xl font-bold flex justify-center items-center gap-2 bg-[#1f2937] hover:bg-[#374151] text-white transition-all shadow-md active:scale-95"
+          >
+            Se déconnecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
       <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
         {showLogoutConfirm && (

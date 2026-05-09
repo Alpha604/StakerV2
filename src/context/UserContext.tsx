@@ -188,6 +188,7 @@ export interface CustomUser {
   rank?: UserRank;
   suspensionEndsAt?: number;
   suspensionReason?: string;
+  banReason?: string;
   banAppealRequested?: boolean;
   lastRankAppealTime?: number;
   canAppealRank?: boolean;
@@ -369,13 +370,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           } else {
             // First time login - Create user document
             let role = "user";
-            let status = "approved"; // Auto-approve for now
-            let balance = 100;
+            let status = "pending"; // Requires manual admin approval
+            let balance = 0; // Better if balance also starts at 0 until approved
             
             const email = firebaseUser.email || "";
             // Set specific users as admin
             if (["romeo.brawlstars59@gmail.com", "lafrancaise.desjeux@outlook.fr", "mimizerzer27@gmail.com"].includes(email)) {
               role = "admin";
+              status = "approved";
               balance = 1000000;
             }
 

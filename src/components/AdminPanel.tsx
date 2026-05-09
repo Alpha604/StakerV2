@@ -22,8 +22,15 @@ export function AdminPanel() {
   const [editForm, setEditForm] = useState<Partial<CustomUser>>({});
   const [editLoading, setEditLoading] = useState(false);
   const [suspensionMinutes, setSuspensionMinutes] = useState<number | "">("");
+  const [suspensionDate, setSuspensionDate] = useState<string>("");
+  const [suspensionTime, setSuspensionTime] = useState<string>("");
+  const [actionReason, setActionReason] = useState<string>("");
+
   const [editTab, setEditTab] = useState<"general"|"finances"|"permissions"|"history">("general");
-  const [mainTab, setMainTab] = useState<"users"|"games">("users");
+  const [mainTab, setMainTab] = useState<"users"|"games"|"inbox">("users");
+  const [userCategory, setUserCategory] = useState<"Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis">("Tous");
+  
+  const [adminRequests, setAdminRequests] = useState<any[]>([]);
 
   const [gamesConfig, setGamesConfig] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
 
@@ -31,6 +38,7 @@ export function AdminPanel() {
     let unsubUsers: () => void;
     let unsubBets: () => void;
     let unsubGames: () => void;
+    let unsubRequests: () => void;
 
     const clockInterval = setInterval(() => setNow(Date.now()), 10000);
 
@@ -50,6 +58,11 @@ export function AdminPanel() {
         if(snap.exists()) setGamesConfig(snap.data() as any);
       }, (err) => console.error(err));
 
+      const requestsQ = query(collection(db, "admin_requests"), orderBy("createdAt", "desc"), limit(50));
+      unsubRequests = onSnapshot(requestsQ, (snap) => {
+        setAdminRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, (err) => console.error(err));
+
       fetchGlobalBetsCount();
       const countInterval = setInterval(fetchGlobalBetsCount, 15000);
 
@@ -57,6 +70,7 @@ export function AdminPanel() {
         if (unsubUsers) unsubUsers();
         if (unsubBets) unsubBets();
         if (unsubGames) unsubGames();
+        if (unsubRequests) unsubRequests();
         clearInterval(countInterval);
         clearInterval(clockInterval);
       };
@@ -128,8 +142,21 @@ export function AdminPanel() {
       status: u.status || 'pending',
       rank: u.rank || "None",
       permissions: u.permissions || {},
+      canAppealRank: u.canAppealRank !== false,
     });
     setSuspensionMinutes("");
+    setSuspensionDate("");
+    setSuspensionTime("");
+    setActionReason(u.status === 'suspended' ? (u.suspensionReason || "") : u.status === 'banned' ? (u.banReason || "") : "");
+    if (u.status === 'suspended' && u.suspensionEndsAt) {
+       const d = new Date(u.suspensionEndsAt);
+       const minDiff = (u.suspensionEndsAt - Date.now()) / (60 * 1000);
+       if (minDiff > 0 && minDiff < 24 * 60) {
+          setSuspensionMinutes(Math.ceil(minDiff));
+       }
+       setSuspensionDate(d.toISOString().split('T')[0]);
+       setSuspensionTime(d.toTimeString().slice(0,5));
+    }
     setEditTab("general");
   };
 
@@ -141,9 +168,18 @@ export function AdminPanel() {
     try {
       const finalUpdates: Partial<CustomUser> = { ...editForm };
       
-      if (finalUpdates.status === 'suspended' && suspensionMinutes !== "") {
-        finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionMinutes) * 60 * 1000;
-      } else if (finalUpdates.status !== 'suspended') {
+      if (finalUpdates.status === 'suspended') {
+        if (suspensionMinutes !== "") {
+          finalUpdates.suspensionEndsAt = Date.now() + Number(suspensionMinutes) * 60 * 1000;
+        } else if (suspensionDate && suspensionTime) {
+          const dateObj = new Date(`${suspensionDate}T${suspensionTime}`);
+          finalUpdates.suspensionEndsAt = dateObj.getTime();
+        }
+        finalUpdates.suspensionReason = actionReason;
+      } else if (finalUpdates.status === 'banned') {
+        finalUpdates.banReason = actionReason;
+        finalUpdates.suspensionEndsAt = null as any;
+      } else {
         finalUpdates.suspensionEndsAt = null as any;
       }
       
@@ -186,10 +222,46 @@ export function AdminPanel() {
   const totalEconomy = totalBalance + totalVault;
   const totalWagered = users.reduce((acc, u) => acc + (u.totalWagered || 0), 0);
   
-  const filteredUsers = users.filter(u => 
-    u.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = u.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+
+    if (userCategory === "En attente") return u.status === "pending";
+    if (userCategory === "Approuvés") return u.status === "approved" || !u.status;
+    if (userCategory === "Suspendus") return u.status === "suspended";
+    if (userCategory === "Bannis") return u.status === "banned";
+    
+    return true; // "Tous"
+  });
+
+  const handleAdminRequestVal = async (reqId: string, reqUserId: string, status: 'accepted' | 'rejected', response: string, type: string) => {
+    try {
+      await updateDoc(doc(db, "admin_requests", reqId), {
+        status,
+        adminResponse: response,
+        resolvedAt: Date.now()
+      });
+
+      if (status === "accepted") {
+        if (type === "ban_appeal") {
+          await updateDoc(doc(db, "users", reqUserId), {
+            status: "approved",
+            suspensionEndsAt: null,
+            banAppealRequested: false
+          });
+        }
+      } else {
+        if (type === "ban_appeal") {
+          await updateDoc(doc(db, "users", reqUserId), { banAppealRequested: false });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la résolution de la requête");
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto w-full text-white animate-in fade-in duration-500 pb-24">
@@ -265,6 +337,17 @@ export function AdminPanel() {
           <Users size={18} /> Registre Utilisateurs
         </button>
         <button
+          onClick={() => setMainTab("inbox")}
+          className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "inbox" ? "bg-white/10 text-white border border-white/20" : "bg-black/40 text-gray-400 border border-transparent hover:bg-white/5"}`}
+        >
+          <Mail size={18} /> Boîte de réception
+          {adminRequests.filter(r => r.status === "pending").length > 0 && (
+             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex flex-col items-center justify-center rounded-full font-bold shadow-lg">
+               {adminRequests.filter(r => r.status === "pending").length}
+             </span>
+          )}
+        </button>
+        <button
           onClick={() => setMainTab("games")}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "games" ? "bg-white/10 text-white border border-white/20" : "bg-black/40 text-gray-400 border border-transparent hover:bg-white/5"}`}
         >
@@ -272,12 +355,60 @@ export function AdminPanel() {
         </button>
       </div>
 
-      {mainTab === "users" ? (
+      {mainTab === "inbox" ? (
+        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col min-h-[600px] p-6 text-white">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+            <Mail className="text-blue-400" /> Requêtes Utilisateurs
+          </h2>
+          {adminRequests.length === 0 ? (
+            <div className="text-center text-gray-500 py-12 flex flex-col items-center justify-center">
+              <CheckCircle className="text-gray-600 mb-4 h-12 w-12" />
+              <p>Aucune requête en attente.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {adminRequests.map((req) => (
+                <div key={req.id} className="bg-[#0f1923] border border-gray-800 rounded-xl p-4 flex flex-col gap-4">
+                   <div className="flex justify-between items-start">
+                     <div>
+                       <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${req.type === 'rank_upgrade' ? 'bg-purple-500/10 text-purple-400' : 'bg-red-500/10 text-red-400'}`}>
+                         {req.type === 'rank_upgrade' ? 'Évolution de grade' : 'Demande de déban'}
+                       </span>
+                       <h3 className="font-bold text-lg mt-2">{req.username} <span className="text-sm font-medium text-gray-400">({req.userEmail})</span></h3>
+                       <p className="text-xs text-gray-500 mt-1">{new Date(req.createdAt).toLocaleString('fr-FR')}</p>
+                     </div>
+                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${req.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : req.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                       {req.status === 'pending' ? 'En attente' : req.status === 'accepted' ? 'Accepté' : 'Refusé'}
+                     </span>
+                   </div>
+                   {req.status === 'pending' && (
+                     <div className="flex gap-2">
+                       <button onClick={() => {
+                          const response = prompt("Raison ou message (optionnel) :");
+                          if (response !== null) handleAdminRequestVal(req.id, req.userId, 'accepted', response, req.type);
+                       }} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg transition-colors text-sm">Accepter</button>
+                       <button onClick={() => {
+                          const response = prompt("Raison du refus (optionnel) :");
+                          if (response !== null) handleAdminRequestVal(req.id, req.userId, 'rejected', response, req.type);
+                       }} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors text-sm">Refuser</button>
+                     </div>
+                   )}
+                   {req.adminResponse && (
+                     <div className="bg-black/30 p-3 rounded-lg border border-gray-800 text-sm">
+                       <span className="font-bold text-gray-400">Réponse de l'admin:</span> {req.adminResponse}
+                     </div>
+                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : mainTab === "users" ? (
       /* Main Table Interface */
       <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col min-h-[600px]">
         {/* Table Toolbar */}
-        <div className="p-6 border-b border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-b from-white/[0.02] to-transparent">
-          <div className="flex items-center gap-3">
+        <div className="p-6 border-b border-gray-800 flex flex-col justify-between gap-4 bg-gradient-to-b from-white/[0.02] to-transparent">
+          <div className="flex items-center gap-3 mb-4">
              <div className="w-10 h-10 rounded-xl bg-gray-800/50 flex items-center justify-center border border-gray-700">
                <Eye size={20} className="text-gray-400" />
              </div>
@@ -286,15 +417,28 @@ export function AdminPanel() {
                 <p className="text-xs text-gray-500 uppercase tracking-widest font-mono">Surveillance Synchrone</p>
              </div>
           </div>
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-            <input 
-              type="text" 
-              placeholder="Identifier un citoyen (UID...)" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-black/50 border border-gray-700 rounded-xl py-3 pl-12 pr-4 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-gray-600 text-sm"
-            />
+          <div className="flex flex-col md:flex-row gap-4 justify-between">
+              <div className="flex bg-[#0f1923] p-1 rounded-xl border border-gray-800 w-full md:w-auto overflow-x-auto">
+                {["Tous", "En attente", "Approuvés", "Suspendus", "Bannis"].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setUserCategory(cat as any)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${userCategory === cat ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <div className="relative w-full md:w-96 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Identifier un citoyen (UID...)" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-black/50 border border-gray-700 rounded-xl py-2.5 pl-12 pr-4 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-gray-600 text-sm"
+                />
+              </div>
           </div>
         </div>
         
@@ -617,21 +761,58 @@ export function AdminPanel() {
                              ]}
                            />
                            
-                           {editForm.status === "suspended" && !(["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(editingUser.email || "")) && user?.id !== editingUser.id && (
-                             <div className="md:col-span-2 p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-3">
-                               <label className="text-sm font-bold text-amber-500 flex items-center gap-2">
-                                 <AlertTriangle size={16} /> Durée d'isolation (Minutes)
+                           {(editForm.status === "suspended" || editForm.status === "banned") && !(["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(editingUser.email || "")) && user?.id !== editingUser.id && (
+                             <div className="md:col-span-2 p-5 bg-red-500/5 border border-red-500/20 rounded-xl space-y-4">
+                               <label className="text-sm font-bold text-red-500 flex items-center gap-2">
+                                 <AlertTriangle size={16} /> Motif de la sanction (Visible par l'utilisateur)
                                </label>
                                <input 
-                                 type="number" min="1" step="1"
-                                 placeholder="Ex: 60 (Laisser vide pour permanent)"
-                                 value={suspensionMinutes} 
-                                 onChange={e => setSuspensionMinutes(e.target.value !== "" ? Number(e.target.value) : "")}
-                                 className="bg-black text-amber-500 font-mono text-lg p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none placeholder:text-amber-500/30 w-full max-w-sm"
+                                 type="text"
+                                 placeholder="Ex: Fraude détectée, Multi-compte..."
+                                 value={actionReason} 
+                                 onChange={e => setActionReason(e.target.value)}
+                                 className="bg-black text-red-400 p-3 rounded-lg border border-red-500/30 focus:border-red-500 outline-none w-full"
                                />
-                               <p className="text-xs text-amber-500/70">
-                                 {suspensionMinutes ? `Reprise d'activité prévue après ${suspensionMinutes} min de quarantaine.` : "Quarantaine à durée indéterminée (intervention manuelle requise)."}
-                               </p>
+
+                               {editForm.status === "suspended" && (
+                                 <>
+                                   <label className="text-sm font-bold text-amber-500 flex items-center gap-2 mt-4">
+                                     <AlertTriangle size={16} /> Fin de l'isolation (Par Date ou Minutes)
+                                   </label>
+                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div>
+                                       <span className="text-xs text-amber-500/70 block mb-1">Durée (Minutes)</span>
+                                       <input 
+                                         type="number" min="1" step="1"
+                                         placeholder="Laisser vide pour permanent ou utiliser la date"
+                                         value={suspensionMinutes} 
+                                         onChange={e => { setSuspensionMinutes(e.target.value !== "" ? Number(e.target.value) : ""); setSuspensionDate(""); setSuspensionTime(""); }}
+                                         className="bg-black text-amber-500 font-mono text-lg p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none placeholder:text-amber-500/30 w-full"
+                                       />
+                                     </div>
+                                     <div className="flex gap-2">
+                                        <div className="w-full">
+                                          <span className="text-xs text-amber-500/70 block mb-1">Date Expiration</span>
+                                          <input 
+                                            type="date"
+                                            value={suspensionDate}
+                                            onChange={e => { setSuspensionDate(e.target.value); setSuspensionMinutes(""); }}
+                                            className="bg-black text-amber-500 block p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none w-full"
+                                          />
+                                        </div>
+                                        <div className="w-full">
+                                          <span className="text-xs text-amber-500/70 block mb-1">Heure</span>
+                                          <input 
+                                            type="time"
+                                            value={suspensionTime}
+                                            onChange={e => { setSuspensionTime(e.target.value); setSuspensionMinutes(""); }}
+                                            className="bg-black text-amber-500 block p-3 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none w-full"
+                                          />
+                                        </div>
+                                     </div>
+                                   </div>
+                                 </>
+                               )}
                              </div>
                            )}
                            
