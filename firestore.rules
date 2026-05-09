@@ -34,16 +34,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /admin_requests/{requestId} {
+      allow get: if isSignedIn() && (isAdmin() || request.auth.uid == existing().userId);
+      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.auth.uid == incoming().userId;
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin(); // Admin can view all users
       allow create: if isSignedIn() && request.auth.uid == userId 
         && isValidUserConfig(incoming()) 
         && incoming().id == userId
-        && incoming().status == "approved"
         && incoming().vault == 0
         && (
-          (incoming().role == "user" && incoming().balance == 100) ||
+          (incoming().role == "user" && incoming().balance == 0 && incoming().status == "pending") ||
+          (incoming().role == "user" && incoming().balance == 100 && incoming().status == "approved") ||
           (incoming().role == "admin" && incoming().balance == 1000000 && request.auth.token.email in ["romeo.brawlstars59@gmail.com", "lafrancaise.desjeux@outlook.fr", "mimizerzer27@gmail.com"])
         );
 

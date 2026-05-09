@@ -98,6 +98,16 @@ const ALL_GAMES = [
     name: "Sweet Bonanza", category: "slots", link: "sweet-bonanza", provider: "Dramatic Play",
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://rainbet.com/_next/image?url=https:%2F%2Frainbet-images.nyc3.cdn.digitaloceanspaces.com%2Fslots%2Fpragmatic-play-sweet-bonanza.jpg&w=828&q=75"
+  },
+  {
+    name: "Super Wheel", category: "stake-gaming", link: "super-wheel", provider: "Stake Gaming", badge: "1000×",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://i.postimg.cc/QNyNmWdQ/Chat-GPT-Image-9-mai-2026-14-04-49.png"
+  },
+  {
+    name: "Super Tower DRAGON", category: "stake-gaming", link: "super-dragon-tower", provider: "Stake Gaming",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://cdn.phototourl.com/free/2026-05-09-3653812e-e002-4f06-af39-f370dfef6e0b.png"
   }
 ];
 
@@ -134,6 +144,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     { name: "Favoris", icon: Heart, id: "favorites" },
     { name: "Originaux de Stake", icon: Flame, id: "originals" },
     { name: "Machines à sous", icon: ArrowRightSquare, id: "slots" },
+    { name: "Stake Gaming", icon: Tv, id: "stake-gaming" },
   ];
 
   let filteredGames = ALL_GAMES.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -145,6 +156,8 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     filteredGames = filteredGames.filter(g => g.category === "originals");
   } else if (view === "slots") {
     filteredGames = filteredGames.filter(g => g.category === "slots");
+  } else if (view === "stake-gaming") {
+    filteredGames = filteredGames.filter(g => g.category === "stake-gaming");
   }
 
   const renderGameGrid = (gamesToRender: typeof ALL_GAMES) => {
@@ -301,45 +314,45 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
 
       {/* Top Banner (Latest Game) */}
       {view === "home" && (
-        <div className="bg-gradient-to-r from-[#2a1b38] to-[#121f29] rounded-2xl w-full p-6 md:p-10 mb-8 border border-white/5 relative overflow-hidden group shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-[#2a1b1b] to-[#12080a] rounded-2xl w-full p-6 md:p-10 mb-8 border border-white/5 relative overflow-hidden group shadow-[0_0_50px_rgba(255,50,50,0.15)] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-0"></div>
           <div className="relative z-10 max-w-lg">
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-[#1475e1] text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-md">
-                Nouveau Jeu
+              <span className="bg-[#e11414] text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-md">
+                Nouveau Jeu Exclusif
               </span>
-              <span className="text-text-secondary text-sm font-bold">Dramatic Play</span>
+              <span className="text-text-secondary text-sm font-bold">Stake Gaming</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md">Sweet Bonanza</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md">Super Tower DRAGON</h2>
             <p className="text-text-secondary font-medium mb-6 leading-relaxed">
-              Découvrez la machine à sous sucrée Sweet Bonanza de Dramatic Play ! Profitez de symboles multiplicateurs et d'un mode tours gratuits explosif jusqu'à 21100× votre mise.
+              Défiez les dragons dans notre toute nouvelle tour extrême ! Paramètres 100% personnalisables : colonnes, nombre de dragons et hauteur vertigineuse des tours !
             </p>
             <div className="flex flex-wrap items-center gap-4 mb-6">
                <div className="flex flex-col">
                   <span className="text-xs text-text-secondary font-bold uppercase mb-1">RTP</span>
-                  <span className="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded">96.48%</span>
+                  <span className="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded">99.00%</span>
                </div>
                <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">Gain Max</span>
-                  <span className="text-amber-400 font-mono font-bold bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded">21,100×</span>
+                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">Thème</span>
+                  <span className="text-red-400 font-mono font-bold bg-red-400/10 border border-red-400/20 px-2 py-1 rounded">Dragons</span>
                </div>
             </div>
-            {isGameBanned("Sweet Bonanza") ? (
+            {isGameBanned("Super Tower DRAGON") ? (
                <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed w-fit">
-                  <Lock size={18} /> Bloqué : {globalGameStatus?.["Sweet Bonanza"]?.reason || "Maintenance"}
+                  <Lock size={18} /> Bloqué : {globalGameStatus?.["Super Tower DRAGON"]?.reason || "Maintenance"}
                </div>
             ) : (
                <button
-                  onClick={() => setView("sweet-bonanza")}
-                  className="bg-[#00e701] hover:bg-[#00c700] text-[#0a2e0a] font-black px-8 py-3.5 rounded-lg transition-transform active:scale-95 drop-shadow flex items-center gap-2"
+                  onClick={() => setView("super-dragon-tower")}
+                  className="bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white font-black px-8 py-3.5 rounded-lg transition-transform active:scale-95 shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2"
                >
                   Jouer Maintenant
                </button>
             )}
           </div>
           <div className="relative z-10 w-full max-w-[200px] md:max-w-[280px]">
-             <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500 border-4 border-[#0f212e]">
-                <img src="https://rainbet.com/_next/image?url=https:%2F%2Frainbet-images.nyc3.cdn.digitaloceanspaces.com%2Fslots%2Fpragmatic-play-sweet-bonanza.jpg&w=828&q=75" alt="Sweet Bonanza" className="w-full h-full object-cover" />
+             <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-[0_0_30px_rgba(255,0,0,0.3)] transform rotate-3 hover:rotate-0 transition-transform duration-500 border-4 border-[#3a0b0b]">
+                <img src="https://cdn.phototourl.com/free/2026-05-09-3653812e-e002-4f06-af39-f370dfef6e0b.png" alt="Super Tower DRAGON" className="w-full h-full object-cover" />
              </div>
           </div>
         </div>
@@ -360,6 +373,19 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             </button>
           </div>
           {renderGameGrid(filteredGames.filter(g => g.category === "originals").slice(0, 12))}
+
+          <div className="flex items-center justify-between mb-4 mt-8">
+            <h2 className="text-white font-bold text-xl flex items-center gap-2">
+              <Tv className="text-text-secondary" size={24} /> <span>Stake Gaming</span>
+            </h2>
+            <button
+              onClick={() => setView("stake-gaming")}
+              className="text-sm font-bold text-text-secondary hover:text-white transition-colors"
+            >
+              Voir Tout
+            </button>
+          </div>
+          {renderGameGrid(filteredGames.filter(g => g.category === "stake-gaming"))}
 
           <div className="flex items-center justify-between mb-4 mt-8">
             <h2 className="text-white font-bold text-xl flex items-center gap-2">

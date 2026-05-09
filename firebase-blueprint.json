@@ -39,6 +39,22 @@
       },
       "required": ["userId", "userName", "game", "betAmount", "multiplier", "payout", "timestamp"]
     },
+    "AdminRequest": {
+      "title": "AdminRequest",
+      "description": "A request made by a user to admins.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "username": { "type": "string" },
+        "type": { "type": "string", "enum": ["ban_appeal", "rank_upgrade"] },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
+        "createdAt": { "type": "number" },
+        "adminResponse": { "type": "string" },
+        "resolvedAt": { "type": "number" }
+      },
+      "required": ["userId", "userEmail", "username", "type", "status", "createdAt"]
+    },
     "Config": {
       "title": "Config",
       "description": "Global application configuration.",
@@ -58,6 +74,10 @@
     "/bets/{betId}": {
       "schema": "Bet",
       "description": "Global bet stream."
+    },
+    "/admin_requests/{requestId}": {
+      "schema": "AdminRequest",
+      "description": "Requests made by users to admins."
     }
   }
 }

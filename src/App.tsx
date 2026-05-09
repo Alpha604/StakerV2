@@ -12,6 +12,8 @@ import { Plinko } from "./components/Plinko";
 import { Crash } from "./components/Crash";
 import { Limbo } from "./components/Limbo";
 import { Wheel } from "./components/Wheel";
+import { SuperWheel } from "./components/SuperWheel";
+import { SuperDragonTower } from "./components/SuperDragonTower";
 import { Hilo } from "./components/Hilo";
 import { DragonTower } from "./components/DragonTower";
 import { Flip } from "./components/Flip";
@@ -179,12 +181,12 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
         <div className="flex flex-1 relative items-stretch">
-          <div className={`bg-bg-panel border-border-subtle overflow-hidden transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[60px] min-w-[60px] border-r" : "w-0 min-w-0 border-r-0"}`}>
+          <div className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r" : "w-0 min-w-0 border-r-0"}`}>
             <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
           </div>
           <main className="flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col">
             <div className="flex-1">
-              {(view === "home" || view === "favorites" || view === "originals" || view === "slots") && <Home view={view} setView={handleSetView as any} />}
+              {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming") && <Home view={view} setView={handleSetView as any} />}
               {view === "leaderboard" && (
                   <div className="p-4 md:p-8 relative min-h-full">
                       <Leaderboard onClose={() => handleSetView("home")} isPage={true} />
@@ -202,6 +204,8 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "crash" && <ApprovalGuard gameName="crash"><Crash /></ApprovalGuard>}
               {view === "limbo" && <ApprovalGuard gameName="limbo"><Limbo /></ApprovalGuard>}
               {view === "wheel" && <ApprovalGuard gameName="wheel"><Wheel /></ApprovalGuard>}
+              {view === "super-wheel" && <ApprovalGuard gameName="super-wheel"><SuperWheel /></ApprovalGuard>}
+              {view === "super-dragon-tower" && <ApprovalGuard gameName="super-dragon-tower"><SuperDragonTower /></ApprovalGuard>}
               {view === "hilo" && <ApprovalGuard gameName="hilo"><Hilo /></ApprovalGuard>}
               {view === "dragon-tower" && <ApprovalGuard gameName="dragon-tower"><DragonTower /></ApprovalGuard>}
               {view === "flip" && <ApprovalGuard gameName="flip"><Flip /></ApprovalGuard>}
