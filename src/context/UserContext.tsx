@@ -186,6 +186,17 @@ export interface CustomUser {
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
   rank?: UserRank;
+  vipStatus?: {
+    active: boolean;
+    expiresAt: number;
+    plan: "Standard" | "Premium";
+  };
+  weeklyChallenges?: {
+    [challengeId: string]: {
+      progress: number;
+      claimed: boolean;
+    };
+  };
   suspensionEndsAt?: number;
   suspensionReason?: string;
   banReason?: string;
@@ -197,6 +208,9 @@ export interface CustomUser {
     canDeposit?: boolean;
     canWithdraw?: boolean;
     canUseVault?: boolean;
+    canBuyVip?: boolean;
+    canClaimRewards?: boolean;
+    canChat?: boolean;
     blockedGames?: Record<string, boolean>;
   };
 }
@@ -558,13 +572,80 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setSessionBets(prev => [...prev, newBet]);
 
+    const newTotalWagered = (user.totalWagered || 0) + safeBetAmount;
+    const thresholds = [
+      { r: "Champion", req: 5000000 },
+      { r: "Diamond", req: 1000000 },
+      { r: "Platinum", req: 250000 },
+      { r: "Gold", req: 100000 },
+      { r: "Silver", req: 50000 },
+      { r: "Bronze", req: 10000 },
+      { r: "None", req: 0 },
+    ];
+    
+    let calculatedRank = user.rank || "None";
+    for (const t of thresholds) {
+      if (newTotalWagered >= t.req) {
+         calculatedRank = t.r as any;
+         break;
+      }
+    }
+
+    let localChallenges = user.weeklyChallenges ? JSON.parse(JSON.stringify(user.weeklyChallenges)) : {};
+    if (!localChallenges.mines_wins) localChallenges.mines_wins = { progress: 0, claimed: false };
+    if (!localChallenges.dice_wager) localChallenges.dice_wager = { progress: 0, claimed: false };
+    if (!localChallenges.crash_x10) localChallenges.crash_x10 = { progress: 0, claimed: false };
+
+    let challengeUpdates = false;
+
+    if (game.toLowerCase().includes("mines") && safeProfit > 0 && !localChallenges.mines_wins.claimed && localChallenges.mines_wins.progress < 5) {
+      localChallenges.mines_wins.progress += 1;
+      challengeUpdates = true;
+    }
+    if (game.toLowerCase().includes("dice") && !localChallenges.dice_wager.claimed && localChallenges.dice_wager.progress < 500) {
+      localChallenges.dice_wager.progress += safeBetAmount;
+      if (localChallenges.dice_wager.progress > 500) localChallenges.dice_wager.progress = 500;
+      challengeUpdates = true;
+    }
+    if (game.toLowerCase().includes("crash") && multiplier >= 10 && !localChallenges.crash_x10.claimed && localChallenges.crash_x10.progress < 1) {
+      localChallenges.crash_x10.progress = 1;
+      challengeUpdates = true;
+    }
+
+    // Update local user directly so UI doesn't lag
+    user.totalWagered = newTotalWagered;
+    user.totalWon = (user.totalWon || 0) + actualPayout;
+    user.rank = calculatedRank as any;
+    if (challengeUpdates) {
+      user.weeklyChallenges = localChallenges;
+    }
+
+    let rakebackAmount = 0;
+    const vipActive = user.vipStatus?.active && user.vipStatus?.expiresAt > Date.now();
+    if (vipActive && safeProfit < 0) {
+       rakebackAmount = Math.abs(safeProfit) * 0.1; // 10% rakeback
+       // directly update local balance for immediate feedback
+       user.balance = (user.balance || 0) + rakebackAmount;
+    }
+
     // Update user stats
     try {
-      const userRef = doc(db, "users", user.id);
-      await updateDoc(userRef, {
+      const updates: any = {
         totalWagered: increment(safeBetAmount),
         totalWon: increment(actualPayout)
-      });
+      };
+      if (calculatedRank !== user.rank) {
+        updates.rank = calculatedRank;
+      }
+      if (challengeUpdates) {
+        updates.weeklyChallenges = localChallenges;
+      }
+      if (rakebackAmount > 0) {
+         updates.balance = increment(rakebackAmount);
+      }
+
+      const userRef = doc(db, "users", user.id);
+      await updateDoc(userRef, updates);
       
       // Send bet to global feed (Firestone Bets collection)
       if (safeBetAmount > 0) {

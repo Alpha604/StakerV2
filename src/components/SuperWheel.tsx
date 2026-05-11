@@ -77,13 +77,21 @@ export function SuperWheel() {
   const handleSpin = async () => {
     if (isSpinning) return;
     if (!user || balance < betAmount) {
-      alert("Connectez-vous et créditez votre compte pour jouer.");
+      if (isAutoPlaying) setIsAutoPlaying(false);
+      else alert("Connectez-vous et créditez votre compte pour jouer.");
       return;
     }
     
-    const success = await subtractBalance(betAmount);
-    if (!success) return;
+    // We set isSpinning synchronously so double calls are blocked
     setIsSpinning(true);
+
+    const success = await subtractBalance(betAmount);
+    if (!success) {
+      setIsSpinning(false);
+      setIsAutoPlaying(false);
+      return;
+    }
+
     setWinInfo(null);
 
     // Pick winning index
@@ -91,7 +99,7 @@ export function SuperWheel() {
     const winMultiplier = segments[winIndex].m;
 
     // Fast rotation for super wheel
-    const extraSpins = 360 * 10; // 10 spins !
+    const extraSpins = 360 * 10; // 10 spins
     const targetAngle = -(winIndex * anglePerSegment + anglePerSegment / 2) + extraSpins;
     const newRotation = rotation + targetAngle - (rotation % 360);
 
@@ -115,63 +123,22 @@ export function SuperWheel() {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    const playAutoRound = async () => {
-      if (betAmount > balance) {
-        setIsAutoPlaying(false);
-        return;
-      }
-      
-      const success = await subtractBalance(betAmount);
-      if (!success) {
-        setIsAutoPlaying(false);
-        return;
-      }
-
-      setIsSpinning(true);
-      setWinInfo(null);
-
-      const winIndex = Math.floor(Math.random() * numSegments);
-      const winMultiplier = segments[winIndex].m;
-
-      const extraSpins = 360 * 10;
-      const targetAngle = -(winIndex * anglePerSegment + anglePerSegment / 2) + extraSpins;
-      const newRotation = rotation + targetAngle - (rotation % 360);
-
-      await controls.start({
-        rotate: newRotation,
-        transition: { duration: 4, ease: [0.1, 0.9, 0.2, 1] },
-      });
-
-      setRotation(newRotation);
-      setIsSpinning(false);
-
-      const payout = betAmount * winMultiplier;
-      if (winMultiplier > 0) {
-        addBalance(payout);
-      }
-
-      recordBet("Super Wheel", betAmount, winMultiplier, payout - betAmount);
-      setWinInfo({ multiplier: winMultiplier, payout });
-
-      if (autoBetsCount > 0) {
-        setAutoBetsRemaining(prev => {
-           const next = prev - 1;
-           if (next <= 0) setIsAutoPlaying(false);
-           return next;
-        });
-      }
-    };
-
     if (isAutoPlaying && !isSpinning) {
       if (autoBetsCount === 0 || autoBetsRemaining > 0) {
         timeoutId = setTimeout(() => {
-          playAutoRound();
-        }, 500); 
+          handleSpin();
+          if (autoBetsCount > 0) {
+            setAutoBetsRemaining((prev) => prev - 1);
+          }
+        }, 800); 
+      } else {
+        setIsAutoPlaying(false);
       }
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isAutoPlaying, isSpinning, autoBetsRemaining, autoBetsCount, betAmount, balance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoPlaying, isSpinning, autoBetsRemaining, autoBetsCount, balance, betAmount, rotation]);
 
   const createSlices = () => {
     let paths = [];
@@ -199,9 +166,32 @@ export function SuperWheel() {
           <path
             d={pathData}
             fill={segments[i].color}
-            stroke="#ffcc00" // Golden stroke
+            stroke="#ffcc00"
             strokeWidth="0.8"
+            className="drop-shadow-md"
           />
+          {/* Add a subtle inner highlight to each slice */}
+          <path
+            d={pathData}
+            fill="transparent"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="0.3"
+          />
+          {/* Draw multiplier text inside slice if there's enough room */}
+          {numSegments <= 20 && (
+             <text
+               x={50 + 35 * Math.cos(startAngle + segAngle / 2)}
+               y={50 + 35 * Math.sin(startAngle + segAngle / 2)}
+               fill="white"
+               fontSize="4"
+               fontWeight="bold"
+               textAnchor="middle"
+               dominantBaseline="central"
+               transform={`rotate(${((startAngle + segAngle / 2) * 180) / Math.PI + 90}, ${50 + 35 * Math.cos(startAngle + segAngle / 2)}, ${50 + 35 * Math.sin(startAngle + segAngle / 2)})`}
+             >
+               {segments[i].m}x
+             </text>
+          )}
         </g>,
       );
       currentAngle += segAngle;
@@ -380,10 +370,13 @@ export function SuperWheel() {
           </div>
         </div>
 
-        <div className="flex-1 order-1 lg:order-2 flex-1 bg-gradient-to-b from-[#0f0b00] to-[black] relative flex flex-col items-center justify-center p-8 overflow-hidden">
+        <div className="flex-1 order-1 lg:order-2 flex-1 bg-gradient-to-b from-[#0f0b00] to-[black] relative flex flex-col items-center justify-center p-8 overflow-hidden z-0">
           {/* Animated Background Rays */}
+          <div className="absolute inset-0 pointer-events-none z-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,rgba(255,160,0,0.15)_0%,rgba(0,0,0,0)_60%)] animate-pulse" />
+          </div>
           {isSpinning && (
-             <div className="absolute inset-0 pointer-events-none opacity-20 animate-spin-slow" style={{ background: 'conic-gradient(from 0deg, transparent 40%, rgba(255, 215, 0, 0.5) 50%, transparent 60%)' }} />
+             <div className="absolute inset-0 pointer-events-none opacity-20 animate-spin-slow z-0" style={{ background: 'conic-gradient(from 0deg, transparent 40%, rgba(255, 215, 0, 0.4) 50%, transparent 60%)' }} />
           )}
 
           {/* Win Popup */}
@@ -395,24 +388,24 @@ export function SuperWheel() {
             />
           )}
 
-          <div className="relative w-full max-w-[450px] aspect-square flex items-center justify-center">
+          <div className="relative w-full max-w-[450px] aspect-square flex items-center justify-center z-10">
             {/* Pointer (Arrow) */}
-            <div className="absolute -top-8 z-20 flex flex-col items-center drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">
-              <div className="w-8 h-12 bg-gradient-to-b from-yellow-300 to-yellow-600 rounded-t-sm" style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}></div>
-              <div className="w-4 h-4 bg-yellow-200 rounded-full -mt-2 shadow-inner"></div>
+            <div className="absolute -top-8 z-30 flex flex-col items-center drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] filter">
+              <div className="w-10 h-14 bg-gradient-to-b from-white to-yellow-300 rounded-t-sm" style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}></div>
+              <div className="w-5 h-5 bg-gradient-to-br from-yellow-100 to-yellow-500 rounded-full -mt-3 shadow-inner shadow-black/50 border-2 border-white/50"></div>
             </div>
 
             {/* Wheel Center (Hole) */}
-            <div className="absolute inset-0 z-10 m-auto w-28 h-28 bg-[#1a1500] rounded-full ring-[10px] ring-[#0a0800] shadow-[0_0_20px_rgba(255,215,0,0.5)] flex items-center justify-center">
-               <div className="w-16 h-16 bg-gradient-to-b from-yellow-400 to-amber-600 rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] flex items-center justify-center">
-                 <Zap className="text-[#1a1500]" size={24} />
+            <div className="absolute inset-0 z-20 m-auto w-32 h-32 bg-gradient-to-b from-[#2a1d00] to-[#0a0800] rounded-full ring-[12px] ring-[#0a0800] shadow-[0_0_25px_rgba(255,215,0,0.5)] flex items-center justify-center border-4 border-yellow-600/30">
+               <div className="w-20 h-20 bg-gradient-to-b from-yellow-300 via-amber-500 to-amber-700 rounded-full shadow-[inset_0_4px_15px_rgba(0,0,0,0.6),0_0_15px_rgba(255,200,0,0.5)] flex items-center justify-center border border-yellow-200">
+                 <Zap className="text-[#1a1500]" size={36} fill="#1a1500" strokeWidth={1} />
                </div>
             </div>
 
             {/* Wheel SVG */}
             <motion.div
               animate={controls}
-              className="w-full h-full rounded-full shadow-[0_0_80px_rgba(255,215,0,0.1)] bg-[#0f172a] border-[12px] border-[#1a1500]"
+              className="w-full h-full rounded-full shadow-[0_0_80px_rgba(255,215,0,0.15)] bg-[#0f172a] border-[16px] border-[#1a1500] relative ring-4 ring-yellow-600/20"
             >
               <svg
                 viewBox="0 0 100 100"

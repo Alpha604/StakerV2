@@ -70,13 +70,20 @@ export function Wheel() {
   const handleSpin = async () => {
     if (isSpinning) return;
     if (!user || balance < betAmount) {
-      alert("Connectez-vous et créditez votre compte pour jouer.");
+      if (isAutoPlaying) setIsAutoPlaying(false);
+      else alert("Connectez-vous et créditez votre compte pour jouer.");
       return;
     }
     
-    const success = await subtractBalance(betAmount);
-    if (!success) return;
     setIsSpinning(true);
+
+    const success = await subtractBalance(betAmount);
+    if (!success) {
+      setIsSpinning(false);
+      setIsAutoPlaying(false);
+      return;
+    }
+
     setWinInfo(null);
 
     // Pick winning index
@@ -115,65 +122,22 @@ export function Wheel() {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    const playAutoRound = async () => {
-      // 1. Check conditions
-      if (betAmount > balance) {
-        setIsAutoPlaying(false);
-        return;
-      }
-      
-      const success = await subtractBalance(betAmount);
-      if (!success) {
-        setIsAutoPlaying(false);
-        return;
-      }
-
-      setIsSpinning(true);
-      setWinInfo(null);
-
-      // Pick winning index
-      const winIndex = Math.floor(Math.random() * numSegments);
-      const winMultiplier = segments[winIndex].m;
-
-      const extraSpins = 360 * 5;
-      const targetAngle = -(winIndex * anglePerSegment + anglePerSegment / 2) + extraSpins;
-      const newRotation = rotation + targetAngle - (rotation % 360);
-
-      await controls.start({
-        rotate: newRotation,
-        transition: { duration: 3, ease: [0.2, 0.8, 0.2, 1] },
-      });
-
-      setRotation(newRotation);
-      setIsSpinning(false);
-
-      const payout = betAmount * winMultiplier;
-      if (winMultiplier > 0) {
-        addBalance(payout);
-      }
-
-      recordBet("Wheel", betAmount, winMultiplier, payout - betAmount);
-      setWinInfo({ multiplier: winMultiplier, payout });
-
-      if (autoBetsCount > 0) {
-        setAutoBetsRemaining(prev => {
-           const next = prev - 1;
-           if (next <= 0) setIsAutoPlaying(false);
-           return next;
-        });
-      }
-    };
-
     if (isAutoPlaying && !isSpinning) {
       if (autoBetsCount === 0 || autoBetsRemaining > 0) {
         timeoutId = setTimeout(() => {
-          playAutoRound();
+          handleSpin();
+          if (autoBetsCount > 0) {
+            setAutoBetsRemaining((prev) => prev - 1);
+          }
         }, 800); // Wait between spins
+      } else {
+        setIsAutoPlaying(false);
       }
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isAutoPlaying, isSpinning, autoBetsRemaining, autoBetsCount, betAmount, balance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoPlaying, isSpinning, autoBetsRemaining, autoBetsCount, betAmount, rotation]);
 
   // Helper to generate SVG pie slices
   const createSlices = () => {

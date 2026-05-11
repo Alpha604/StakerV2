@@ -36,8 +36,12 @@ import { ApprovalGuard } from "./components/ApprovalGuard";
 import { Profile } from "./components/Profile";
 import { Stats } from "./components/Stats";
 import { Leaderboard } from "./components/Leaderboard";
+import { LiveChat } from "./components/LiveChat";
+import { Toaster } from "react-hot-toast";
 
 import { BannedScreen } from "./components/BannedScreen";
+
+import { Rewards } from "./components/Rewards";
 
 export type ViewType =
   | "home"
@@ -54,8 +58,10 @@ export type ViewType =
   | "crash"
   | "limbo"
   | "wheel"
+  | "super-wheel"
   | "hilo"
   | "dragon-tower"
+  | "super-dragon-tower"
   | "flip"
   | "slide"
   | "video-poker"
@@ -67,9 +73,12 @@ export type ViewType =
   | "slots-game"
   | "scarab-spin"
   | "le-bandit"
+  | "sweet-bonanza"
   | "verify"
   | "admin"
-  | "profile";
+  | "profile"
+  | "rewards"
+  | "stake-gaming";
 
 class ErrorBoundary extends React.Component<any, any> {
   state = { hasError: false, error: null };
@@ -119,6 +128,7 @@ function InnerApp() {
 
 function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, setSidebarOpen }: any) {
   const { user, isLoggingOut, showLogoutConfirm, setShowLogoutConfirm, logoutUser } = useUser() as any;
+  const [chatOpen, setChatOpen] = useState(false);
 
   if (user?.status === "banned" || user?.status === "suspended") {
     return <BannedScreen user={user} />;
@@ -127,6 +137,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
   if (user?.status === "pending") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-base relative overflow-hidden bg-pattern">
+        <Toaster position="top-center" reverseOrder={false} />
         <div className="bg-bg-panel border border-border-subtle p-8 md:p-12 rounded-2xl max-w-xl w-full mx-4 relative z-10 flex flex-col items-center text-center shadow-2xl">
           <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6">
             <svg className="text-yellow-500 w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,6 +161,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
 
   return (
       <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
+        <Toaster position="top-right" reverseOrder={true} toastOptions={{ className: 'min-w-[250px]' }} />
         {showLogoutConfirm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm transition-opacity duration-300 px-4">
             <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-sm w-full border border-[#374151] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
@@ -179,12 +191,13 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
         <Header
           setView={handleSetView as any}
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          toggleChat={() => setChatOpen(!chatOpen)}
         />
         <div className="flex flex-1 relative items-stretch">
           <div className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r" : "w-0 min-w-0 border-r-0"}`}>
             <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
           </div>
-          <main className="flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col">
+          <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "mr-[350px]" : ""}`}>
             <div className="flex-1">
               {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming") && <Home view={view} setView={handleSetView as any} />}
               {view === "leaderboard" && (
@@ -196,6 +209,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "stats" && <Stats />}
               {view === "admin" && <AdminPanel />}
               {view === "profile" && <Profile />}
+              {view === "rewards" && <Rewards />}
               {view === "mines" && <ApprovalGuard gameName="mines"><Mines /></ApprovalGuard>}
               {view === "roulette" && <ApprovalGuard gameName="roulette"><Roulette /></ApprovalGuard>}
               {view === "keno" && <ApprovalGuard gameName="keno"><Keno /></ApprovalGuard>}
@@ -234,6 +248,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
             </footer>
           </main>
         </div>
+        <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} />
         <LiveSessionWidget />
         {isChangingView && !isLoggingOut && <TruckLoader />}
         {isLoggingOut && <LogoutScreen />}

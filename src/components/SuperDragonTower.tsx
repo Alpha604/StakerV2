@@ -45,12 +45,14 @@ export function SuperDragonTower() {
   // Update grid dimensions when settings change
   useEffect(() => {
     if (!isPlaying) {
-      if (dragonsCount >= cols) {
-        setDragonsCount(cols - 1);
+      const maxDragons = Math.max(1, cols - 1);
+      if (dragonsCount > maxDragons) {
+        setDragonsCount(maxDragons);
       }
-      setGrid(Array(rows).fill(Array(cols).fill("hidden")));
+      setGrid(Array.from({ length: rows }, () => Array(cols).fill("hidden")));
+      setCurrentRow(0);
     }
-  }, [cols, dragonsCount, rows, isPlaying]);
+  }, [cols, rows, dragonsCount, isPlaying]);
 
   const startGame = async () => {
     if (!user || balance < betAmount) {
@@ -71,7 +73,7 @@ export function SuperDragonTower() {
       return Array.from(rowDragons);
     });
     setDragons(newDragons);
-    setGrid(Array(rows).fill(Array(cols).fill("hidden")));
+    setGrid(Array.from({ length: rows }, () => Array(cols).fill("hidden")));
     setCurrentRow(0);
   };
 
@@ -80,6 +82,9 @@ export function SuperDragonTower() {
     const logicalRow = rows - 1 - ri;
 
     if (logicalRow !== currentRow) return;
+    
+    // Prevent double clicks by checking if any cell in the row is already revealed
+    if (grid[logicalRow].some(cell => cell !== "hidden")) return;
 
     const isDragon = dragons[logicalRow].includes(ci);
 
@@ -282,7 +287,9 @@ export function SuperDragonTower() {
           )}
 
           {/* Background FX */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: "url('https://i.postimg.cc/QNyNmWdQ/Chat-GPT-Image-9-mai-2026-14-04-49.png')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'grayscale(100%) blur(2px)' }} />
+          <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: "url('https://cdn.phototourl.com/free/2026-05-09-3653812e-e002-4f06-af39-f370dfef6e0b.png')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(3px)' }} />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#080a10] to-transparent pointer-events-none z-0" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,50,50,0.1)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0 mix-blend-screen" />
 
           <div className="flex flex-col-reverse gap-[6px] lg:gap-2 w-full max-w-2xl my-auto z-10 relative px-12 md:px-16" style={{ height: 'fit-content' }}>
             {Array.from({ length: rows }).map((_, logicalRow) => {
@@ -302,7 +309,8 @@ export function SuperDragonTower() {
 
                   {Array.from({ length: cols }).map((_, colIndex) => {
                     const uiRowIndex = rows - 1 - logicalRow;
-                    const state = grid[logicalRow][colIndex];
+                    const gridRow = grid[logicalRow] || [];
+                    const state = gridRow[colIndex] || "hidden";
 
                     return (
                       <div

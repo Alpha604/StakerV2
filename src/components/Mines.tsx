@@ -98,19 +98,15 @@ export function Mines() {
     let timeoutId: NodeJS.Timeout;
 
     const playAutoRound = async () => {
-      // 1. Start game
-      if (betAmount > balance) {
-        setIsAutoPlaying(false);
-        return;
-      }
-      
+      setIsPlaying(true);
+
       const success = await subtractBalance(betAmount);
       if (!success) {
         setIsAutoPlaying(false);
+        setIsPlaying(false);
         return;
       }
 
-      setIsPlaying(true);
       setCrashed(false);
       setWinInfo(null);
       setRevealedCount(0);
@@ -159,7 +155,7 @@ export function Mines() {
             }));
           }
 
-          await recordBet("Mines", betAmount, 0, -betAmount);
+          recordBet("Mines", betAmount, 0, -betAmount);
           break; // Stop picking
         } else {
           // hit gem
@@ -185,8 +181,8 @@ export function Mines() {
         const autoPotentialWin = betAmount * mult;
         
         playSound("cashout");
-        await addBalance(autoPotentialWin);
-        await recordBet(
+        addBalance(autoPotentialWin);
+        recordBet(
           "Mines",
           betAmount,
           mult,
@@ -222,11 +218,14 @@ export function Mines() {
         timeoutId = setTimeout(() => {
           playAutoRound();
         }, autoSpeed === "instant" ? 200 : 1500); // Wait between rounds
+      } else {
+        setIsAutoPlaying(false);
       }
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isAutoPlaying, isPlaying, autoBetsRemaining, autoBetsCount, selectedSpots, minesCount, betAmount, balance, autoSpeed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoPlaying, isPlaying, autoBetsRemaining, autoBetsCount, selectedSpots, minesCount, betAmount, autoSpeed]);
 
   const currentMultiplier = calculateMultiplier(minesCount, revealedCount);
   const potentialWin = betAmount * currentMultiplier;

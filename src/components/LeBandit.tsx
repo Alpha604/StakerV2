@@ -193,6 +193,8 @@ export function LeBandit() {
   const executeSpin = async (buyFeature?: "tier1" | "tier2") => {
     if (isSpinning) return;
     
+    setIsSpinning(true);
+
     let betCost = betAmount;
     let actualBet = betAmount;
     if (buyFeature === "tier1") {
@@ -208,13 +210,17 @@ export function LeBandit() {
     if (!isFreeSpinMode) {
       if (!user || balance < betCost || betCost <= 0) {
          if (isAutoPlaying) setIsAutoPlaying(false);
+         setIsSpinning(false);
          return;
       }
       const success = await subtractBalance(betCost);
-      if (!success) return;
+      if (!success) {
+         if (isAutoPlaying) setIsAutoPlaying(false);
+         setIsSpinning(false);
+         return;
+      }
     }
     
-    setIsSpinning(true);
     setWinInfo(null);
     setHighlightedCells(new Set());
     setRevealedCoins([]);

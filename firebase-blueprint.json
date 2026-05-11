@@ -60,12 +60,31 @@
       "description": "Global application configuration.",
       "type": "object",
       "properties": {}
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Live chat messages.",
+      "type": "object",
+      "properties": {
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "rank": { "type": "string" },
+        "isVip": { "type": "boolean" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "timeStr": { "type": "string" }
+      },
+      "required": ["author", "authorId", "rank", "isVip", "text", "timestamp", "timeStr"]
     }
   },
   "firestore": {
     "/config/{configId}": {
       "schema": "Config",
       "description": "Global config documents."
+    },
+    "/chat_messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Live chat message stream."
     },
     "/users/{userId}": {
       "schema": "User",

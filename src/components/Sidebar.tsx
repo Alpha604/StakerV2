@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   User,
   MoreHorizontal,
+  Gift
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -99,6 +100,14 @@ export function Sidebar({
 
         {/* Divider */}
         <div className="w-6 h-px bg-border-medium my-1 flex-shrink-0"></div>
+
+        <button
+          onClick={() => { setView("rewards"); setShowSecondarySidebar(false); }}
+          className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "rewards" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+          title="Récompenses VIP"
+        >
+          <Gift size={20} className={view === "rewards" ? "text-emerald-500" : ""} />
+        </button>
 
         <button
           onClick={() => { setView("leaderboard"); setShowSecondarySidebar(false); }}

@@ -48,23 +48,19 @@ export function Dice() {
       return () => clearInterval(interval);
   }, [isRolling, playTick]);
 
-  // Auto Play Loop
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
     const playAutoRound = async () => {
-      if (betAmount > balance) {
-        setIsAutoPlaying(false);
-        return;
-      }
-      
+      setIsRolling(true);
+
       const success = await subtractBalance(betAmount);
       if (!success) {
         setIsAutoPlaying(false);
+        setIsRolling(false);
         return;
       }
 
-      setIsRolling(true);
       setLastWin(null);
       setWinInfo(null);
 
@@ -84,14 +80,17 @@ export function Dice() {
 
       const payout = isWin ? Math.floor(potentialWin * 100) / 100 : 0;
       if (isWin) {
-        await addBalance(payout);
+        // We do not await addBalance to let the visual update instantly
+        addBalance(payout);
         if (autoSpeed === "normal") {
           setTimeout(() => setWinInfo({ multiplier, payout }), 500); 
         } else {
            setWinInfo({ multiplier, payout });
         }
       }
-      await recordBet("Dice", betAmount, isWin ? multiplier : 0, payout - betAmount);
+      
+      // recordBet happens asynchronously
+      recordBet("Dice", betAmount, isWin ? multiplier : 0, payout - betAmount);
 
       setIsRolling(false);
 
@@ -111,11 +110,14 @@ export function Dice() {
         timeoutId = setTimeout(() => {
           playAutoRound();
         }, autoSpeed === "instant" ? 100 : 500);
+      } else {
+        setIsAutoPlaying(false);
       }
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isAutoPlaying, isRolling, autoBetsRemaining, autoBetsCount, betAmount, balance, autoSpeed, condition, target, potentialWin, multiplier]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoPlaying, isRolling, autoBetsRemaining, autoBetsCount, betAmount, autoSpeed, condition, target, potentialWin, multiplier]);
 
   const handleRoll = async () => {
     if (!user || balance < betAmount) return; // Add proper auth/balance notifications in real app

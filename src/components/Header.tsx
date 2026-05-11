@@ -6,7 +6,8 @@ import {
   Trophy,
   Menu,
   ChevronDown,
-  Wallet
+  Wallet,
+  MessageSquare
 } from "lucide-react";
 import { Leaderboard } from "./Leaderboard";
 import { CryptoModal } from "./CryptoModal";
@@ -16,9 +17,11 @@ import { LoginModal } from "./LoginModal";
 export function Header({
   setView,
   toggleSidebar,
+  toggleChat,
 }: {
   setView: (view: any) => void;
   toggleSidebar: () => void;
+  toggleChat: () => void;
 }) {
   const { user, balance, setShowLogoutConfirm, activeCrypto, setActiveCrypto } = useUser() as any;
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -78,26 +81,41 @@ export function Header({
                 className="bg-[#1475e1] hover:bg-[#1b80f0] text-white text-sm px-4 rounded-r font-bold transition-colors flex items-center justify-center gap-2 border-l-0 shadow-inner"
               >
                 <Wallet size={16} />
-                <span>Portefeuille</span>
+                <span className="hidden md:inline">Portefeuille</span>
               </button>
             </div>
 
-            <div className="hidden md:flex items-center gap-6 text-text-secondary">
+            <div className="flex items-center gap-4 text-text-secondary">
               <button
                 onClick={() => setShowLeaderboard(true)}
-                className="hover:text-white transition-colors"
+                className="hover:text-white transition-colors hidden sm:block"
                 title="Classement Mondial"
               >
                 <Trophy size={18} />
               </button>
               
-              <button className="connexion-btn ml-2" onClick={() => setShowLogoutConfirm(true)} title="Déconnexion">
+              <button
+                onClick={toggleChat}
+                className="hover:text-white transition-colors"
+                title="Ouvrir le Chat"
+              >
+                <MessageSquare size={18} />
+              </button>
+              
+              <button className="connexion-btn ml-2 hidden sm:block" onClick={() => setShowLogoutConfirm(true)} title="Déconnexion">
                 Déconnexion
               </button>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-4">
+            <button
+                onClick={toggleChat}
+                className="hover:text-white transition-colors text-text-secondary mr-2"
+                title="Ouvrir le Chat"
+            >
+              <MessageSquare size={18} />
+            </button>
             <button
               onClick={() => setShowLogin(true)}
               className="connexion-btn"

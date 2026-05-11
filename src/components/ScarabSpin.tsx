@@ -93,13 +93,18 @@ export function ScarabSpin() {
   const performSpin = async () => {
     if (!user || (!isFreeSpinMode && (balance < betAmount || betAmount <= 0))) return;
     if (isSpinning) return;
+    
+    setIsSpinning(true);
 
     if (!isFreeSpinMode) {
       const success = await subtractBalance(betAmount);
-      if (!success) return;
+      if (!success) {
+         if (isAutoPlaying) setIsAutoPlaying(false);
+         setIsSpinning(false);
+         return;
+      }
     }
 
-    setIsSpinning(true);
     setWinInfo(null);
     setWinningLines([]);
 

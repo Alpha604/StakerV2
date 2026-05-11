@@ -924,12 +924,15 @@ export function AdminPanel() {
                          <p className="text-sm text-gray-500 mb-6">Bloquez l'accès aux modules spécifiés (Rouge = Verrouillé).</p>
                          
                          <div className="mb-8">
-                           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Accès Financier</h4>
-                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Accès Financier & Avantages</h4>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                              {[
                                { id: "canDeposit", label: "Dépôts", value: editForm.permissions?.canDeposit !== false },
                                { id: "canWithdraw", label: "Retraits", value: editForm.permissions?.canWithdraw !== false },
-                               { id: "canUseVault", label: "Vault (Coffre)", value: editForm.permissions?.canUseVault !== false }
+                               { id: "canUseVault", label: "Vault (Coffre)", value: editForm.permissions?.canUseVault !== false },
+                               { id: "canBuyVip", label: "Achat VIP", value: editForm.permissions?.canBuyVip !== false },
+                               { id: "canClaimRewards", label: "Récompenses", value: editForm.permissions?.canClaimRewards !== false },
+                               { id: "canChat", label: "Live Chat", value: editForm.permissions?.canChat !== false }
                              ].map(perm => (
                                <label key={perm.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${!perm.value ? 'bg-rose-500/5 border-rose-500/30 text-rose-300' : 'bg-[#0c0c0e] border-gray-800 hover:border-gray-600 text-gray-300'}`}>
                                  <input 
