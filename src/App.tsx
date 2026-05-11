@@ -42,6 +42,8 @@ import { Toaster } from "react-hot-toast";
 import { BannedScreen } from "./components/BannedScreen";
 
 import { Rewards } from "./components/Rewards";
+import { ScreenSizeGuard, IPGuard } from "./components/SecurityGuards";
+import { UpdateModal } from "./components/UpdateModal";
 
 export type ViewType =
   | "home"
@@ -99,9 +101,13 @@ class ErrorBoundary extends React.Component<any, any> {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <InnerApp />
-    </ErrorBoundary>
+    <ScreenSizeGuard>
+      <IPGuard>
+        <ErrorBoundary>
+          <InnerApp />
+        </ErrorBoundary>
+      </IPGuard>
+    </ScreenSizeGuard>
   );
 }
 
@@ -109,6 +115,7 @@ function InnerApp() {
   const [view, setView] = useState<ViewType>("home");
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [isChangingView, setIsChangingView] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -119,6 +126,14 @@ function InnerApp() {
       }
     };
     window.addEventListener("resize", handleResize);
+    
+    // Check for updates
+    const currentVersion = "v1.1";
+    const seenVersion = localStorage.getItem("seenUpdateVersion");
+    if (seenVersion !== currentVersion) {
+      setShowUpdate(true);
+    }
+    
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -134,8 +149,14 @@ function InnerApp() {
     }, 50); // fast transition
   };
 
+  const closeUpdate = () => {
+    localStorage.setItem("seenUpdateVersion", "v1.1");
+    setShowUpdate(false);
+  };
+
   return (
     <UserProvider>
+      <UpdateModal isOpen={showUpdate} onClose={closeUpdate} />
       <InnerAppContent view={view} sidebarOpen={sidebarOpen} isChangingView={isChangingView} handleSetView={handleSetView} setSidebarOpen={setSidebarOpen} />
     </UserProvider>
   );

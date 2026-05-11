@@ -27,18 +27,21 @@ export function AdminPanel() {
   const [actionReason, setActionReason] = useState<string>("");
 
   const [editTab, setEditTab] = useState<"general"|"finances"|"permissions"|"history">("general");
-  const [mainTab, setMainTab] = useState<"users"|"games"|"inbox">("users");
+  const [mainTab, setMainTab] = useState<"users"|"games"|"inbox"|"security">("users");
   const [userCategory, setUserCategory] = useState<"Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis">("Tous");
   
   const [adminRequests, setAdminRequests] = useState<any[]>([]);
 
   const [gamesConfig, setGamesConfig] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
+  const [securityConfig, setSecurityConfig] = useState<{ blockedIps: string[] }>({ blockedIps: [] });
+  const [newIp, setNewIp] = useState("");
 
   useEffect(() => {
     let unsubUsers: () => void;
     let unsubBets: () => void;
     let unsubGames: () => void;
     let unsubRequests: () => void;
+    let unsubSecurity: () => void;
 
     const clockInterval = setInterval(() => setNow(Date.now()), 10000);
 
@@ -58,6 +61,10 @@ export function AdminPanel() {
         if(snap.exists()) setGamesConfig(snap.data() as any);
       }, (err) => console.error(err));
 
+      unsubSecurity = onSnapshot(doc(db, "config", "security"), (snap) => {
+        if(snap.exists()) setSecurityConfig(snap.data() as { blockedIps: string[] });
+      }, (err) => console.error(err));
+
       const requestsQ = query(collection(db, "admin_requests"), orderBy("createdAt", "desc"), limit(50));
       unsubRequests = onSnapshot(requestsQ, (snap) => {
         setAdminRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -71,6 +78,7 @@ export function AdminPanel() {
         if (unsubBets) unsubBets();
         if (unsubGames) unsubGames();
         if (unsubRequests) unsubRequests();
+        if (unsubSecurity) unsubSecurity();
         clearInterval(countInterval);
         clearInterval(clockInterval);
       };
@@ -353,6 +361,12 @@ export function AdminPanel() {
         >
           <Gamepad size={18} /> Configuration Jeux
         </button>
+        <button
+          onClick={() => setMainTab("security")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "security" ? "bg-white/10 text-emerald-400 border border-white/20" : "bg-black/40 text-emerald-500/50 border border-transparent hover:bg-emerald-500/10 hover:text-emerald-400"}`}
+        >
+          <Shield size={18} /> Sécurité / IP
+        </button>
       </div>
 
       {mainTab === "inbox" ? (
@@ -625,7 +639,7 @@ export function AdminPanel() {
           </table>
         </div>
       </div>
-      ) : (
+      ) : mainTab === "games" ? (
         <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col">
            <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
               <Gamepad className="text-emerald-500" /> Gestion Globale des Jeux
@@ -670,7 +684,64 @@ export function AdminPanel() {
              })}
            </div>
         </div>
-      )}
+      ) : mainTab === "security" ? (
+        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col animate-in fade-in zoom-in-95 duration-300">
+           <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
+              <Shield className="text-emerald-500" /> Centre de Sécurité & Filtrage IP
+           </h2>
+           
+           <div className="flex flex-col gap-6">
+              <div className="bg-black/40 border border-gray-800 rounded-xl p-6">
+                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                   <ShieldAlert className="text-rose-500 w-5 h-5" /> Adresses IP Bloquées
+                 </h3>
+                 <p className="text-gray-400 mb-6 text-sm">Les utilisateurs avec une adresse IP dans cette liste se verront refuser l'accès au site totalement, y compris la création de compte et la navigation.</p>
+                 
+                 <div className="flex gap-3 mb-6">
+                   <input 
+                      type="text" 
+                      placeholder="Ajouter une IP (ex: 192.168.1.1)" 
+                      value={newIp}
+                      onChange={(e) => setNewIp(e.target.value)}
+                      className="flex-1 bg-[#0c0c0e] border border-gray-800 p-3 rounded-xl text-white font-mono placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50"
+                   />
+                   <button 
+                      onClick={async () => {
+                         if(!newIp.trim()) return;
+                         const updated = [...(securityConfig?.blockedIps || []), newIp.trim()];
+                         await updateDoc(doc(db, "config", "security"), { blockedIps: updated });
+                         setNewIp("");
+                      }}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-black px-6 font-bold rounded-xl whitespace-nowrap transition-colors flex items-center justify-center gap-2"
+                   >
+                     Ajouter l'IP
+                   </button>
+                 </div>
+
+                 <div className="space-y-2">
+                   {(!securityConfig?.blockedIps || securityConfig.blockedIps.length === 0) ? (
+                      <div className="text-center p-8 border border-dashed border-gray-800 rounded-xl text-gray-600 font-medium">
+                         Aucune adresse IP n'est actuellement bloquée.
+                      </div>
+                   ) : securityConfig.blockedIps.map(ip => (
+                      <div key={ip} className="flex justify-between items-center bg-[#0c0c0e] border border-gray-800 p-3 rounded-lg px-4 hover:border-gray-600 transition-colors">
+                         <span className="font-mono text-gray-300 font-bold">{ip}</span>
+                         <button 
+                            onClick={async () => {
+                               const updated = securityConfig.blockedIps.filter(i => i !== ip);
+                               await updateDoc(doc(db, "config", "security"), { blockedIps: updated });
+                            }}
+                            className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 p-2 rounded-lg transition-colors"
+                         >
+                            <Trash2 size={16} />
+                         </button>
+                      </div>
+                   ))}
+                 </div>
+              </div>
+           </div>
+        </div>
+      ) : null}
 
       {/* Editing Modal (Command Center Style) */}
       {editingUser ? (
