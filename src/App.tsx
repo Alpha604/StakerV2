@@ -197,7 +197,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           <div className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r" : "w-0 min-w-0 border-r-0"}`}>
             <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
           </div>
-          <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "mr-[350px]" : ""}`}>
+          <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}>
             <div className="flex-1">
               {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming") && <Home view={view} setView={handleSetView as any} />}
               {view === "leaderboard" && (
