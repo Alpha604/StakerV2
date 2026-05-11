@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LogOut } from "lucide-react";
 import { UserProvider, useUser } from "./context/UserContext";
 import { Header } from "./components/Header";
@@ -107,12 +107,27 @@ export default function App() {
 
 function InnerApp() {
   const [view, setView] = useState<ViewType>("home");
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Default open
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [isChangingView, setIsChangingView] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSetView = (newView: ViewType) => {
     if (newView === view) return;
     setIsChangingView(true);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false); // Close sidebar on mobile when navigating
+    }
     setTimeout(() => {
       setView(newView);
       setIsChangingView(false);
@@ -194,7 +209,11 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           toggleChat={() => setChatOpen(!chatOpen)}
         />
         <div className="flex flex-1 relative items-stretch">
-          <div className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r" : "w-0 min-w-0 border-r-0"}`}>
+          {/* Mobile Sidebar Overlay */}
+          {sidebarOpen && (
+             <div className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>
+          )}
+          <div className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r pointer-events-auto" : "w-0 min-w-0 border-r-0 opacity-0 pointer-events-none md:pointer-events-auto md:opacity-100 overflow-hidden"} flex-shrink-0 absolute md:relative top-0 bottom-0 left-0 bg-[#0f212e]`}>
             <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
           </div>
           <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}>

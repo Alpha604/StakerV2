@@ -463,7 +463,7 @@ export function LiveSessionWidget() {
       dragMomentum={false}
       initial={{ opacity: 0, y: 50, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="fixed bottom-4 right-4 z-50 flex flex-col bg-[#0f212e]/95 backdrop-blur-xl border border-[#2f4553]/80 rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(0,231,1,0.05)] overflow-hidden"
+      className="fixed bottom-4 right-4 z-50 flex flex-col bg-[#0f212e]/95 backdrop-blur-xl border border-[#2f4553]/80 rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(0,231,1,0.05)] overflow-hidden max-w-[calc(100vw-32px)]"
       style={{ width: 360, touchAction: "none" }}
     >
       {/* Dynamic Header Gradient line */}

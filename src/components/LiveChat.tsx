@@ -25,6 +25,7 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
   const [messages, setMessages] = useState<any[]>([]);
   const [inputMsg, setInputMsg] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageTime = useRef<number>(0);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -53,6 +54,20 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     }
     if (user.permissions?.canChat === false) {
       toast.error("Vous n'êtes pas autorisé à parler dans le chat.");
+      return;
+    }
+
+    const now = Date.now();
+    if (user.role !== "admin" && now - lastMessageTime.current < 2000) {
+      toast.error("Veuillez patienter avant d'envoyer un autre message.");
+      return;
+    }
+    lastMessageTime.current = now;
+
+    const forbiddenWords = ['connard', 'salope', 'pute', 'pd', 'fdp', 'ntm', 'tg', 'nègre', 'negre', 'bougnoule', 'bâtard', 'batard', 'enculé', 'encule'];
+    const lowerMsg = inputMsg.toLowerCase();
+    if (forbiddenWords.some(w => lowerMsg.includes(w))) {
+      toast.error("Message inapproprié. Veuillez rester respectueux.");
       return;
     }
 
@@ -112,6 +127,21 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     }
   };
 
+  const handleBanUserFromChat = async (msgId: string, authorId: string, authorName: string) => {
+    if (user?.role !== "admin") return;
+    if (!window.confirm(`Voulez-vous BANNIR DEFINITIVEMENT ${authorName} du site ?`)) return;
+    try {
+      await updateDoc(doc(db, "users", authorId), {
+        status: "banned",
+        banReason: "Banni depuis le chat public par un administrateur pour comportement toxique."
+      });
+      await deleteDoc(doc(db, "chat_messages", msgId));
+      toast.success(`${authorName} a été banni du site.`);
+    } catch(e) {
+      toast.error("Erreur lors de la sanction");
+    }
+  };
+
   return (
     <>
       {/* Mobile overlay */}
@@ -121,7 +151,7 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           onClick={onClose}
         ></div>
       )}
-      <div className={`fixed top-0 right-0 h-full w-[100vw] sm:w-[400px] lg:w-[350px] bg-bg-panel border-l border-border-subtle z-50 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full shadow-none'}`}>
+      <div className={`fixed top-0 right-0 h-full w-[100vw] sm:w-[400px] lg:w-[350px] bg-bg-panel border-l border-border-subtle z-50 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full shadow-none pointer-events-none'}`}>
         <div className="h-16 md:h-20 border-b border-border-subtle flex flex-col justify-center px-4 shrink-0 bg-[#0f212e]/50 backdrop-blur-md">
           <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -159,6 +189,9 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               </span>
               {user?.role === "admin" && (
                 <div className="ml-auto flex items-center gap-1">
+                  <button onClick={() => handleBanUserFromChat(msg.id, msg.authorId, msg.author)} className="text-purple-500/50 hover:text-purple-500 transition-colors p-1" title={`BANNIR ${msg.author}`}>
+                     <X size={12} strokeWidth={4} />
+                  </button>
                   <button onClick={() => handleMuteUser(msg.authorId, msg.author)} className="text-amber-500/50 hover:text-amber-500 transition-colors p-1" title={`Mute ${msg.author}`}>
                      <User size={12} className="relative before:content-['/'] before:absolute before:text-amber-500 before:font-bold before:-rotate-45" />
                   </button>

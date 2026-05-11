@@ -32,7 +32,7 @@ export function Header({
   return (
     <>
       <header className="h-16 md:h-20 border-b border-border-subtle flex items-center justify-between px-4 md:px-8 bg-bg-panel sticky top-0 z-50">
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-4 md:gap-6 shrink-0">
           <Menu
             className="text-text-secondary cursor-pointer hover:text-white transition-colors"
             onClick={toggleSidebar}
@@ -44,7 +44,7 @@ export function Header({
             <img 
               src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
               alt="Stake Logo" 
-              className="h-6 md:h-7 brightness-[100] invert drop-shadow-md"
+              className="h-6 md:h-7 brightness-[100] invert drop-shadow-md hidden sm:block"
             />
             {user && user.status !== "approved" && user.role !== "admin" && (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -59,33 +59,33 @@ export function Header({
         </div>
 
         {user ? (
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 justify-end sm:flex-none sm:justify-start">
             {/* Middle Container for Balance */}
-            <div className="flex items-stretch absolute left-1/2 -translate-x-1/2 h-10 shadow-md rounded">
+            <div className="flex items-stretch h-10 shadow-md rounded sm:absolute sm:left-1/2 sm:-translate-x-1/2 mr-2 sm:mr-0 min-w-0">
               <div
-                className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-4 pr-3 py-2 rounded-l flex items-center gap-2 shadow-inner cursor-pointer transition-colors max-w-[200px]"
+                className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-3 pr-2 py-2 rounded-l flex items-center gap-1 sm:gap-2 shadow-inner cursor-pointer transition-colors max-w-[120px] sm:max-w-[200px]"
                 onClick={() => setShowCryptoModal(true)}
               >
-                <span className="font-bold text-lg tracking-tight text-white truncate shrink">
+                <span className="font-bold text-sm sm:text-lg tracking-tight text-white truncate shrink">
                   {formatCurrency(balance)}
                 </span>
-                {renderCryptoIcon(activeCrypto, "w-5 h-5 ml-1")}
+                {renderCryptoIcon(activeCrypto, "w-4 h-4 sm:w-5 sm:h-5 ml-1 hidden min-[360px]:block")}
                 <ChevronDown
-                  size={16}
-                  className={`text-text-secondary ml-1 shrink-0 transition-transform`}
+                  size={14}
+                  className={`text-text-secondary shrink-0 transition-transform hidden sm:block`}
                 />
               </div>
 
               <button
                 onClick={() => setShowWallet(true)}
-                className="bg-[#1475e1] hover:bg-[#1b80f0] text-white text-sm px-4 rounded-r font-bold transition-colors flex items-center justify-center gap-2 border-l-0 shadow-inner"
+                className="bg-[#1475e1] hover:bg-[#1b80f0] text-white text-sm px-3 md:px-4 rounded-r font-bold transition-colors flex items-center justify-center gap-1 sm:gap-2 border-l-0 shadow-inner"
               >
-                <Wallet size={16} />
+                <Wallet size={14} className="sm:w-4 sm:h-4" />
                 <span className="hidden md:inline">Portefeuille</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-4 text-text-secondary">
+            <div className="flex items-center gap-2 md:gap-4 text-text-secondary shrink-0">
               <button
                 onClick={() => setShowLeaderboard(true)}
                 className="hover:text-white transition-colors hidden sm:block"
