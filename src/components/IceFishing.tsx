@@ -4,7 +4,7 @@ import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { WinPopup } from './WinPopup';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSound } from '../lib/useSound';
-import { Anchor, FishMenu, Waves, Snowflake, Users, PlayCircle, History, Menu, Volume2, Info } from 'lucide-react';
+import { Snowflake, Users, History, Menu, Volume2, Info } from 'lucide-react';
 
 const CATCH_TYPES = [
   { name: "Squelette", multiplier: 0.00, probability: 40, image: "☠️", color: "text-gray-400" },
@@ -290,7 +290,7 @@ export function IceFishing() {
             <WinPopup 
                multiplier={winInfo.multiplier} 
                payout={winInfo.payout} 
-               onComplete={() => setWinInfo(null)} 
+               onClose={() => setWinInfo(null)} 
             />
          )}
       </AnimatePresence>

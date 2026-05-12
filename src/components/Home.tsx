@@ -322,45 +322,45 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
 
       {/* Top Banner (Latest Game) */}
       {view === "home" && (
-        <div className="bg-gradient-to-r from-[#2a1b1b] to-[#12080a] rounded-2xl w-full p-6 md:p-10 mb-8 border border-white/5 relative overflow-hidden group shadow-[0_0_50px_rgba(255,50,50,0.15)] flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-[#1a3a4e] to-[#0f212e] rounded-2xl w-full p-6 md:p-10 mb-8 border border-white/5 relative overflow-hidden group shadow-[0_0_50px_rgba(52,211,153,0.15)] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-0"></div>
           <div className="relative z-10 max-w-lg">
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-[#e11414] text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-md">
+              <span className="bg-[#10b981] text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-md">
                 Nouveau Jeu Exclusif
               </span>
-              <span className="text-text-secondary text-sm font-bold">Stake Gaming</span>
+              <span className="text-text-secondary text-sm font-bold">Evolution Gaming</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md">Super Tower DRAGON</h2>
-            <p className="text-text-secondary font-medium mb-6 leading-relaxed">
-              Défiez les dragons dans notre toute nouvelle tour extrême ! Paramètres 100% personnalisables : colonnes, nombre de dragons et hauteur vertigineuse des tours !
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md tracking-widest text-[#d4af37] uppercase">Ice Fishing</h2>
+            <p className="text-gray-300 font-medium mb-6 leading-relaxed">
+              L'expérience de pêche sur glace la plus polaire jamais créée ! Creusez un trou, attrapez un saumon, ou un coffre au trésor... Vous pouvez gagner jusqu'à 100x très raipidement !
             </p>
             <div className="flex flex-wrap items-center gap-4 mb-6">
                <div className="flex flex-col">
                   <span className="text-xs text-text-secondary font-bold uppercase mb-1">RTP</span>
-                  <span className="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded">99.00%</span>
+                  <span className="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded">98.50%</span>
                </div>
                <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">Thème</span>
-                  <span className="text-red-400 font-mono font-bold bg-red-400/10 border border-red-400/20 px-2 py-1 rounded">Dragons</span>
+                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">Éditeur</span>
+                  <span className="text-blue-400 font-mono font-bold bg-blue-400/10 border border-blue-400/20 px-2 py-1 rounded">Evolution</span>
                </div>
             </div>
-            {isGameBanned("Super Tower DRAGON") ? (
+            {isGameBanned("Ice Fishing") ? (
                <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed w-fit">
-                  <Lock size={18} /> Bloqué : {globalGameStatus?.["Super Tower DRAGON"]?.reason || "Maintenance"}
+                  <Lock size={18} /> Bloqué : {globalGameStatus?.["Ice Fishing"]?.reason || "Maintenance"}
                </div>
             ) : (
                <button
-                  onClick={() => setView("super-dragon-tower")}
-                  className="bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white font-black px-8 py-3.5 rounded-lg transition-transform active:scale-95 shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2"
+                  onClick={() => setView("ice-fishing")}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-bg-darker font-black py-4 px-8 rounded-lg transition-colors w-max shadow-[0_0_20px_rgba(52,211,153,0.3)] transform hover:scale-105"
                >
                   Jouer Maintenant
                </button>
             )}
           </div>
           <div className="relative z-10 w-full max-w-[200px] md:max-w-[280px]">
-             <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-[0_0_30px_rgba(255,0,0,0.3)] transform rotate-3 hover:rotate-0 transition-transform duration-500 border-4 border-[#3a0b0b]">
-                <img src="https://cdn.phototourl.com/free/2026-05-09-3653812e-e002-4f06-af39-f370dfef6e0b.png" alt="Super Tower DRAGON" className="w-full h-full object-cover" />
+             <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-[0_0_30px_rgba(52,211,153,0.3)] transform rotate-3 hover:rotate-0 transition-transform duration-500 border-4 border-[#1a4a6e]">
+                <img src="https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg" alt="Ice Fishing" className="w-full h-full object-cover" />
              </div>
           </div>
         </div>
