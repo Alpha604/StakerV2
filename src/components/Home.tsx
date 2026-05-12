@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock } from "lucide-react";
+import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useUser } from "../context/UserContext";
 
@@ -108,6 +108,11 @@ const ALL_GAMES = [
     name: "Super Tower DRAGON", category: "stake-gaming", link: "super-dragon-tower", provider: "Stake Gaming",
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://cdn.phototourl.com/free/2026-05-09-3653812e-e002-4f06-af39-f370dfef6e0b.png"
+  },
+  {
+    name: "Ice Fishing", category: "evolution", link: "ice-fishing", provider: "Evolution",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg"
   }
 ];
 
@@ -144,6 +149,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     { name: "Favoris", icon: Heart, id: "favorites" },
     { name: "Originaux de Stake", icon: Flame, id: "originals" },
     { name: "Machines à sous", icon: ArrowRightSquare, id: "slots" },
+    { name: "Evolution", icon: Zap, id: "evolution" },
     { name: "Stake Gaming", icon: Tv, id: "stake-gaming" },
   ];
 
@@ -158,6 +164,8 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     filteredGames = filteredGames.filter(g => g.category === "slots");
   } else if (view === "stake-gaming") {
     filteredGames = filteredGames.filter(g => g.category === "stake-gaming");
+  } else if (view === "evolution") {
+    filteredGames = filteredGames.filter(g => g.category === "evolution");
   }
 
   const renderGameGrid = (gamesToRender: typeof ALL_GAMES) => {
@@ -386,6 +394,19 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             </button>
           </div>
           {renderGameGrid(filteredGames.filter(g => g.category === "stake-gaming"))}
+
+          <div className="flex items-center justify-between mb-4 mt-8">
+            <h2 className="text-white font-bold text-xl flex items-center gap-2">
+              <Zap className="text-emerald-500" size={24} /> <span>Evolution</span>
+            </h2>
+            <button
+              onClick={() => setView("evolution")}
+              className="text-sm font-bold text-text-secondary hover:text-white transition-colors"
+            >
+              Voir Tout
+            </button>
+          </div>
+          {renderGameGrid(filteredGames.filter(g => g.category === "evolution"))}
 
           <div className="flex items-center justify-between mb-4 mt-8">
             <h2 className="text-white font-bold text-xl flex items-center gap-2">

@@ -30,6 +30,7 @@ import { Slots } from "./components/Slots";
 import { ScarabSpin } from "./components/ScarabSpin";
 import { LeBandit } from "./components/LeBandit";
 import { SweetBonanza } from "./components/SweetBonanza";
+import { IceFishing } from "./components/IceFishing";
 import { AdminPanel } from "./components/AdminPanel";
 import { VerifyBet } from "./components/VerifyBet";
 import { ApprovalGuard } from "./components/ApprovalGuard";
@@ -76,6 +77,7 @@ export type ViewType =
   | "scarab-spin"
   | "le-bandit"
   | "sweet-bonanza"
+  | "ice-fishing"
   | "verify"
   | "admin"
   | "profile"
@@ -274,6 +276,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "scarab-spin" && <ApprovalGuard gameName="scarab-spin"><ScarabSpin /></ApprovalGuard>}
               {view === "le-bandit" && <ApprovalGuard gameName="le-bandit"><LeBandit /></ApprovalGuard>}
               {view === "sweet-bonanza" && <ApprovalGuard gameName="sweet-bonanza"><SweetBonanza /></ApprovalGuard>}
+              {view === "ice-fishing" && <ApprovalGuard gameName="ice-fishing"><IceFishing /></ApprovalGuard>}
             </div>
             
             {/* Footer */}

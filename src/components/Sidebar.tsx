@@ -7,6 +7,7 @@ import {
   Trophy,
   Swords,
   Zap,
+  Flame,
   Menu,
   Activity,
   Search,
@@ -79,7 +80,7 @@ export function Sidebar({
           className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "originals" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
           title="Stake Originals"
         >
-          <Zap size={20} />
+          <Flame size={20} />
         </button>
 
         <button
@@ -96,6 +97,14 @@ export function Sidebar({
           title="Stake Gaming"
         >
           <Tv size={20} />
+        </button>
+
+        <button
+          onClick={() => { setView("evolution"); setShowSecondarySidebar(false); }}
+          className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "evolution" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+          title="Evolution"
+        >
+          <Zap size={20} className={view === "evolution" ? "text-emerald-500" : ""} />
         </button>
 
         {/* Divider */}
