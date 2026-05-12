@@ -102,11 +102,9 @@ class ErrorBoundary extends React.Component<any, any> {
 export default function App() {
   return (
     <ScreenSizeGuard>
-      <IPGuard>
-        <ErrorBoundary>
-          <InnerApp />
-        </ErrorBoundary>
-      </IPGuard>
+      <ErrorBoundary>
+        <InnerApp />
+      </ErrorBoundary>
     </ScreenSizeGuard>
   );
 }
@@ -156,8 +154,10 @@ function InnerApp() {
 
   return (
     <UserProvider>
-      <UpdateModal isOpen={showUpdate} onClose={closeUpdate} />
-      <InnerAppContent view={view} sidebarOpen={sidebarOpen} isChangingView={isChangingView} handleSetView={handleSetView} setSidebarOpen={setSidebarOpen} />
+      <IPGuard>
+        <UpdateModal isOpen={showUpdate} onClose={closeUpdate} />
+        <InnerAppContent view={view} sidebarOpen={sidebarOpen} isChangingView={isChangingView} handleSetView={handleSetView} setSidebarOpen={setSidebarOpen} />
+      </IPGuard>
     </UserProvider>
   );
 }

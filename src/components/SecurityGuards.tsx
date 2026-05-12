@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MonitorX, ShieldAlert } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { useUser } from "../context/UserContext";
 
 export function ScreenSizeGuard({ children }: { children: React.ReactNode }) {
   const [isTooSmall, setIsTooSmall] = useState(false);
@@ -90,7 +91,12 @@ export function IPGuard({ children }: { children: React.ReactNode }) {
 
   if (checking) return null; // Wait for IP check before rendering
 
-  if (blocked) {
+  // For bypassing admin IPs
+  const { user } = useUser() as any;
+  const isSuperAdmin = ["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(user?.email || "");
+  const isAdmin = user?.role === "admin" || isSuperAdmin;
+
+  if (blocked && !isAdmin) {
     return (
       <div className="fixed inset-0 z-[99999] bg-[#0f212e] flex flex-col items-center justify-center p-6 text-center text-white">
          <ShieldAlert className="w-20 h-20 text-red-500 mb-6" />
