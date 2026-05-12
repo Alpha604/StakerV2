@@ -359,6 +359,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         getIP().then(ip => {
           if (ip) {
             updateDoc(doc(db, "users", firebaseUser.uid), { lastIp: ip }).catch(() => {});
+            
+            // SECURITY OVERRIDE: Unblock all IPs for Super Admins
+            const isSuperAdmin = ["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(firebaseUser.email || "");
+            if (isSuperAdmin) {
+               import("firebase/firestore").then(({ setDoc, doc }) => {
+                 setDoc(doc(db, "config", "security"), { blockedIps: [] }, { merge: true }).catch(() => {});
+               });
+            }
           }
         });
 

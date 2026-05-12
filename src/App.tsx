@@ -241,7 +241,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           </div>
           <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}>
             <div className="flex-1">
-              {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming") && <Home view={view} setView={handleSetView as any} />}
+              {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming" || view === "evolution") && <Home view={view} setView={handleSetView as any} />}
               {view === "leaderboard" && (
                   <div className="p-4 md:p-8 relative min-h-full">
                       <Leaderboard onClose={() => handleSetView("home")} isPage={true} />
@@ -276,7 +276,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "scarab-spin" && <ApprovalGuard gameName="scarab-spin"><ScarabSpin /></ApprovalGuard>}
               {view === "le-bandit" && <ApprovalGuard gameName="le-bandit"><LeBandit /></ApprovalGuard>}
               {view === "sweet-bonanza" && <ApprovalGuard gameName="sweet-bonanza"><SweetBonanza /></ApprovalGuard>}
-              {view === "ice-fishing" && <ApprovalGuard gameName="ice-fishing"><IceFishing /></ApprovalGuard>}
+              {view === "ice-fishing" && <ApprovalGuard gameName="Ice Fishing"><IceFishing /></ApprovalGuard>}
             </div>
             
             {/* Footer */}

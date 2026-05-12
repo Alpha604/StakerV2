@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap } from "lucide-react";
+import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap, Star } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useUser } from "../context/UserContext";
 
@@ -333,7 +333,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md tracking-widest text-[#d4af37] uppercase">Ice Fishing</h2>
             <p className="text-gray-300 font-medium mb-6 leading-relaxed">
-              L'expérience de pêche sur glace la plus polaire jamais créée ! Creusez un trou, attrapez un saumon, ou un coffre au trésor... Vous pouvez gagner jusqu'à 100x très raipidement !
+              La toute nouvelle roue d'Evolution ! Misez sur vos poissons préférés (Lil' Blues, Big Orange, Huge Reds) et pêchez jusqu'à x20 par partie !
             </p>
             <div className="flex flex-wrap items-center gap-4 mb-6">
                <div className="flex flex-col">
@@ -370,6 +370,13 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
       {view === "home" ? (
         <>
           <div className="flex items-center justify-between mb-4 mt-2">
+            <h2 className="text-white font-bold text-xl flex items-center gap-2">
+              <Star className="text-yellow-400" size={24} /> <span>Nouveautés</span>
+            </h2>
+          </div>
+          {renderGameGrid(filteredGames.filter(g => g.name === "Ice Fishing" || g.name === "Super Tower DRAGON"))}
+
+          <div className="flex items-center justify-between mb-4 mt-8">
             <h2 className="text-white font-bold text-xl flex items-center gap-2">
               <Flame className="text-text-secondary" size={24} /> <span>Originaux de Stake</span>
             </h2>
