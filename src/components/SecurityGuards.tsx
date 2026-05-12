@@ -37,31 +37,52 @@ export function ScreenSizeGuard({ children }: { children: React.ReactNode }) {
 export function IPGuard({ children }: { children: React.ReactNode }) {
   const [blocked, setBlocked] = useState<boolean>(false);
   const [checking, setChecking] = useState(true);
+  const [userIp, setUserIp] = useState<string | null>(null);
 
   useEffect(() => {
-    async function checkIP() {
-      try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        const userIp = data.ip;
+    async function fetchIP() {
+      const getIP = async () => {
+        try {
+           const res = await fetch("https://api.ipify.org?format=json");
+           const data = await res.json();
+           if (data.ip) return data.ip;
+        } catch(e) {}
+        try {
+           const res = await fetch("https://api.seeip.org/jsonip?");
+           const data = await res.json();
+           if (data.ip) return data.ip;
+        } catch(e) {}
+        try {
+           const res = await fetch("https://api64.ipify.org?format=json");
+           const data = await res.json();
+           if (data.ip) return data.ip;
+        } catch(e) {}
+        return null;
+      };
 
-        if (userIp) {
-            const configDoc = await getDoc(doc(db, "config", "security"));
-            if (configDoc.exists()) {
-                const blockedIps = configDoc.data()?.blockedIps || [];
-                if (blockedIps.includes(userIp)) {
-                    setBlocked(true);
-                }
-            }
-        }
-      } catch (err) {
-         // Silently fail if ipify drops
-      } finally {
-        setChecking(false);
-      }
+      const ip = await getIP();
+      if (ip) setUserIp(ip);
+      setChecking(false);
     }
-    checkIP();
+    fetchIP();
   }, []);
+
+  useEffect(() => {
+    if (!userIp) return;
+    import("firebase/firestore").then(({ onSnapshot, doc }) => {
+      const unsub = onSnapshot(doc(db, "config", "security"), (snap) => {
+        if (snap.exists()) {
+          const blockedIps = snap.data()?.blockedIps || [];
+          if (blockedIps.includes(userIp)) {
+            setBlocked(true);
+          } else {
+            setBlocked(false);
+          }
+        }
+      });
+      return () => unsub();
+    });
+  }, [userIp]);
 
   if (checking) return null; // Wait for IP check before rendering
 

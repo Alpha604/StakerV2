@@ -342,14 +342,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (firebaseUser) {
         // Fetch user IP
-        fetch("https://api.ipify.org?format=json")
-          .then(res => res.json())
-          .then(data => {
-            if (data.ip) {
-              updateDoc(doc(db, "users", firebaseUser.uid), { lastIp: data.ip }).catch(() => {});
-            }
-          })
-          .catch(() => {});
+        const getIP = async () => {
+          try {
+             const res = await fetch("https://api.ipify.org?format=json");
+             const data = await res.json();
+             if (data.ip) return data.ip;
+          } catch(e) {}
+          try {
+             const res = await fetch("https://api.seeip.org/jsonip?");
+             const data = await res.json();
+             if (data.ip) return data.ip;
+          } catch(e) {}
+          return null;
+        };
+
+        getIP().then(ip => {
+          if (ip) {
+            updateDoc(doc(db, "users", firebaseUser.uid), { lastIp: ip }).catch(() => {});
+          }
+        });
 
         // Ping online status every 1 minute
         pingInterval = setInterval(() => {
