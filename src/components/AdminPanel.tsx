@@ -1,7 +1,7 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect, useMemo } from "react";
 import { useUser, CustomUser, UserRank } from "../context/UserContext";
-import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle } from "lucide-react";
+import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle, Monitor } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
 import { collection, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
@@ -907,6 +907,38 @@ export function AdminPanel() {
                            </div>
                          </div>
                        </FormSection>
+
+                        <FormSection title="Traces Réseau" icon={<Monitor size={18} className="text-emerald-400" />}>
+                           <div className="bg-black/20 border border-gray-800 rounded-xl p-5 mt-4">
+                              <div className="flex justify-between items-center">
+                                 <div>
+                                    <label className="text-xs font-bold text-gray-500 tracking-wider uppercase mb-1 block">Adresse IP Connue</label>
+                                    <div className="text-emerald-400 font-mono text-lg">{editingUser?.lastIp || "Inconnue"}</div>
+                                 </div>
+                                 {editingUser?.lastIp && (
+                                    <button 
+                                       type="button"
+                                       onClick={async (e) => {
+                                          e.preventDefault();
+                                          const confirmed = window.confirm(`Voulez-vous vraiment bloquer l'IP ${editingUser.lastIp} ?`);
+                                          if (confirmed) {
+                                             const updated = [...(securityConfig?.blockedIps || []), editingUser.lastIp];
+                                             await updateDoc(doc(db, "config", "security"), { blockedIps: Array.from(new Set(updated)) });
+                                          }
+                                       }}
+                                       disabled={securityConfig?.blockedIps?.includes(editingUser.lastIp)}
+                                       className={`px-4 py-2 rounded-lg font-bold transition-all ${
+                                          securityConfig?.blockedIps?.includes(editingUser.lastIp) 
+                                             ? "bg-rose-500/10 text-rose-500/50 cursor-not-allowed border border-rose-500/10" 
+                                             : "bg-rose-500 text-white hover:bg-rose-600 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
+                                       }`}
+                                    >
+                                       {securityConfig?.blockedIps?.includes(editingUser.lastIp) ? "IP Déjà Bloquée" : "Bloquer cette IP"}
+                                    </button>
+                                 )}
+                              </div>
+                           </div>
+                        </FormSection>
                      </div>
                    )}
 

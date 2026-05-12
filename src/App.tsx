@@ -288,7 +288,9 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
             </footer>
           </main>
         </div>
-        <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+        {user && user.permissions?.canChat !== false && (
+          <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+        )}
         <LiveSessionWidget />
         {isChangingView && !isLoggingOut && <TruckLoader />}
         {isLoggingOut && <LogoutScreen />}

@@ -94,13 +94,15 @@ export function Header({
                 <Trophy size={18} />
               </button>
               
-              <button
-                onClick={toggleChat}
-                className="hover:text-white transition-colors"
-                title="Ouvrir le Chat"
-              >
-                <MessageSquare size={18} />
-              </button>
+              {user && user.permissions?.canChat !== false && (
+                <button
+                  onClick={toggleChat}
+                  className="hover:text-white transition-colors"
+                  title="Ouvrir le Chat"
+                >
+                  <MessageSquare size={18} />
+                </button>
+              )}
               
               <button className="connexion-btn ml-2 hidden sm:block" onClick={() => setShowLogoutConfirm(true)} title="Déconnexion">
                 Déconnexion
@@ -109,13 +111,6 @@ export function Header({
           </div>
         ) : (
           <div className="flex items-center gap-4">
-            <button
-                onClick={toggleChat}
-                className="hover:text-white transition-colors text-text-secondary mr-2"
-                title="Ouvrir le Chat"
-            >
-              <MessageSquare size={18} />
-            </button>
             <button
               onClick={() => setShowLogin(true)}
               className="connexion-btn"

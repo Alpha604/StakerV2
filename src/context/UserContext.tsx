@@ -185,6 +185,7 @@ export interface CustomUser {
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
+  lastIp?: string;
   rank?: UserRank;
   vipStatus?: {
     active: boolean;
@@ -340,6 +341,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (firebaseUser) {
+        // Fetch user IP
+        fetch("https://api.ipify.org?format=json")
+          .then(res => res.json())
+          .then(data => {
+            if (data.ip) {
+              updateDoc(doc(db, "users", firebaseUser.uid), { lastIp: data.ip }).catch(() => {});
+            }
+          })
+          .catch(() => {});
+
         // Ping online status every 1 minute
         pingInterval = setInterval(() => {
            updateDoc(doc(db, "users", firebaseUser.uid), { lastOnline: Date.now() }).catch(() => {});
