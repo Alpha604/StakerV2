@@ -61,8 +61,11 @@ export function IPGuard({ children }: { children: React.ReactNode }) {
       };
 
       const ip = await getIP();
-      if (ip) setUserIp(ip);
-      setChecking(false);
+      if (ip) {
+         setUserIp(ip);
+      } else {
+         setChecking(false);
+      }
     }
     fetchIP();
   }, []);
@@ -79,6 +82,7 @@ export function IPGuard({ children }: { children: React.ReactNode }) {
             setBlocked(false);
           }
         }
+        setChecking(false);
       });
       return () => unsub();
     });

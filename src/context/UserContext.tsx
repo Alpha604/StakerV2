@@ -187,6 +187,10 @@ export interface CustomUser {
   lastOnline?: number;
   lastIp?: string;
   rank?: UserRank;
+  permissions?: {
+    canChat?: boolean;
+    blockedGames?: Record<string, boolean>;
+  };
   vipStatus?: {
     active: boolean;
     expiresAt: number;

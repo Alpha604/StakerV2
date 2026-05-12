@@ -4,7 +4,7 @@ import { useUser, CustomUser, UserRank } from "../context/UserContext";
 import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle, Monitor } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
-import { collection, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
+import { collection, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
 import { AreaChart, Area, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from "recharts";
 
 export function AdminPanel() {
@@ -709,7 +709,7 @@ export function AdminPanel() {
                       onClick={async () => {
                          if(!newIp.trim()) return;
                          const updated = [...(securityConfig?.blockedIps || []), newIp.trim()];
-                         await updateDoc(doc(db, "config", "security"), { blockedIps: updated });
+                         await setDoc(doc(db, "config", "security"), { blockedIps: updated }, { merge: true });
                          setNewIp("");
                       }}
                       className="bg-emerald-500 hover:bg-emerald-600 text-black px-6 font-bold rounded-xl whitespace-nowrap transition-colors flex items-center justify-center gap-2"
@@ -729,7 +729,7 @@ export function AdminPanel() {
                          <button 
                             onClick={async () => {
                                const updated = securityConfig.blockedIps.filter(i => i !== ip);
-                               await updateDoc(doc(db, "config", "security"), { blockedIps: updated });
+                               await setDoc(doc(db, "config", "security"), { blockedIps: updated }, { merge: true });
                             }}
                             className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 p-2 rounded-lg transition-colors"
                          >
@@ -923,7 +923,7 @@ export function AdminPanel() {
                                           const confirmed = window.confirm(`Voulez-vous vraiment bloquer l'IP ${editingUser.lastIp} ?`);
                                           if (confirmed) {
                                              const updated = [...(securityConfig?.blockedIps || []), editingUser.lastIp];
-                                             await updateDoc(doc(db, "config", "security"), { blockedIps: Array.from(new Set(updated)) });
+                                             await setDoc(doc(db, "config", "security"), { blockedIps: Array.from(new Set(updated)) }, { merge: true });
                                           }
                                        }}
                                        disabled={securityConfig?.blockedIps?.includes(editingUser.lastIp)}
@@ -1008,7 +1008,7 @@ export function AdminPanel() {
                    {editTab === "permissions" && (
                       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                        <FormSection title="Restrictions Ludiques & Systèmes" icon={<Settings className="text-rose-400" />}>
-                         <div className="mb-8 p-4 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-between">
+                         <div className="mb-4 p-4 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-between">
                            <div>
                              <h4 className="font-bold text-white mb-1">Requêtes de Promotion</h4>
                              <p className="text-xs text-gray-500">Autoriser l'utilisateur à créer des requêtes d'évolution de grade.</p>
@@ -1019,6 +1019,28 @@ export function AdminPanel() {
                                className="sr-only peer"
                                checked={editForm.canAppealRank !== false}
                                onChange={e => setEditForm({...editForm, canAppealRank: e.target.checked})}
+                             />
+                             <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                           </label>
+                         </div>
+
+                         <div className="mb-8 p-4 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-between">
+                           <div>
+                             <h4 className="font-bold text-white mb-1">Accès au Chat en Direct</h4>
+                             <p className="text-xs text-gray-500">Autoriser l'utilisateur à lire et envoyer des messages dans le chat.</p>
+                           </div>
+                           <label className="relative inline-flex items-center cursor-pointer">
+                             <input 
+                               type="checkbox" 
+                               className="sr-only peer"
+                               checked={editForm.permissions?.canChat !== false}
+                               onChange={e => setEditForm({
+                                 ...editForm, 
+                                 permissions: {
+                                   ...editForm.permissions,
+                                   canChat: e.target.checked
+                                 }
+                               })}
                              />
                              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                            </label>
