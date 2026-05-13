@@ -20,6 +20,9 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
+import { db } from "../lib/firebase";
+import { addDoc, collection } from "firebase/firestore";
+
 export function WalletModal({ onClose }: { onClose: () => void }) {
   const {
     user,
@@ -50,6 +53,29 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
     const val = parseFloat(amount);
     
     setLoading(true);
+
+    if (user?.permissions?.isDemandMode) {
+      try {
+        const typeStr = tab === "buy" ? "deposit" : tab === "cashout" ? "withdraw" : tab;
+        await addDoc(collection(db, "admin_requests"), {
+          type: typeStr,
+          userId: user.id,
+          userEmail: user.email || "",
+          username: user.username,
+          amount: val,
+          method: tab === "buy" || tab === "cashout" ? method : null,
+          crypto: tab === "buy" || tab === "cashout" ? (method === "crypto" ? activeCrypto.symbol : null) : null,
+          status: "pending",
+          createdAt: Date.now()
+        });
+        setSuccessMsg("Demande envoyée à l'administrateur !");
+        setTimeout(() => onClose(), 2500);
+      } catch (err) {
+        setError("Erreur de connexion.");
+      }
+      setLoading(false);
+      return;
+    }
 
     if (tab === "buy") {
       setTimeout(async () => {
@@ -209,7 +235,23 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                  exit={{ opacity: 0, x: 20 }}
                  className="flex flex-col flex-1"
               >
-                 <div className="text-sm text-text-secondary mb-4 uppercase tracking-wider font-bold">1. Type de transaction</div>
+                 <div className="flex gap-4 mb-6">
+                    <div className="flex-1 bg-bg-base border border-border-medium rounded-xl p-3 flex flex-col justify-center items-center">
+                       <span className="text-[10px] text-text-secondary uppercase tracking-wider font-bold mb-1 flex items-center gap-1">
+                          <Wallet size={10} /> Solde Jeu
+                       </span>
+                       <span className="text-lg font-bold font-mono text-emerald-400">${formatCurrency(balance)}</span>
+                    </div>
+                    <div className="flex-1 bg-bg-base border border-border-medium rounded-xl p-3 flex flex-col justify-center items-center shadow-inner relative overflow-hidden">
+                       <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500 opacity-10 blur-xl rounded-full"></div>
+                       <span className="text-[10px] text-text-secondary uppercase tracking-wider font-bold mb-1 flex items-center gap-1">
+                          <Vault size={10} /> Vault
+                       </span>
+                       <span className="text-lg font-bold font-mono text-indigo-400">${formatCurrency(vault)}</span>
+                    </div>
+                 </div>
+
+                 <div className="text-sm text-text-secondary mb-3 uppercase tracking-wider font-bold">1. Type de transaction</div>
                  
                  <div className="bg-bg-base border border-border-medium rounded-xl p-1 grid grid-cols-4 gap-1 mb-6">
                     <button onClick={() => setTab("buy")} className={cn("py-3 flex flex-col items-center gap-1.5 rounded-lg font-bold text-[10px] sm:text-xs transition-colors", tab === "buy" ? "bg-bg-panel text-white shadow-md border-border-medium" : "text-text-secondary hover:text-white")}>

@@ -213,6 +213,7 @@ export interface CustomUser {
     canClaimRewards?: boolean;
     canChat?: boolean;
     blockedGames?: Record<string, boolean>;
+    isDemandMode?: boolean;
   };
 }
 

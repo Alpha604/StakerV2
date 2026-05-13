@@ -244,25 +244,43 @@ export function AdminPanel() {
     return true; // "Tous"
   });
 
-  const handleAdminRequestVal = async (reqId: string, reqUserId: string, status: 'accepted' | 'rejected', response: string, type: string) => {
+  const handleAdminRequestVal = async (req: any, status: 'accepted' | 'rejected', response: string) => {
     try {
-      await updateDoc(doc(db, "admin_requests", reqId), {
+      await updateDoc(doc(db, "admin_requests", req.id), {
         status,
         adminResponse: response,
         resolvedAt: Date.now()
       });
 
       if (status === "accepted") {
-        if (type === "ban_appeal") {
-          await updateDoc(doc(db, "users", reqUserId), {
+        if (req.type === "ban_appeal") {
+          await updateDoc(doc(db, "users", req.userId), {
             status: "approved",
             suspensionEndsAt: null,
             banAppealRequested: false
           });
+        } else if (req.type === "deposit") {
+          await updateDoc(doc(db, "users", req.userId), {
+            balance: increment(req.amount)
+          });
+        } else if (req.type === "withdraw") {
+          await updateDoc(doc(db, "users", req.userId), {
+            balance: increment(-req.amount)
+          });
+        } else if (req.type === "vault_in") {
+          await updateDoc(doc(db, "users", req.userId), {
+            balance: increment(-req.amount),
+            vault: increment(req.amount)
+          });
+        } else if (req.type === "vault_out") {
+          await updateDoc(doc(db, "users", req.userId), {
+            balance: increment(req.amount),
+            vault: increment(-req.amount)
+          });
         }
       } else {
-        if (type === "ban_appeal") {
-          await updateDoc(doc(db, "users", reqUserId), { banAppealRequested: false });
+        if (req.type === "ban_appeal") {
+          await updateDoc(doc(db, "users", req.userId), { banAppealRequested: false });
         }
       }
     } catch (err) {
@@ -385,10 +403,12 @@ export function AdminPanel() {
                 <div key={req.id} className="bg-[#0f1923] border border-gray-800 rounded-xl p-4 flex flex-col gap-4">
                    <div className="flex justify-between items-start">
                      <div>
-                       <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${req.type === 'rank_upgrade' ? 'bg-purple-500/10 text-purple-400' : 'bg-red-500/10 text-red-400'}`}>
-                         {req.type === 'rank_upgrade' ? 'Évolution de grade' : 'Demande de déban'}
+                       <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${req.type === 'rank_upgrade' ? 'bg-purple-500/10 text-purple-400' : req.type === 'ban_appeal' ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                         {req.type === 'rank_upgrade' ? 'Évolution de grade' : req.type === 'ban_appeal' ? 'Demande de déban' : req.type === 'deposit' ? 'Achat - Demande' : req.type === 'withdraw' ? 'Retrait - Demande' : req.type === 'vault_in' ? 'Vault In - Demande' : 'Vault Out - Demande'}
                        </span>
                        <h3 className="font-bold text-lg mt-2">{req.username} <span className="text-sm font-medium text-gray-400">({req.userEmail})</span></h3>
+                       {req.amount && <div className="text-emerald-400 font-mono font-bold mt-1 text-xl">${req.amount.toFixed(2)} {req.crypto ? `(${req.crypto})` : ''}</div>}
+                       {req.method && <p className="text-xs text-gray-500 uppercase">{req.method}</p>}
                        <p className="text-xs text-gray-500 mt-1">{new Date(req.createdAt).toLocaleString('fr-FR')}</p>
                      </div>
                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${req.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : req.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
@@ -399,11 +419,11 @@ export function AdminPanel() {
                      <div className="flex gap-2">
                        <button onClick={() => {
                           const response = prompt("Raison ou message (optionnel) :");
-                          if (response !== null) handleAdminRequestVal(req.id, req.userId, 'accepted', response, req.type);
+                          if (response !== null) handleAdminRequestVal(req, 'accepted', response);
                        }} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg transition-colors text-sm">Accepter</button>
                        <button onClick={() => {
                           const response = prompt("Raison du refus (optionnel) :");
-                          if (response !== null) handleAdminRequestVal(req.id, req.userId, 'rejected', response, req.type);
+                          if (response !== null) handleAdminRequestVal(req, 'rejected', response);
                        }} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors text-sm">Refuser</button>
                      </div>
                    )}
@@ -1052,7 +1072,7 @@ export function AdminPanel() {
                            <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Accès Financier & Avantages</h4>
                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                              {[
-                               { id: "canDeposit", label: "Dépôts", value: editForm.permissions?.canDeposit !== false },
+                               { id: "canDeposit", label: "Dépôts", value: editForm.permissions?.canDeposit !== false }, { id: "isDemandMode", label: "Mode Sur Demande", value: editForm.permissions?.isDemandMode === true },
                                { id: "canWithdraw", label: "Retraits", value: editForm.permissions?.canWithdraw !== false },
                                { id: "canUseVault", label: "Vault (Coffre)", value: editForm.permissions?.canUseVault !== false },
                                { id: "canBuyVip", label: "Achat VIP", value: editForm.permissions?.canBuyVip !== false },
