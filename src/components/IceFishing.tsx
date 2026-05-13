@@ -6,16 +6,19 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSound } from '../lib/useSound';
 import { WinPopup } from './WinPopup';
 
-const SEGMENTS = 54;
+const SEGMENTS = 53;
 const segmentsConfig = [
-  { type: 'silver', color: '#c4d6da', textColor: '#475569', label: '', sub: "", multiplier: 2, isPattern: true },
-  { type: 'blue', color: '#0054ff', textColor: '#ffffff', label: '10x', sub: "LIL' BLUES", multiplier: 10 },
-  { type: 'orange', color: '#ff7700', textColor: '#ffffff', label: 'X', sub: "BIG ORANGE", multiplier: 20 }, // Replaced label to X so it just renders a dot/icon if I want, or just empty. Wait, the user image shows LIL' BLUES has 10x, HUGE REDS has 5x.
-  { type: 'red', color: '#d91122', textColor: '#ffffff', label: '5x', sub: "HUGE REDS", multiplier: 5 },
+  { type: 'leaf1', color: '#c4d6da', textColor: '#475569', label: '1x', sub: "LEAF 1", multiplier: 1, isPattern: true },
+  { type: 'leaf2', color: '#a0c4da', textColor: '#2d3f4d', label: '2x', sub: "LEAF 2", multiplier: 2, isPattern: true },
+  { type: 'blue', color: '#0054ff', textColor: '#ffffff', label: '5x', sub: "LIL' BLUES", multiplier: 5 },
+  { type: 'orange', color: '#ff7700', textColor: '#ffffff', label: '15x', sub: "BIG ORANGES", multiplier: 15 },
+  { type: 'red', color: '#d91122', textColor: '#ffffff', label: '50x', sub: "HUGE REDS", multiplier: 50 },
+  { type: 'bonus', color: '#8b5cf6', textColor: '#ffffff', label: '🎣', sub: "BONUS", multiplier: 0 },
 ];
 
+// Precisely 53 segments
 const wheelLayout = [
-  0, 1, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3
+  0, 1, 0, 2, 0, 1, 0, 3, 1, 0, 1, 2, 0, 4, 0, 1, 0, 2, 1, 0, 5, 0, 1, 0, 3, 0, 1, 0, 2, 1, 0, 1, 0, 3, 0, 2, 1, 0, 4, 0, 1, 2, 0, 1, 0, 5, 0, 1, 0, 3, 0, 2, 1
 ];
 
 function getCoordinatesForPercent(percent: number, radius: number = 50) {
@@ -33,21 +36,115 @@ const SHADOW_CHIPS = [
    { value: 500, color: "bg-purple-500" }
 ];
 
+function FishingBonus({ betAmount, onComplete }: { betAmount: number; onComplete: (multiplier: number) => void }) {
+    const [round, setRound] = useState(1);
+    const [totalMulti, setTotalMulti] = useState(0);
+    const [fishingState, setFishingState] = useState<"idle" | "fishing" | "catch" | "done">("idle");
+    const [currentCatch, setCurrentCatch] = useState<{ type: string; multi: number; color: string } | null>(null);
+
+    // Some simple fishing logic
+    const handleFish = () => {
+        if (fishingState !== "idle") return;
+        setFishingState("fishing");
+        
+        setTimeout(() => {
+            const rand = Math.random();
+            let type = "small";
+            let multi = 0;
+            let color = "#0054ff";
+            
+            if (rand > 0.95) {
+                // Huge Red
+                type = "huge";
+                multi = Math.floor(Math.random() * 401) + 100; // 100 - 500x
+                color = "#d91122";
+            } else if (rand > 0.8) {
+                // Orange
+                type = "medium";
+                multi = Math.floor(Math.random() * 36) + 15; // 15 - 50x
+                color = "#ff7700";
+            } else if (rand > 0.2) {
+                // Blue
+                type = "small";
+                multi = Math.floor(Math.random() * 9) + 2; // 2 - 10x
+                color = "#0054ff";
+            } else {
+                // Nothing / Boot (End of bonus if caught boot? Or just small fish)
+               type = "small";
+               multi = 2;
+            }
+
+            setCurrentCatch({ type, multi, color });
+            setTotalMulti(prev => prev + multi);
+            setFishingState("catch");
+
+            setTimeout(() => {
+                // Decide if round continues
+                if (round >= 3 || Math.random() < 0.3) {
+                    setFishingState("done");
+                    setTimeout(() => onComplete(totalMulti + multi), 3000); // end bonus after showing final catch
+                } else {
+                    setRound(r => r + 1);
+                    setFishingState("idle");
+                }
+            }, 3000);
+            
+        }, 2000);
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 bg-[#c4d6da]/90 flex flex-col items-center justify-center p-6 text-slate-800" style={{ backgroundImage: 'url("https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg")', backgroundSize: 'cover', backgroundBlendMode: 'overlay' }}>
+           <h2 className="text-4xl font-black mb-4 text-white drop-shadow-lg text-center leading-tight uppercase">Bonus de Pêche<br/><span className="text-[#ff7700] text-3xl">Manche {round}</span></h2>
+           
+           <div className="bg-white/80 backdrop-blur pb-4 pt-6 px-10 rounded-xl shadow-2xl flex flex-col items-center border-[4px] border-[#a0c4da]">
+               <div className="text-xl font-bold uppercase tracking-widest text-[#475569] mb-2">Total Mutiplicateur</div>
+               <div className="text-6xl font-black text-[#d91122] drop-shadow-md mb-8">{totalMulti > 0 ? `${totalMulti}x` : '0x'}</div>
+               
+               <div className="h-[200px] w-[300px] rounded-full border-4 border-[#4b6a7a] bg-[#0c1f2e] mb-8 relative flex flex-col items-center justify-center overflow-hidden shadow-inner cursor-pointer" onClick={handleFish}>
+                   {fishingState === "idle" && (
+                       <div className="text-white/50 font-black animate-pulse flex flex-col items-center">
+                           <Anchor className="text-white/80 mb-2" size={32} />
+                           Click to Fish!
+                       </div>
+                   )}
+                   {fishingState === "fishing" && (
+                       <div className="text-[#a0c4da] font-bold animate-bounce flex items-center gap-2">🎣 Fishing...</div>
+                   )}
+                   {(fishingState === "catch" || fishingState === "done") && currentCatch && (
+                       <motion.div initial={{ y: 50, scale: 0.5, opacity: 0 }} animate={{ y: 0, scale: 2, opacity: 1 }} className="flex flex-col items-center font-black">
+                           <span className="text-[10px] uppercase mb-1" style={{ color: currentCatch.color }}>{currentCatch.type} Fish</span>
+                           <span className="text-white text-md drop-shadow-md bg-black/40 px-2 py-0.5 rounded">+{currentCatch.multi}x</span>
+                       </motion.div>
+                   )}
+               </div>
+               
+               {fishingState === "done" && (
+                   <div className="text-2xl font-black text-[#0054ff] animate-bounce uppercase">Bonus Complete!</div>
+               )}
+           </div>
+        </div>
+    );
+}
+
 export function IceFishing() {
   const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser() as any;
   const { playTick, playWin, playLoss } = useSound();
   
-  const [bets, setBets] = useState<Record<number, number>>({ 0: 0, 1: 0, 2: 0, 3: 0 });
+  const [bets, setBets] = useState<Record<number, number>>({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
   const [selectedChipIndex, setSelectedChipIndex] = useState<number>(1);
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   
   const [winInfo, setWinInfo] = useState<{ multiplier: number, payout: number } | null>(null);
+  
+  // Bonus Game State
+  const [isBonusActive, setIsBonusActive] = useState(false);
+  const [bonusBetAmount, setBonusBetAmount] = useState(0);
 
   const totalBet = Object.values(bets).reduce((a, b) => (a as number) + (b as number), 0) as number;
 
   const placeBetOnTrack = async (trackIndex: number) => {
-     if (isSpinning) return;
+     if (isSpinning || isBonusActive) return;
      const chipValue = SHADOW_CHIPS[selectedChipIndex].value;
      if (balance < chipValue) return;
 
@@ -59,15 +156,36 @@ export function IceFishing() {
   };
 
   const clearBets = () => {
-      if (isSpinning) return;
+      if (isSpinning || isBonusActive) return;
       if (totalBet > 0) {
          addBalance(totalBet);
-         setBets({ 0: 0, 1: 0, 2: 0, 3: 0 });
+         setBets({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
       }
   };
 
+  const handleBonusCompletion = (finalMulti: number) => {
+      const payout = bonusBetAmount * finalMulti;
+      const profit = payout - totalBet;
+
+      if (payout > 0) {
+        addBalance(payout);
+        playWin();
+        if (finalMulti >= 5) {
+            setWinInfo({ multiplier: finalMulti, payout });
+        }
+      } else {
+        playLoss();
+      }
+
+      recordBet("Ice Fishing", totalBet, finalMulti, profit);
+      
+      setIsBonusActive(false);
+      setBonusBetAmount(0);
+      setBets({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+  };
+
   const handleSpin = () => {
-    if (isSpinning || totalBet <= 0) return;
+    if (isSpinning || isBonusActive || totalBet <= 0) return;
 
     setIsSpinning(true);
     setWinInfo(null);
@@ -79,6 +197,14 @@ export function IceFishing() {
     const segmentAngle = 360 / SEGMENTS;
     const targetAngle = targetSegment * segmentAngle + (segmentAngle / 2);
     
+    // Check if there is an active random boost globally (mocking this with a random chance)
+    let appliedMultiplier = segmentConfig.multiplier;
+    let boosted = false;
+    if (confIdx >= 2 && confIdx <= 4 && Math.random() < 0.2) {
+       appliedMultiplier = appliedMultiplier * (Math.floor(Math.random() * 4) + 2); // 2x to 5x boost
+       boosted = true;
+    }
+
     const spins = 5;
     const currentRot = rotation % 360;
     const finalRotation = rotation - currentRot + (360 * spins) - targetAngle;
@@ -87,34 +213,38 @@ export function IceFishing() {
 
     setTimeout(() => {
         setIsSpinning(false);
-        const payoutConfig = segmentsConfig[confIdx];
         
-        let payout = 0;
-        let profit = -totalBet;
-
-        const betAmountOnWinning = bets[confIdx] || 0;
-        if (betAmountOnWinning > 0) {
-            payout = betAmountOnWinning + (betAmountOnWinning * payoutConfig.multiplier);
-            profit += payout;
-            addBalance(payout);
-            playWin();
-            
-            if (payoutConfig.multiplier >= 5) {
-                setWinInfo({ multiplier: payoutConfig.multiplier, payout });
+        if (confIdx === 5) { // Bonus
+            const betAmountOnBonus = bets[5] || 0;
+            if (betAmountOnBonus > 0) {
+                setBonusBetAmount(betAmountOnBonus);
+                setIsBonusActive(true);
+            } else {
+                playLoss();
+                recordBet("Ice Fishing", totalBet, 0, -totalBet);
+                setBets({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
             }
         } else {
-            playLoss();
+            let payout = 0;
+            let profit = -totalBet;
+
+            const betAmountOnWinning = bets[confIdx] || 0;
+            if (betAmountOnWinning > 0) {
+                payout = betAmountOnWinning + (betAmountOnWinning * appliedMultiplier);
+                profit += payout;
+                addBalance(payout);
+                playWin();
+                
+                if (appliedMultiplier >= 5) {
+                    setWinInfo({ multiplier: appliedMultiplier, payout });
+                }
+            } else {
+                playLoss();
+            }
+
+            recordBet("Ice Fishing", totalBet, betAmountOnWinning > 0 ? appliedMultiplier : 0, profit);
+            setBets({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
         }
-
-        recordBet({
-            game: "Ice Fishing",
-            betAmount: totalBet,
-            multiplier: betAmountOnWinning > 0 ? payoutConfig.multiplier : 0,
-            payout,
-            profit
-        });
-
-        setBets({ 0: 0, 1: 0, 2: 0, 3: 0 });
     }, 7000);
   };
 
@@ -307,6 +437,15 @@ export function IceFishing() {
             </button>
             <div className="absolute bottom-2 left-2 text-white/50 text-[10px] font-mono">Camera 1</div>
          </div>
+
+         {/* Bonus Game Overlay */}
+         <AnimatePresence>
+            {isBonusActive && (
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50">
+                  <FishingBonus betAmount={bonusBetAmount} onComplete={handleBonusCompletion} />
+               </motion.div>
+            )}
+         </AnimatePresence>
       </div>
 
       {/* FOOTER (Betting UI) */}

@@ -39,6 +39,7 @@ export function IPGuard({ children }: { children: React.ReactNode }) {
   const [blocked, setBlocked] = useState<boolean>(false);
   const [checking, setChecking] = useState(true);
   const [userIp, setUserIp] = useState<string | null>(null);
+  const { user } = useUser() as any;
 
   useEffect(() => {
     async function fetchIP() {
@@ -92,7 +93,6 @@ export function IPGuard({ children }: { children: React.ReactNode }) {
   if (checking) return null; // Wait for IP check before rendering
 
   // For bypassing admin IPs
-  const { user } = useUser() as any;
   const isSuperAdmin = ["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(user?.email || "");
   const isAdmin = user?.role === "admin" || isSuperAdmin;
 

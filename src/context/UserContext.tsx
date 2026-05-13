@@ -584,6 +584,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     if (!user) return;
     
+    const safeGame = typeof game === 'string' ? game : "Unknown";
     const safeBetAmount = typeof betAmount === "number" && !isNaN(betAmount) ? betAmount : 0;
     const safeProfit = typeof passedProfit === "number" && !isNaN(passedProfit) ? passedProfit : 0;
     const actualPayout = safeProfit + safeBetAmount;
@@ -592,7 +593,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     const betId = "bet_" + Date.now();
     const newBet = {
       id: betId,
-      game,
+      game: safeGame,
       wagered: safeBetAmount,
       multiplier,
       payout: actualPayout,
@@ -683,7 +684,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           id: betId,
           userId: user.id,
           userName: user.username || "Joueur",
-          game,
+          game: safeGame,
           betAmount: safeBetAmount,
           multiplier,
           payout: actualPayout,

@@ -70,7 +70,6 @@ export type ViewType =
   | "video-poker"
   | "baccarat"
   | "tome-of-life"
-  | "blackjack"
   | "chicken"
   | "moles"
   | "slots-game"
@@ -78,6 +77,7 @@ export type ViewType =
   | "le-bandit"
   | "sweet-bonanza"
   | "ice-fishing"
+  | "blackjack-evolution"
   | "verify"
   | "admin"
   | "profile"
@@ -270,13 +270,13 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "baccarat" && <ApprovalGuard gameName="baccarat"><Baccarat /></ApprovalGuard>}
               {view === "tome-of-life" && <ApprovalGuard gameName="tome-of-life"><TomeOfLife /></ApprovalGuard>}
               {view === "slots-game" && <ApprovalGuard gameName="slots-game"><Slots /></ApprovalGuard>}
-              {view === "blackjack" && <ApprovalGuard gameName="blackjack"><Blackjack /></ApprovalGuard>}
               {view === "chicken" && <ApprovalGuard gameName="chicken"><Chicken /></ApprovalGuard>}
               {view === "moles" && <ApprovalGuard gameName="moles"><Moles /></ApprovalGuard>}
               {view === "scarab-spin" && <ApprovalGuard gameName="scarab-spin"><ScarabSpin /></ApprovalGuard>}
               {view === "le-bandit" && <ApprovalGuard gameName="le-bandit"><LeBandit /></ApprovalGuard>}
               {view === "sweet-bonanza" && <ApprovalGuard gameName="sweet-bonanza"><SweetBonanza /></ApprovalGuard>}
               {view === "ice-fishing" && <ApprovalGuard gameName="Ice Fishing"><IceFishing /></ApprovalGuard>}
+              {view === "blackjack-evolution" && <ApprovalGuard gameName="Blackjack"><Blackjack /></ApprovalGuard>}
             </div>
             
             {/* Footer */}

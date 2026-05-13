@@ -595,7 +595,7 @@ export function LiveSessionWidget() {
                   {[...sessionBets].reverse().slice(0, 50).map((bet, i) => (
                     <div key={i} className="flex items-center justify-between bg-black/20 hover:bg-black/40 transition-colors p-2 rounded-lg border border-[#2f4553]/50 text-xs font-mono group">
                       <div className="flex items-center gap-3">
-                        <span className="text-[#8b9ba5] w-12 truncate font-bold text-[10px] uppercase bg-black/50 px-1 py-0.5 rounded text-center">{bet.game.substring(0, 6)}</span>
+                        <span className="text-[#8b9ba5] w-12 truncate font-bold text-[10px] uppercase bg-black/50 px-1 py-0.5 rounded text-center">{(typeof bet.game === "string" ? bet.game : "Unknown").substring(0, 6)}</span>
                         <span className={cn("font-bold", bet.profit > 0 ? "text-[#00e701]" : "text-rose-500")}>
                           {bet.profit > 0 ? "+" : ""}{formatCurrency(bet.profit)}$
                         </span>

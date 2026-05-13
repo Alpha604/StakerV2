@@ -28,10 +28,6 @@ const ALL_GAMES = [
     img: "https://mediumrare.imgix.net/8c1768b783a43931a4ebc8784ce64085e39139d262e6bb50da242b9f3fda70da?w=180&h=236&fit=min&auto=format",
   },
   {
-    name: "BLACKJACK", category: "originals", link: "blackjack",
-    img: "https://mediumrare.imgix.net/3a536fa64023f92764ddccad1b80102d1b32b23a2e3dac4dff52394a612fc005?w=180&h=236&fit=min&auto=format",
-  },
-  {
     name: "KENO", category: "originals", link: "keno",
     img: "https://mediumrare.imgix.net/102cf3d7c840018b939cd787bf013e080b996d80e604f3008f21dddf1f1aa201?w=180&h=236&fit=min&auto=format",
   },
@@ -113,6 +109,11 @@ const ALL_GAMES = [
     name: "Ice Fishing", category: "evolution", link: "ice-fishing", provider: "Evolution",
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg"
+  },
+  {
+    name: "Blackjack", category: "evolution", link: "blackjack-evolution", provider: "Evolution",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://mediumrare.imgix.net/ceb29aff91c7ba3033e44ee289d2eeb4e85088cdb56daac04d2e82a886542b05?w=180&h=236&fit=min&auto=format"
   }
 ];
 
@@ -127,7 +128,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
   const { sessionBets, globalGameStatus } = useUser() as any;
 
   const getGameBetsCount = (gameName: string) => {
-    return sessionBets.filter((b: any) => b.game.toLowerCase() === gameName.toLowerCase()).length;
+    return sessionBets.filter((b: any) => (typeof b.game === 'string' ? b.game : '').toLowerCase() === gameName.toLowerCase()).length;
   };
 
   const isGameBanned = (gameName: string) => {
