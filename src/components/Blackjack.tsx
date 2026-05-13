@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn, formatCurrency } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, MessageSquare, Video, MicOff, Settings, Menu, Grip, Zap } from "lucide-react";
 import { WinPopup } from "./WinPopup";
+import { useSound } from '../lib/useSound';
 
 type Suit = "hearts" | "diamonds" | "clubs" | "spades";
 type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" | "A";
@@ -51,7 +52,7 @@ const getHandValue = (hand: Card[]) => {
 const CardView = ({ card, hidden }: { card?: Card; hidden?: boolean }) => {
   if (hidden || !card) {
     return (
-      <div className="w-12 h-16 md:w-20 md:h-28 bg-gradient-to-br from-blue-700 to-blue-900 border border-white/20 rounded shadow-2xl flex items-center justify-center">
+      <div className="w-16 h-24 md:w-28 md:h-40 bg-gradient-to-br from-blue-700 to-blue-900 border border-white/20 rounded shadow-2xl flex items-center justify-center">
         <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400/20 to-transparent m-1 border border-blue-400/30"></div>
       </div>
     );
@@ -71,20 +72,20 @@ const CardView = ({ card, hidden }: { card?: Card; hidden?: boolean }) => {
        animate={{ scale: 1, x: 0, y: 0, rotateY: 0 }}
        transition={{ type: "spring", stiffness: 200, damping: 20 }}
        style={{ transformStyle: "preserve-3d" }}
-       className="relative w-12 h-16 md:w-20 md:h-28 bg-white rounded shadow-2xl flex flex-col items-center justify-center"
+       className="relative w-16 h-24 md:w-28 md:h-40 bg-white rounded shadow-2xl flex flex-col items-center justify-center"
     >
-      <div className={cn("absolute top-1 left-1.5 md:top-1.5 md:left-2 text-[10px] md:text-sm font-bold leading-none", isRed ? "text-red-500" : "text-black")}>
+      <div className={cn("absolute top-1.5 left-2 md:top-2 md:left-3 text-xs md:text-lg font-bold leading-none", isRed ? "text-red-500" : "text-black")}>
         {card.rank}
       </div>
-      <div className={cn("absolute top-3.5 left-1.5 md:top-5 md:left-2 text-[10px] md:text-sm", isRed ? "text-red-500" : "text-black")}>
+      <div className={cn("absolute top-4 left-2 md:top-7 md:left-3 text-xs md:text-lg", isRed ? "text-red-500" : "text-black")}>
         {suitIcon}
       </div>
       
-      <div className={cn("text-2xl md:text-4xl", isRed ? "text-red-500" : "text-black")}>
+      <div className={cn("text-3xl md:text-5xl", isRed ? "text-red-500" : "text-black")}>
         {suitIcon}
       </div>
 
-      <div className={cn("absolute bottom-1 right-1.5 md:bottom-1.5 md:right-2 text-[10px] md:text-sm font-bold leading-none rotate-180", isRed ? "text-red-500" : "text-black")}>
+      <div className={cn("absolute bottom-1.5 right-2 md:bottom-2 md:right-3 text-xs md:text-lg font-bold leading-none rotate-180", isRed ? "text-red-500" : "text-black")}>
         {card.rank}
       </div>
     </motion.div>
@@ -93,6 +94,7 @@ const CardView = ({ card, hidden }: { card?: Card; hidden?: boolean }) => {
 
 export function Blackjack() {
   const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser() as any;
+  const { playTick, playWin, playLoss } = useSound();
   const [selectedChipIndex, setSelectedChipIndex] = useState<number>(1);
   const [bet, setBet] = useState(0);
   
@@ -113,6 +115,7 @@ export function Blackjack() {
      const success = await subtractBalance(chipValue);
      if (success) {
         setBet(prev => prev + chipValue);
+        playTick();
      }
   };
 
@@ -122,10 +125,14 @@ export function Blackjack() {
     setBet(0);
   };
 
+  const [displayMessage, setDisplayMessage] = useState<string | null>(null);
+
   const startDeal = () => {
     if (bet <= 0 || stage !== "BETTING") return;
     setStage("DEALING");
     setWinInfo(null);
+    setDisplayMessage("BETS ACCEPTED");
+    setTimeout(() => setDisplayMessage(null), 1500);
     
     // Shuffle 6 decks for realistic evolution behavior
     let d: Card[] = [];
@@ -135,13 +142,16 @@ export function Blackjack() {
     setTimeout(() => {
         const pHand = [d.pop()!];
         setPlayerHand([...pHand]);
+        playTick();
         setTimeout(() => {
             const dHand = [d.pop()!];
             setDealerHand([...dHand]);
+            playTick();
             setTimeout(() => {
                 pHand.push(d.pop()!);
                 setPlayerHand([...pHand]);
                 setDeck(d);
+                playTick();
 
                 setTimeout(() => {
                    const pVal = getHandValue(pHand);
@@ -151,9 +161,9 @@ export function Blackjack() {
                        setStage("PLAYER_TURN");
                    }
                 }, 1000);
-            }, 600);
-        }, 600);
-    }, 600);
+            }, 800); // slightly slower dealing for visual drama
+        }, 800);
+    }, 2000); // 2 second pause for "BETS ACCEPTED"
   };
 
   const hit = () => {
@@ -164,6 +174,7 @@ export function Blackjack() {
      
      setDeck(d);
      setPlayerHand(newHand);
+     playTick();
      
      if (getHandValue(newHand) > 21) {
          handleEndGame(newHand, dealerHand, "BUST");
@@ -191,6 +202,7 @@ export function Blackjack() {
      
      setDeck(d);
      setPlayerHand(newHand);
+     playTick();
      
      if (getHandValue(newHand) > 21) {
          setTimeout(() => handleEndGame(newHand, dealerHand, "BUST"), 1000);
@@ -210,6 +222,7 @@ export function Blackjack() {
              currentDealerHand = [...currentDealerHand, card];
              setDealerHand(currentDealerHand);
              setDeck(d);
+             playTick();
              
              if (getHandValue(currentDealerHand) < 17) {
                  drawDealerCard();
@@ -268,9 +281,12 @@ export function Blackjack() {
       
       if (payout > 0) {
           addBalance(payout);
+          playWin();
           if (multiplier >= 2) {
               setWinInfo({ multiplier, payout });
           }
+      } else {
+          playLoss();
       }
       
       recordBet("Blackjack", bet, multiplier, profit);
@@ -300,7 +316,17 @@ export function Blackjack() {
         {/* Table Curve */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[200vw] sm:w-[150vw] h-[60vh] bg-[#0c2e17] rounded-t-[100%] border-t-[10px] border-[#06170b] shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-0">
              {/* Velvet texture overlay */}
-             <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/fabric-plaid.png')] rounded-t-[100%] pointer-events-none mix-blend-overlay"></div>
+             <div className="absolute inset-0 opacity-[0.05] bg-[url('https://www.transparenttextures.com/patterns/fabric-plaid.png')] rounded-t-[100%] pointer-events-none mix-blend-overlay"></div>
+             
+             {/* Card Shoe (Sabot) */}
+             <div className="absolute top-[5%] right-[20%] w-[120px] h-[160px] bg-black/80 rotate-[-15deg] rounded-md shadow-2xl skew-x-[-10deg] border-l-4 border-l-white/10 border-t-2 border-t-white/30 z-10 hidden md:flex justify-end p-2 pointer-events-none">
+                 {/* Cards inside shoe */}
+                 <div className="w-[80px] h-[100px] bg-red-800/80 rounded border-y border-red-900/50 shadow-inner" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px)' }}></div>
+                 <div className="absolute -left-[5px] -bottom-[10px] w-full h-[30px] bg-black rounded-b-md"></div>
+             </div>
+
+             {/* Deck Discard */}
+             <div className="absolute top-[8%] left-[20%] w-[90px] h-[140px] bg-black/40 rotate-[15deg] rounded-md shadow-inner skew-x-[10deg] border border-white/5 z-10 hidden md:block pointer-events-none"></div>
              
              {/* Betting Circles / Lines */}
              <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[80%] h-[30%] border border-white/5 rounded-t-[100%] flex justify-center">
@@ -343,7 +369,7 @@ export function Blackjack() {
                     )}
                  </AnimatePresence>
                  {/* Invisible spacing block for layout */}
-                 <div className="w-[160px] h-28"></div>
+                 <div className="w-[200px] h-24 md:h-40"></div>
              </div>
              {dealerHand.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2 bg-black/80 border border-white/20 text-white font-bold px-3 py-1 rounded shadow-lg backdrop-blur-sm">
@@ -353,16 +379,30 @@ export function Blackjack() {
           </div>
 
           <AnimatePresence>
+              {displayMessage && (
+                  <motion.div 
+                     initial={{ scale: 1.5, opacity: 0 }} 
+                     animate={{ scale: 1, opacity: 1 }} 
+                     exit={{ opacity: 0 }}
+                     className="absolute top-[35%] left-1/2 -translate-x-1/2 font-black text-2xl md:text-5xl px-8 py-4 z-50 uppercase tracking-widest whitespace-nowrap text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]"
+                  >
+                     {displayMessage}
+                  </motion.div>
+              )}
+          </AnimatePresence>
+
+          <AnimatePresence>
               {stage === "ENDED" && (
                  <motion.div 
                      initial={{ scale: 0.5, opacity: 0 }} 
                      animate={{ scale: 1, opacity: 1 }} 
                      exit={{ scale: 0.5, opacity: 0 }}
                      className={cn("absolute top-[45%] left-1/2 -translate-x-1/2 font-black text-3xl px-12 py-4 rounded-lg z-50 uppercase tracking-widest border whitespace-nowrap shadow-2xl backdrop-blur-md", 
-                        resultMsg.includes("GAGNE") || resultMsg.includes("BLACKJACK") ? "bg-emerald-500/30 text-emerald-400 border-emerald-500/50" : 
-                        resultMsg.includes("ÉGALITÉ") ? "bg-gray-500/30 text-white border-gray-500/50" : "bg-rose-500/30 text-rose-400 border-rose-500/50"
+                        resultMsg.includes("GAGNE") || resultMsg.includes("BLACKJACK") ? "bg-gradient-to-b from-[#eab308]/40 to-[#ca8a04]/40 text-yellow-400 border-yellow-500/50" : 
+                        resultMsg.includes("ÉGALITÉ") ? "bg-gray-500/30 text-white border-gray-500/50" : "bg-black/60 text-white border-white/10"
                      )}
                  >
+                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse rounded-lg pointer-events-none"></div>
                      {resultMsg}
                  </motion.div>
               )}
@@ -394,30 +434,59 @@ export function Blackjack() {
                  </AnimatePresence>
 
                  {playerHand.length === 0 && stage === "BETTING" && bet === 0 && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute z-0 pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                       <span className="text-white/40 uppercase font-black tracking-widest text-sm animate-pulse text-center">Place Your<br/>Bets</span>
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute z-0 pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                       <span className="text-yellow-500/80 uppercase font-black tracking-widest text-lg md:text-2xl animate-pulse text-center drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]">PLEASE PLACE<br/>YOUR BETS</span>
                     </motion.div>
                  )}
                  {/* The invisible box for sizing */}
-                 <div className="w-[180px] h-28"></div>
+                 <div className="w-[200px] h-24 md:h-40"></div>
              </div>
 
              {/* Bet Chip shown on table */}
              <AnimatePresence>
                 {bet > 0 && (
                     <motion.div 
-                       initial={{ opacity: 0, scale: 0 }} 
-                       animate={{ opacity: 1, scale: 1 }} 
-                       className="absolute bottom-[-20px] pointer-events-none z-30"
+                       initial={{ opacity: 0, scale: 0, y: 50 }} 
+                       animate={{ opacity: 1, scale: 1, y: 0 }} 
+                       className="absolute bottom-[-10px] pointer-events-none z-30"
                     >
-                        <div className="w-14 h-14 rounded-full bg-[#182a39] border-4 border-dashed border-white/30 flex flex-col items-center justify-center font-bold text-white shadow-2xl">
+                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#182a39] border-4 border-dashed border-white/30 flex flex-col items-center justify-center font-bold text-white shadow-2xl">
                             {renderCryptoIcon(activeCrypto, "w-4 h-4")}
-                            <span className="text-xs">{bet}</span>
+                            <span className="text-xs md:text-sm">{bet}</span>
                         </div>
                     </motion.div>
                 )}
              </AnimatePresence>
           </div>
+      </div>
+
+      {/* PIP Presenter (Evolution UI element) */}
+      <div className="absolute top-[20px] right-[80px] w-[200px] md:w-[250px] aspect-[16/9] rounded-md border-2 border-white/20 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-40 hidden md:flex bg-black items-center justify-center pointer-events-none">
+          <div className="absolute top-1 left-1 bg-black/60 px-1 py-0.5 rounded flex items-center gap-1 z-10">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+              <span className="text-[8px] text-white font-bold uppercase tracking-widest leading-none">Live</span>
+          </div>
+          <div className="w-full h-full relative" style={{ backgroundImage: 'radial-gradient(circle at center, #1f2937 0%, #030712 100%)' }}>
+             {/* Decorative webcam view of dealer */}
+             <div className="absolute inset-0 bg-[url('https://focusgn.com/wp-content/uploads/2021/04/Evolution-Live-Blackjack-2.jpg')] bg-cover bg-center opacity-60 mix-blend-lighten"></div>
+          </div>
+      </div>
+
+      {/* CHAT/SIDE UI (Fake Evolution Side UI) */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2 z-40">
+          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors">
+              <Video size={18} />
+          </button>
+          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors">
+              <MicOff size={18} />
+          </button>
+          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors">
+              <Settings size={18} />
+          </button>
+          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors hidden md:flex relative mt-4">
+              <MessageSquare size={18} />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-black"></div>
+          </button>
       </div>
 
       {/* FOOTER EVOLUTION ACTION OVERLAYS */}
