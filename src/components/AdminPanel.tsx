@@ -4,7 +4,7 @@ import { useUser, CustomUser, UserRank } from "../context/UserContext";
 import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle, Monitor } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
-import { collection, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer } from "firebase/firestore";
+import { collection, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer, increment } from "firebase/firestore";
 import { AreaChart, Area, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from "recharts";
 
 export function AdminPanel() {

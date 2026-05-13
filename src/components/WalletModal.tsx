@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   CheckCircle2,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -46,6 +47,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
   const [isVerified, setIsVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationPhase, setVerificationPhase] = useState(0);
+  const [demandWarning, setDemandWarning] = useState(false);
 
   const handleAction = async () => {
     setError("");
@@ -169,12 +171,17 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
           setIsVerified(false);
           setVerifying(false);
           setVerificationPhase(0);
+          setDemandWarning(false);
           setStep(2);
       }
   };
 
   // Anti-bot simulation logic
   const handleVerify = () => {
+      if (user?.permissions?.isDemandMode && !demandWarning) {
+          setDemandWarning(true);
+      }
+
       setVerifying(true);
       setVerificationPhase(1);
       setTimeout(() => setVerificationPhase(2), 800);
@@ -451,6 +458,15 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                              </div>
                           )}
                       </div>
+
+                      {demandWarning && (
+                          <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 p-3 rounded-lg flex items-start gap-3 mt-2">
+                              <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
+                              <div className="text-sm font-medium">
+                                  Attention : Votre compte est configuré en mode "Sur Demande". Cette demande nécessitera la validation d'un administrateur.
+                              </div>
+                          </div>
+                      )}
                   </div>
 
                   <AnimatePresence>
