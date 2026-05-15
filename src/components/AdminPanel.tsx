@@ -260,8 +260,16 @@ export function AdminPanel() {
             banAppealRequested: false
           });
         } else if (req.type === "deposit") {
+          const u = users.find(u => u.id === req.userId);
+          const today = new Date().toISOString().split('T')[0];
+          const currentDailyCount = u?.dailyDeposits?.date === today ? (u.dailyDeposits.count || 0) : 0;
+          const currentDailyTotal = u?.dailyDeposits?.date === today ? (u.dailyDeposits.totalAmount || 0) : 0;
+          
           await updateDoc(doc(db, "users", req.userId), {
-            balance: increment(req.amount)
+            balance: increment(req.amount),
+            "dailyDeposits.date": today,
+            "dailyDeposits.count": currentDailyCount + 1,
+            "dailyDeposits.totalAmount": currentDailyTotal + req.amount
           });
         } else if (req.type === "withdraw") {
           await updateDoc(doc(db, "users", req.userId), {
@@ -1068,6 +1076,43 @@ export function AdminPanel() {
 
                          <p className="text-sm text-gray-500 mb-6">Bloquez l'accès aux modules spécifiés (Rouge = Verrouillé).</p>
                          
+                         <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           <div>
+                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Montant Dépôt Max ($)</label>
+                             <input 
+                               type="number" 
+                               min="0" 
+                               placeholder="Ex: 500 (laisser vide pour illimité)" 
+                               value={editForm.permissions?.maxDepositAmount || ''} 
+                               onChange={(e) => setEditForm({
+                                 ...editForm, 
+                                 permissions: {
+                                   ...(editForm.permissions || {}), 
+                                   maxDepositAmount: e.target.value ? parseFloat(e.target.value) : undefined
+                                 }
+                               })} 
+                               className="w-full bg-[#0c0c0e] border border-gray-800 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500 placeholder-gray-700" 
+                             />
+                           </div>
+                           <div>
+                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Dépôts Max / Jour</label>
+                             <input 
+                               type="number" 
+                               min="0" 
+                               placeholder="Ex: 3 (laisser vide pour illimité)" 
+                               value={editForm.permissions?.maxDepositsPerDay || ''} 
+                               onChange={(e) => setEditForm({
+                                 ...editForm, 
+                                 permissions: {
+                                   ...(editForm.permissions || {}), 
+                                   maxDepositsPerDay: e.target.value ? parseInt(e.target.value) : undefined
+                                 }
+                               })} 
+                               className="w-full bg-[#0c0c0e] border border-gray-800 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500 placeholder-gray-700" 
+                             />
+                           </div>
+                         </div>
+
                          <div className="mb-8">
                            <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Accès Financier & Avantages</h4>
                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

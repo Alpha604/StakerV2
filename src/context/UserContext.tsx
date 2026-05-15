@@ -205,6 +205,7 @@ export interface CustomUser {
   lastRankAppealTime?: number;
   canAppealRank?: boolean;
   activeCryptoSymbol?: string;
+  dailyDeposits?: { date: string; count: number; totalAmount: number };
   permissions?: {
     canDeposit?: boolean;
     canWithdraw?: boolean;
@@ -214,6 +215,8 @@ export interface CustomUser {
     canChat?: boolean;
     blockedGames?: Record<string, boolean>;
     isDemandMode?: boolean;
+    maxDepositAmount?: number;
+    maxDepositsPerDay?: number;
   };
 }
 

@@ -56,6 +56,28 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
     
     setLoading(true);
 
+    if (user?.status === "suspended" || user?.status === "banned") {
+      setError("Votre compte est actuellement bloqué ou suspendu.");
+      setLoading(false);
+      return;
+    }
+
+    if (tab === "buy") {
+      if (user?.permissions?.maxDepositAmount && val > user.permissions.maxDepositAmount) {
+        setError(`Le montant maximum par dépôt est de $${user.permissions.maxDepositAmount}.`);
+        setLoading(false);
+        return;
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      const currentDaily = user?.dailyDeposits?.date === today ? user.dailyDeposits.count : 0;
+      if (user?.permissions?.maxDepositsPerDay && currentDaily >= user.permissions.maxDepositsPerDay) {
+        setError(`Vous avez atteint la limite de dépôts par jour (${user.permissions.maxDepositsPerDay}).`);
+        setLoading(false);
+        return;
+      }
+    }
+
     if (user?.permissions?.isDemandMode) {
       try {
         const typeStr = tab === "buy" ? "deposit" : tab === "cashout" ? "withdraw" : tab;
@@ -82,6 +104,21 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
     if (tab === "buy") {
       setTimeout(async () => {
         await addBalance(val);
+        
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          const userRef = doc(db, "users", user.id);
+          const currentDailyCount = user?.dailyDeposits?.date === today ? (user.dailyDeposits.count || 0) : 0;
+          const currentDailyTotal = user?.dailyDeposits?.date === today ? (user.dailyDeposits.totalAmount || 0) : 0;
+          await updateDoc(userRef, {
+            "dailyDeposits.date": today,
+            "dailyDeposits.count": currentDailyCount + 1,
+            "dailyDeposits.totalAmount": currentDailyTotal + val
+          });
+        } catch (e) {
+            console.error("Error updating deposit stats:", e);
+        }
+
         setLoading(false);
         setSuccessMsg(`Dépôt de $${val} réussi !`);
         setTimeout(() => onClose(), 2000);
