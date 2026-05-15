@@ -178,6 +178,11 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
 
   // Anti-bot simulation logic
   const handleVerify = () => {
+      if (user?.status === "suspended" || user?.status === "banned") {
+          setError("Votre compte est actuellement bloqué ou suspendu.");
+          return;
+      }
+
       if (user?.permissions?.isDemandMode && !demandWarning) {
           setDemandWarning(true);
       }

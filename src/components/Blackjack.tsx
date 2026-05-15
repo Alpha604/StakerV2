@@ -52,8 +52,8 @@ const getHandValue = (hand: Card[]) => {
 const CardView = ({ card, hidden }: { card?: Card; hidden?: boolean }) => {
   if (hidden || !card) {
     return (
-      <div className="w-16 h-24 md:w-28 md:h-40 bg-gradient-to-br from-blue-700 to-blue-900 border border-white/20 rounded shadow-2xl flex items-center justify-center">
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400/20 to-transparent m-1 border border-blue-400/30"></div>
+      <div className="w-20 h-28 md:w-32 md:h-48 bg-gradient-to-br from-blue-700 to-blue-900 border border-white/20 rounded-lg shadow-2xl flex items-center justify-center">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400/20 to-transparent m-1.5 border border-blue-400/30 rounded"></div>
       </div>
     );
   }
@@ -72,21 +72,23 @@ const CardView = ({ card, hidden }: { card?: Card; hidden?: boolean }) => {
        animate={{ scale: 1, x: 0, y: 0, rotateY: 0 }}
        transition={{ type: "spring", stiffness: 200, damping: 20 }}
        style={{ transformStyle: "preserve-3d" }}
-       className="relative w-16 h-24 md:w-28 md:h-40 bg-white rounded shadow-2xl flex flex-col items-center justify-center"
+       className="relative w-20 h-28 md:w-32 md:h-48 bg-white rounded-lg shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center overflow-hidden border border-gray-200"
     >
-      <div className={cn("absolute top-1.5 left-2 md:top-2 md:left-3 text-xs md:text-lg font-bold leading-none", isRed ? "text-red-500" : "text-black")}>
-        {card.rank}
-      </div>
-      <div className={cn("absolute top-4 left-2 md:top-7 md:left-3 text-xs md:text-lg", isRed ? "text-red-500" : "text-black")}>
-        {suitIcon}
+      {/* Top Left */}
+      <div className={cn("absolute top-1 left-2 md:top-2 md:left-2 flex flex-col items-center leading-none", isRed ? "text-red-600" : "text-gray-900")}>
+        <span className="text-sm md:text-xl font-bold">{card.rank}</span>
+        <span className="text-[10px] md:text-sm">{suitIcon}</span>
       </div>
       
-      <div className={cn("text-3xl md:text-5xl", isRed ? "text-red-500" : "text-black")}>
+      {/* Center Grouping for realistic look */}
+      <div className={cn("text-4xl md:text-6xl flex flex-col items-center justify-center", isRed ? "text-red-600" : "text-gray-900")}>
         {suitIcon}
       </div>
 
-      <div className={cn("absolute bottom-1.5 right-2 md:bottom-2 md:right-3 text-xs md:text-lg font-bold leading-none rotate-180", isRed ? "text-red-500" : "text-black")}>
-        {card.rank}
+      {/* Bottom Right */}
+      <div className={cn("absolute bottom-1 right-2 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180", isRed ? "text-red-600" : "text-gray-900")}>
+        <span className="text-sm md:text-xl font-bold">{card.rank}</span>
+        <span className="text-[10px] md:text-sm">{suitIcon}</span>
       </div>
     </motion.div>
   );
@@ -328,10 +330,15 @@ export function Blackjack() {
              {/* Deck Discard */}
              <div className="absolute top-[8%] left-[20%] w-[90px] h-[140px] bg-black/40 rotate-[15deg] rounded-md shadow-inner skew-x-[10deg] border border-white/5 z-10 hidden md:block pointer-events-none"></div>
              
-             {/* Betting Circles / Lines */}
-             <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[80%] h-[30%] border border-white/5 rounded-t-[100%] flex justify-center">
-                 <div className="w-[120px] h-[160px] border border-white/20 mt-4 rounded-xl flex items-center justify-center relative">
-                     <span className="text-white/20 font-black tracking-widest uppercase text-sm">Place Bets</span>
+             {/* Betting Circles / Lines and Golden Table Text */}
+             <div className="absolute top-[10%] left-1/2 -translate-x-1/2 text-center text-yellow-500/30 uppercase tracking-widest font-black leading-tight flex flex-col items-center">
+                 <span className="text-sm md:text-xl">Blackjack pays 3 to 2</span>
+                 <span className="text-[10px] md:text-xs tracking-widest mt-1">Dealer must draw to 16 and stand on all 17s</span>
+                 <span className="text-[10px] md:text-sm mt-3 tracking-[0.3em]">Insurance pays 2:1</span>
+             </div>
+
+             <div className="absolute top-[25%] left-1/2 -translate-x-1/2 w-[80%] h-[30%] border-[2px] border-yellow-500/10 rounded-t-[100%] flex justify-center pointer-events-none">
+                 <div className="w-[110px] h-[150px] border-[2px] border-yellow-500/30 mt-4 rounded-xl flex items-center justify-center relative bg-black/10">
                  </div>
              </div>
         </div>
@@ -492,17 +499,19 @@ export function Blackjack() {
       {/* FOOTER EVOLUTION ACTION OVERLAYS */}
       <AnimatePresence>
           {stage === "PLAYER_TURN" && (
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="absolute bottom-[100px] md:bottom-28 left-1/2 -translate-x-1/2 flex gap-4 z-40">
-                 <button onClick={hit} className="bg-emerald-500 hover:bg-emerald-400 text-bg-dark font-black px-6 py-4 md:px-10 rounded-full shadow-[0_5px_20px_rgba(52,211,153,0.4)] uppercase tracking-widest transition-transform hover:-translate-y-1 flex items-center gap-2">
-                     <span className="text-2xl leading-none">+</span> Hit
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="absolute bottom-[100px] md:bottom-28 left-1/2 -translate-x-1/2 flex gap-6 z-40 items-center">
+                 <button onClick={hit} className="group relative w-16 h-16 md:w-20 md:h-20 bg-emerald-500/80 hover:bg-emerald-400 backdrop-blur-md text-white rounded-full shadow-[0_0_20px_rgba(52,211,153,0.3)] transition-all flex flex-col items-center justify-center border-2 border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/30">
+                     <span className="text-3xl leading-none font-light mb-1">+</span>
+                     <span className="text-[10px] uppercase font-bold tracking-widest leading-none">Hit</span>
                  </button>
-                 <button onClick={stand} className="bg-rose-500 hover:bg-rose-400 text-white font-black px-6 py-4 md:px-10 rounded-full shadow-[0_5px_20px_rgba(244,63,94,0.4)] uppercase tracking-widest transition-transform hover:-translate-y-1 flex items-center gap-2">
-                     <span className="text-2xl leading-none">-</span> Stand
+                 <button onClick={stand} className="group relative w-16 h-16 md:w-20 md:h-20 bg-rose-500/80 hover:bg-rose-400 backdrop-blur-md text-white rounded-full shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all flex flex-col items-center justify-center border-2 border-rose-400 focus:outline-none focus:ring-4 focus:ring-rose-500/30">
+                     <span className="text-3xl leading-none font-light mb-1">-</span>
+                     <span className="text-[10px] uppercase font-bold tracking-widest leading-none">Stand</span>
                  </button>
                  {playerHand.length === 2 && balance >= bet && (
-                     <button onClick={double} className="bg-amber-500 hover:bg-amber-400 text-bg-dark font-black px-6 py-4 md:px-10 rounded-full shadow-[0_5px_20px_rgba(245,158,11,0.4)] uppercase tracking-widest transition-transform hover:-translate-y-1 flex flex-col items-center leading-none">
-                         <span>Double</span>
-                         <span className="text-[10px]">2x</span>
+                     <button onClick={double} className="group relative w-16 h-16 md:w-20 md:h-20 bg-amber-500/80 hover:bg-amber-400 backdrop-blur-md text-white rounded-full shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all flex flex-col items-center justify-center border-2 border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-500/30">
+                         <span className="text-xl leading-none font-black mb-1">x2</span>
+                         <span className="text-[9px] uppercase font-bold tracking-widest leading-none">Double</span>
                      </button>
                  )}
               </motion.div>

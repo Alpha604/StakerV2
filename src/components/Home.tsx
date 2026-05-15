@@ -132,6 +132,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
   };
 
   const isGameBanned = (gameName: string) => {
+    if (gameName === "Ice Fishing") return true;
     if (globalGameStatus?.[gameName]) return globalGameStatus[gameName].banned;
     return ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => gameName.toLowerCase() === n.toLowerCase());
   };
