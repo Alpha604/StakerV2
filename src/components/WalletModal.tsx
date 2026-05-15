@@ -220,6 +220,31 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
           return;
       }
 
+      if (tab === "buy" && user?.permissions?.canDeposit === false) {
+          setError("Vous n'êtes pas autorisé à effectuer des dépôts.");
+          return;
+      }
+      
+      if (tab === "cashout" && user?.permissions?.canWithdraw === false) {
+          setError("Vous n'êtes pas autorisé à effectuer des retraits.");
+          return;
+      }
+
+      if (tab === "buy") {
+          const val = parseFloat(amount || "0");
+          if (user?.permissions?.maxDepositAmount && val > user.permissions.maxDepositAmount) {
+              setError(`Le montant maximum par dépôt est de $${user.permissions.maxDepositAmount}.`);
+              return;
+          }
+          
+          const today = new Date().toISOString().split('T')[0];
+          const currentDaily = user?.dailyDeposits?.date === today ? user.dailyDeposits.count : 0;
+          if (user?.permissions?.maxDepositsPerDay && currentDaily >= user.permissions.maxDepositsPerDay) {
+              setError(`Vous avez atteint la limite de dépôts par jour (${user.permissions.maxDepositsPerDay}).`);
+              return;
+          }
+      }
+
       if (user?.permissions?.isDemandMode && !demandWarning) {
           setDemandWarning(true);
       }
@@ -408,9 +433,24 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                           <button onClick={() => setAmount(String((balance || 0) / 2))} className="text-xs font-bold bg-bg-panel hover:bg-border-medium text-text-secondary hover:text-white px-2 py-1.5 rounded transition-colors hidden sm:block">Half</button>
-                          <button onClick={() => setAmount(tab === "vault_out" ? String(vault) : String(balance))} className="text-xs font-bold bg-bg-panel hover:bg-border-medium text-text-secondary hover:text-white px-2 py-1.5 rounded transition-colors">Max</button>
+                          <button onClick={() => {
+                            if (tab === "vault_out") setAmount(String(vault));
+                            else if (tab === "buy" && user?.permissions?.maxDepositAmount) setAmount(String(user.permissions.maxDepositAmount));
+                            else setAmount(String(balance));
+                          }} className="text-xs font-bold bg-bg-panel hover:bg-border-medium text-text-secondary hover:text-white px-2 py-1.5 rounded transition-colors">Max</button>
                         </div>
                      </div>
+                     
+                     {tab === "buy" && user?.permissions?.maxDepositAmount && (
+                         <div className="mt-2 text-xs text-amber-500 font-medium">
+                             Limite par dépôt : ${user.permissions.maxDepositAmount}
+                         </div>
+                     )}
+                     {tab === "buy" && user?.permissions?.maxDepositsPerDay && (
+                         <div className="mt-1 text-xs text-amber-500 font-medium">
+                             Dépôts maximum par jour : {user.permissions.maxDepositsPerDay}
+                         </div>
+                     )}
                      
                      <div className="mt-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
                         {["10", "50", "100", "500", "1000"].map(v => (
