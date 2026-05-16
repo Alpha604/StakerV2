@@ -480,95 +480,116 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
                  exit={{ opacity: 0, scale: 1.05 }}
                  className="flex flex-col flex-1"
               >
-                  <div className="text-sm text-text-secondary mb-4 uppercase tracking-wider font-bold">3. Vérification de Sécurité</div>
-                  
-                  <div className="bg-bg-base border border-border-medium rounded-xl p-6 mb-6 flex flex-col gap-4">
-                      {/* Summary */}
-                      <div className="flex items-center justify-between p-4 bg-bg-inner border border-border-subtle rounded-lg">
-                          <div className="flex flex-col gap-1">
-                             <span className="text-[10px] text-text-secondary uppercase tracking-wider">Action</span>
-                             <span className="font-bold flex items-center gap-2 text-sm text-white">
-                                {tab === "buy" ? "Dépôt" : tab === "cashout" ? "Retrait" : tab === "vault_in" ? "Vers Vault" : "Depuis Vault"}
-                                {(tab === "buy" || tab === "cashout") && <span className="text-text-secondary">({method})</span>}
-                             </span>
-                          </div>
-                          <div className="text-right flex flex-col gap-1">
-                             <span className="text-[10px] text-text-secondary uppercase tracking-wider">Montant</span>
-                             <span className="font-mono font-bold text-xl text-emerald-400">${formatCurrency(parseFloat(amount))}</span>
-                          </div>
+                  {successMsg ? (
+                      <div className="flex flex-col items-center justify-center flex-1 py-12">
+                          <motion.div 
+                              initial={{ scale: 0, rotate: -180 }} 
+                              animate={{ scale: 1, rotate: 0 }} 
+                              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                              className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(16,185,129,0.5)]"
+                          >
+                              <CheckCircle2 size={48} className="text-white" />
+                          </motion.div>
+                          <motion.h3 
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.2 }}
+                              className="text-2xl font-black text-white mb-2 text-center"
+                          >
+                              Transaction Réussie
+                          </motion.h3>
+                          <motion.p 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.4 }}
+                              className="text-text-secondary text-sm text-center font-bold text-emerald-400"
+                          >
+                              {successMsg}
+                          </motion.p>
                       </div>
-
-                      {/* Anti-bot */}
-                      <div className={cn("p-4 rounded-lg flex flex-col gap-3 transition-colors border", isVerified ? "bg-emerald-500/10 border-emerald-500/30" : "bg-bg-inner border-border-medium")}>
-                          <div className="flex items-center gap-3">
-                              {isVerified ? (
-                                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                                    <CheckCircle2 size={16} />
-                                </div>
-                              ) : verifying ? (
-                                <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center">
-                                    <Loader2 size={16} className="animate-spin" />
-                                </div>
-                              ) : (
-                                <button onClick={handleVerify} className="w-8 h-8 rounded border border-border-medium bg-bg-panel hover:bg-border-subtle focus:ring-2 focus:ring-accent transition-all cursor-pointer shadow-inner"></button>
-                              )}
-                              <div className="flex flex-col">
-                                  <span className="font-bold text-sm text-white">Vérification de sécurité</span>
-                                  <span className="text-xs text-text-secondary">
-                                      {isVerified ? "Vérification réussie. Vous êtes validé." : verifying ? "Analyse de la connexion en cours..." : "Cochez la case pour prouver que vous êtes humain."}
-                                  </span>
-                              </div>
-                              <div className="ml-auto opacity-30">
-                                 <ShieldAlert size={24} />
-                              </div>
-                          </div>
+                  ) : (
+                      <>
+                          <div className="text-sm text-text-secondary mb-4 uppercase tracking-wider font-bold">3. Vérification de Sécurité</div>
                           
-                          {verifying && (
-                             <div className="mt-2 text-xs font-mono text-text-secondary flex flex-col gap-1.5 pl-[2.75rem]">
-                                <div className="flex items-center gap-2">
-                                     {verificationPhase >= 1 ? <CheckCircle2 size={12} className="text-emerald-400"/> : <Loader2 size={12} className="animate-spin" />}
-                                     <span className={verificationPhase >= 1 ? "text-emerald-400/80" : ""}>Contrôle de l'adresse IP...</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                     {verificationPhase >= 2 ? <CheckCircle2 size={12} className="text-emerald-400"/> : verificationPhase >= 1 ? <Loader2 size={12} className="animate-spin" /> : <div className="w-3 h-3"/>}
-                                     <span className={verificationPhase >= 2 ? "text-emerald-400/80" : verificationPhase >= 1 ? "text-white/60" : "text-text-secondary"}>Vérification des accès compte... {verificationPhase >= 2 && "(Autorisé)"}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                     {verificationPhase >= 3 ? <CheckCircle2 size={12} className="text-emerald-400"/> : verificationPhase >= 2 ? <Loader2 size={12} className="animate-spin" /> : <div className="w-3 h-3"/>}
-                                     <span className={verificationPhase >= 3 ? "text-emerald-400/80" : verificationPhase >= 2 ? "text-white/60" : "text-text-secondary"}>Sécurisation de la connexion SSL...</span>
-                                </div>
-                             </div>
-                          )}
-                      </div>
-
-                      {demandWarning && (
-                          <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 p-3 rounded-lg flex items-start gap-3 mt-2">
-                              <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
-                              <div className="text-sm font-medium">
-                                  Attention : Votre compte est configuré en mode "Sur Demande". Cette demande nécessitera la validation d'un administrateur.
+                          <div className="bg-bg-base border border-border-medium rounded-xl p-6 mb-6 flex flex-col gap-4">
+                              {/* Summary */}
+                              <div className="flex items-center justify-between p-4 bg-bg-inner border border-border-subtle rounded-lg">
+                                  <div className="flex flex-col gap-1">
+                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider">Action</span>
+                                     <span className="font-bold flex items-center gap-2 text-sm text-white">
+                                        {tab === "buy" ? "Dépôt" : tab === "cashout" ? "Retrait" : tab === "vault_in" ? "Vers Vault" : "Depuis Vault"}
+                                        {(tab === "buy" || tab === "cashout") && <span className="text-text-secondary">({method})</span>}
+                                     </span>
+                                  </div>
+                                  <div className="text-right flex flex-col gap-1">
+                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider">Montant</span>
+                                     <span className="font-mono font-bold text-xl text-emerald-400">${formatCurrency(parseFloat(amount))}</span>
+                                  </div>
                               </div>
+
+                              {/* Anti-bot */}
+                              <div className={cn("p-4 rounded-lg flex flex-col gap-3 transition-colors border", isVerified ? "bg-emerald-500/10 border-emerald-500/30" : "bg-bg-inner border-border-medium")}>
+                                  <div className="flex items-center gap-3">
+                                      {isVerified ? (
+                                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                            <CheckCircle2 size={16} />
+                                        </div>
+                                      ) : verifying ? (
+                                        <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center">
+                                            <Loader2 size={16} className="animate-spin" />
+                                        </div>
+                                      ) : (
+                                        <button onClick={handleVerify} className="w-8 h-8 rounded border border-border-medium bg-bg-panel hover:bg-border-subtle focus:ring-2 focus:ring-accent transition-all cursor-pointer shadow-inner"></button>
+                                      )}
+                                      <div className="flex flex-col">
+                                          <span className="font-bold text-sm text-white">Vérification de sécurité</span>
+                                          <span className="text-xs text-text-secondary">
+                                              {isVerified ? "Vérification réussie. Vous êtes validé." : verifying ? "Analyse de la connexion en cours..." : "Cochez la case pour prouver que vous êtes humain."}
+                                          </span>
+                                      </div>
+                                      <div className="ml-auto opacity-30">
+                                         <ShieldAlert size={24} />
+                                      </div>
+                                  </div>
+                                  
+                                  {verifying && (
+                                     <div className="mt-2 text-xs font-mono text-text-secondary flex flex-col gap-1.5 pl-[2.75rem]">
+                                        <div className="flex items-center gap-2">
+                                             {verificationPhase >= 1 ? <CheckCircle2 size={12} className="text-emerald-400"/> : <Loader2 size={12} className="animate-spin" />}
+                                             <span className={verificationPhase >= 1 ? "text-emerald-400/80" : ""}>Contrôle de l'adresse IP...</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                             {verificationPhase >= 2 ? <CheckCircle2 size={12} className="text-emerald-400"/> : verificationPhase >= 1 ? <Loader2 size={12} className="animate-spin" /> : <div className="w-3 h-3"/>}
+                                             <span className={verificationPhase >= 2 ? "text-emerald-400/80" : verificationPhase >= 1 ? "text-white/60" : "text-text-secondary"}>Vérification des accès compte... {verificationPhase >= 2 && "(Autorisé)"}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                             {verificationPhase >= 3 ? <CheckCircle2 size={12} className="text-emerald-400"/> : verificationPhase >= 2 ? <Loader2 size={12} className="animate-spin" /> : <div className="w-3 h-3"/>}
+                                             <span className={verificationPhase >= 3 ? "text-emerald-400/80" : verificationPhase >= 2 ? "text-white/60" : "text-text-secondary"}>Sécurisation de la connexion SSL...</span>
+                                        </div>
+                                     </div>
+                                  )}
+                              </div>
+
+                              {demandWarning && (
+                                  <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 p-3 rounded-lg flex items-start gap-3 mt-2">
+                                      <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
+                                      <div className="text-sm font-medium">
+                                          Attention : Votre compte est configuré en mode "Sur Demande". Cette demande nécessitera la validation d'un administrateur.
+                                      </div>
+                                  </div>
+                              )}
                           </div>
-                      )}
-                  </div>
 
-                  <AnimatePresence>
-                     {successMsg && (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center mb-4">
-                           <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-bold px-4 py-2 rounded-lg flex items-center gap-2">
-                              <CheckCircle2 size={18} /> {successMsg}
-                           </div>
-                        </motion.div>
-                     )}
-                  </AnimatePresence>
-
-                  <div className="mt-auto flex justify-between gap-4">
-                    <button onClick={prevStep} disabled={loading || verifying} className="bg-bg-inner disabled:opacity-50 hover:bg-border-medium text-white font-bold py-3 px-4 rounded-xl flex items-center gap-2 transition-all">
-                       <ChevronLeft size={18} /> Retour
-                    </button>
-                    <button onClick={handleAction} disabled={!isVerified || loading} className={cn("flex-1 text-black font-bold py-3 px-6 rounded-xl flex justify-center items-center gap-2 transition-all", (!isVerified) ? "bg-bg-inner text-text-secondary cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}>
-                       {loading ? <Loader2 size={18} className="animate-spin text-black" /> : tab === "buy" ? "Confirmer le dépôt" : tab === "cashout" ? "Confirmer le retrait" : "Valider le transfert"}
-                    </button>
-                 </div>
+                          <div className="mt-auto flex justify-between gap-4">
+                            <button onClick={prevStep} disabled={loading || verifying} className="bg-bg-inner disabled:opacity-50 hover:bg-border-medium text-white font-bold py-3 px-4 rounded-xl flex items-center gap-2 transition-all">
+                               <ChevronLeft size={18} /> Retour
+                            </button>
+                            <button onClick={handleAction} disabled={!isVerified || loading} className={cn("flex-1 text-black font-bold py-3 px-6 rounded-xl flex justify-center items-center gap-2 transition-all", (!isVerified) ? "bg-bg-inner text-text-secondary cursor-not-allowed" : "bg-emerald-500 hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]")}>
+                               {loading ? <Loader2 size={18} className="animate-spin text-black" /> : tab === "buy" ? "Confirmer le dépôt" : tab === "cashout" ? "Confirmer le retrait" : "Valider le transfert"}
+                            </button>
+                         </div>
+                      </>
+                  )}
               </motion.div>
             )}
           </AnimatePresence>

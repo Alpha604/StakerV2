@@ -7,6 +7,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
   const { loginWithGoogle } = useUser();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -15,13 +16,15 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
     try {
       const success = await loginWithGoogle();
       if (success) {
-        onClose();
+        setIsLoading(false);
+        setSuccessMsg("Connexion réussie !");
+        setTimeout(() => onClose(), 1500);
       } else {
         setError("Erreur de connexion. Veuillez réessayer.");
+        setIsLoading(false);
       }
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -63,17 +66,42 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
               <X size={16} className="shrink-0" /> <span>{error}</span>
             </motion.div>
           )}
+          {successMsg && (
+            <motion.div
+              key="success-message"
+              initial={{ opacity: 0, height: 0, marginTop: -10 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 p-3 rounded-lg text-sm flex items-center justify-center mb-4 gap-2 font-bold"
+            >
+              <div className="w-5 h-5 rounded-full bg-emerald-500 text-bg-dark flex items-center justify-center shrink-0">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              {successMsg}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <button
           onClick={handleLogin}
-          disabled={isLoading}
-          className="connexion-btn w-full relative disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center bg-white text-black hover:bg-gray-100 rounded-lg py-3 font-semibold transition-all h-12"
+          disabled={isLoading || !!successMsg}
+          className="connexion-btn w-full relative disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center bg-white text-black hover:bg-gray-100 rounded-lg py-3 font-semibold transition-all h-12 overflow-hidden"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
             </div>
+          ) : successMsg ? (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+              className="flex items-center gap-2 text-emerald-600"
+            >
+              <span className="font-bold tracking-widest uppercase text-sm">Authentifié</span>
+            </motion.div>
           ) : (
              <>
               <svg width="18" height="18" viewBox="0 0 18 18" className="absolute left-6">

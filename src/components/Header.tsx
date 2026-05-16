@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { formatCurrency } from "../lib/utils";
 import { useUser, CRYPTOS, CryptoType, renderCryptoIcon } from "../context/UserContext";
 import { RankBadge } from "./RankBadge";
+import { motion, useAnimation } from "motion/react";
 import {
   Trophy,
   Menu,
@@ -28,6 +29,32 @@ export function Header({
   const [showWallet, setShowWallet] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showCryptoModal, setShowCryptoModal] = useState(false);
+
+  const prevBalanceRef = useRef(balance);
+  const controls = useAnimation();
+  const [balanceColor, setBalanceColor] = useState("text-white");
+
+  useEffect(() => {
+    if (balance > prevBalanceRef.current) {
+      setBalanceColor("text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]");
+      controls.start({
+        scale: [1, 1.25, 1],
+        transition: { duration: 0.4, type: "spring", stiffness: 300, damping: 10 }
+      });
+    } else if (balance < prevBalanceRef.current) {
+      setBalanceColor("text-rose-400");
+      controls.start({
+        scale: [1, 0.9, 1],
+        transition: { duration: 0.3 }
+      });
+    }
+    
+    if (balance !== prevBalanceRef.current) {
+        setTimeout(() => setBalanceColor("text-white"), 800);
+    }
+    
+    prevBalanceRef.current = balance;
+  }, [balance, controls]);
 
   return (
     <>
@@ -66,9 +93,12 @@ export function Header({
                 className="bg-bg-inner/80 hover:bg-bg-inner border border-transparent hover:border-border-medium pl-3 pr-2 py-2 rounded-l flex items-center gap-1 sm:gap-2 shadow-inner cursor-pointer transition-colors max-w-[120px] sm:max-w-[200px]"
                 onClick={() => setShowCryptoModal(true)}
               >
-                <span className="font-bold text-sm sm:text-lg tracking-tight text-white truncate shrink">
+                <motion.span 
+                  animate={controls}
+                  className={`font-bold text-sm sm:text-lg tracking-tight truncate shrink transition-colors duration-300 ${balanceColor}`}
+                >
                   {formatCurrency(balance)}
-                </span>
+                </motion.span>
                 {renderCryptoIcon(activeCrypto, "w-4 h-4 sm:w-5 sm:h-5 ml-1 hidden min-[360px]:block")}
                 <ChevronDown
                   size={14}

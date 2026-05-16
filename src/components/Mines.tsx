@@ -7,11 +7,20 @@ import { motion, AnimatePresence } from "motion/react";
 
 type CellState = "hidden" | "picked_gem" | "picked_bomb" | "revealed_gem" | "revealed_bomb";
 
+let sharedAudioCtx: AudioContext | null = null;
+
 const playSound = (type: "gem" | "bomb" | "cashout", pitchShift: number = 0) => {
   try {
-    const audioCtx = new (
-      window.AudioContext || (window as any).webkitAudioContext
-    )();
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const audioCtx = sharedAudioCtx;
+    
+    // Ensure the context is running
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
@@ -499,7 +508,7 @@ export function Mines() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={pickRandom}
-                  className="w-full py-3 rounded text-white bg-[#2f4553] hover:bg-[#3d5a6a] font-bold text-[13px] transition-colors"
+                  className="w-full py-3.5 rounded text-white bg-[#2f4553] shadow-[0_4px_0_#213743] hover:translate-y-1 hover:shadow-[0_0px_0_#213743] active:translate-y-1 active:shadow-none hover:bg-[#3d5a6a] font-bold text-[13px] transition-all"
                 >
                   Sélection aléatoire
                 </button>
@@ -520,10 +529,10 @@ export function Mines() {
                   onClick={cashout}
                   disabled={revealedCount === 0}
                   className={cn(
-                    "w-full py-3.5 rounded font-bold transition-all text-sm flex justify-center items-center gap-2",
+                    "w-full py-4 rounded font-bold transition-all text-sm flex justify-center items-center gap-2",
                     revealedCount === 0 
                       ? "bg-[#1bc86a]/40 text-black/50 cursor-not-allowed" 
-                      : "bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black"
+                      : "shadow-[0_4px_0_#149e53] hover:translate-y-1 hover:shadow-[0_0px_0_#149e53] active:translate-y-1 active:shadow-none bg-[#1bc86a] hover:bg-[#1bc86a] text-black"
                   )}
                 >
                   <span>Retrait</span>
@@ -539,8 +548,8 @@ export function Mines() {
                 onClick={startGame}
                 disabled={isPlaying || betAmount > balance || betAmount <= 0}
                 className={cn(
-                  "w-full py-3.5 rounded font-bold transition-all text-sm bg-[#1bc86a] hover:bg-[#1bc86a]/80 text-black",
-                  (isPlaying || betAmount > balance || betAmount <= 0) && "opacity-50 cursor-not-allowed"
+                  "w-full py-4 rounded font-bold transition-all text-sm shadow-[0_4px_0_#149e53] hover:translate-y-1 hover:shadow-[0_0px_0_#149e53] active:translate-y-1 active:shadow-none bg-[#1bc86a] hover:bg-[#1bc86a] text-black",
+                  (isPlaying || betAmount > balance || betAmount <= 0) && "opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-[0_4px_0_#149e53]"
                 )}
               >
                 Pari
@@ -619,11 +628,11 @@ export function Mines() {
                   }}
                   transition={{ duration: 0.4, type: "spring", stiffness: 200, damping: 20 }}
                   className={cn(
-                    "w-full h-full rounded-lg flex items-center justify-center relative transform-style-3d",
+                    "w-full h-full rounded-xl flex items-center justify-center relative transform-style-3d",
                     (cell === "hidden" && (isPlaying || mode === "auto"))
-                      ? "bg-[#2f4553] hover:-translate-y-1 hover:bg-[#3d5565] cursor-pointer shadow-[0_4px_0_#213743] hover:shadow-[0_6px_0_#213743] active:shadow-[0_0px_0_#213743] active:translate-y-1"
+                      ? "bg-gradient-to-b from-[#3d5a6a] to-[#2f4553] border border-[#496a7d] hover:-translate-y-1 hover:from-[#4a6b7e] hover:to-[#3b5666] cursor-pointer shadow-[0_5px_0_#213743,inset_0_2px_0_rgba(255,255,255,0.1)] hover:shadow-[0_7px_0_#213743,inset_0_2px_0_rgba(255,255,255,0.1)] active:shadow-[0_0px_0_#213743,inset_0_1px_0_rgba(255,255,255,0.05)] active:translate-y-[5px]"
                       : "bg-transparent shadow-none",
-                    (!isPlaying && mode === "manual" && cell === "hidden") && "opacity-80 cursor-default bg-[#213743] shadow-[0_4px_0_#15242d]",
+                    (!isPlaying && mode === "manual" && cell === "hidden") && "opacity-60 cursor-default bg-gradient-to-b from-[#2b414e] to-[#213743] border border-[#334b5c] shadow-[0_5px_0_#15242d,inset_0_1px_0_rgba(255,255,255,0.05)]",
                   )}
                   style={{ transformStyle: "preserve-3d" }}
                 >
@@ -634,7 +643,7 @@ export function Mines() {
                     )}
                   </div>
 
-                  <div className="absolute inset-0 backface-hidden bg-[#0f172a] shadow-inner border border-white/5 rounded-lg flex items-center justify-center overflow-hidden" style={{ transform: "rotateY(180deg)" }}>
+                  <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#0b1720] to-[#071118] shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] border border-white/5 rounded-xl flex items-center justify-center overflow-hidden" style={{ transform: "rotateY(180deg)" }}>
                     <AnimatePresence>
                       {(cell === "picked_gem" || cell === "revealed_gem") && (
                         <motion.div
@@ -656,8 +665,10 @@ export function Mines() {
                           <svg
                             viewBox="0 0 512 512"
                             className={cn(
-                              "w-3/5 h-3/5 drop-shadow-md relative z-10",
-                              cell === "revealed_gem" && "opacity-40 grayscale"
+                              "w-[65%] h-[65%] relative z-10 transition-all",
+                              cell === "revealed_gem" 
+                                ? "opacity-30 grayscale drop-shadow-none" 
+                                : "drop-shadow-[0_4px_15px_rgba(0,231,1,0.5)]"
                             )}
                           >
                             <path fill="#02D574" d="M256 512L0 192.5 125.8 0h260.4L512 192.5z"/>
@@ -687,12 +698,13 @@ export function Mines() {
                             />
                           )}
                           <Bomb
-                            size={40}
+                            size={48}
                             className={cn(
-                              "drop-shadow-[0_0_10px_rgba(237,65,99,0.5)] relative z-10",
-                              cell === "revealed_bomb" ? "text-text-secondary opacity-50" : "text-[#ed4163]"
+                              "relative z-10 transition-all",
+                              cell === "revealed_bomb" ? "text-slate-400 opacity-60 drop-shadow-none" : "text-[#ff2b56] drop-shadow-[0_4px_15px_rgba(255,43,86,0.6)]"
                             )}
-                            fill={cell === "revealed_bomb" ? "#94a3b8" : "#ed4163"}
+                            fill="currentColor"
+                            strokeWidth={1.5}
                           />
                         </motion.div>
                       )}

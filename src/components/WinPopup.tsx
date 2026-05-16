@@ -8,11 +8,19 @@ interface WinPopupProps {
   onClose?: () => void;
 }
 
+let sharedAudioCtx: AudioContext | null = null;
+
 const playWinSound = () => {
   try {
-    const audioCtx = new (
-      window.AudioContext || (window as any).webkitAudioContext
-    )();
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const audioCtx = sharedAudioCtx;
+    
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    
     // Very soft, low-pitched chord (G3, C4, E4, G4)
     const frequencies = [196.0, 261.63, 329.63, 392.0];
 
