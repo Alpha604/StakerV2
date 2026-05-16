@@ -5,6 +5,7 @@ import { cn, formatCurrency } from "../lib/utils";
 import { Coins, RotateCcw, Dices, Maximize, Minimize } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 import { useSound } from "../lib/useSound";
+import { AutoBetSettingsForm, useAutoBetOptions, useAutoBetLogic } from "./AutoBetSettings";
 
 export function Dice() {
   const { user, balance, activeCrypto, subtractBalance, addBalance, recordBet } = useUser();
@@ -26,6 +27,9 @@ export function Dice() {
   const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
   const [autoSpeed, setAutoSpeed] = useState<"normal" | "instant">("normal");
   const [isTheaterMode, setIsTheaterMode] = useState(false);
+
+  const autoBetOptions = useAutoBetOptions();
+  const { startAutoBet, processResult } = useAutoBetLogic();
 
   const winChance = condition === "over" ? 100 - target : target;
   const multiplier = Number((99 / winChance).toFixed(4));
@@ -92,9 +96,14 @@ export function Dice() {
       // recordBet happens asynchronously
       recordBet("Dice", betAmount, isWin ? multiplier : 0, payout - betAmount);
 
+      const profitFromRound = isWin ? payout - betAmount : -betAmount;
+      const stopped = processResult(isWin, profitFromRound, autoBetOptions.config, setBetAmount, () => {
+         setIsAutoPlaying(false);
+      });
+
       setIsRolling(false);
 
-      if (autoBetsCount > 0) {
+      if (!stopped && autoBetsCount > 0) {
         setAutoBetsRemaining(prev => {
           const next = prev - 1;
           if (next <= 0) {
@@ -117,7 +126,7 @@ export function Dice() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAutoPlaying, isRolling, autoBetsRemaining, autoBetsCount, betAmount, autoSpeed, condition, target, potentialWin, multiplier]);
+  }, [isAutoPlaying, isRolling, autoBetsRemaining, autoBetsCount, betAmount, autoSpeed, condition, target, potentialWin, multiplier, autoBetOptions.config]);
 
   const handleRoll = async () => {
     if (!user || balance < betAmount) return; // Add proper auth/balance notifications in real app
@@ -262,6 +271,7 @@ export function Dice() {
                     </div>
                   </div>
                 </div>
+                <AutoBetSettingsForm config={autoBetOptions.config} actions={autoBetOptions.actions} disabled={isAutoPlaying || isRolling} />
               </div>
             )}
 
@@ -280,6 +290,7 @@ export function Dice() {
                     if (isAutoPlaying) {
                       setIsAutoPlaying(false);
                     } else {
+                      startAutoBet(betAmount);
                       setIsAutoPlaying(true);
                       setAutoBetsRemaining(autoBetsCount);
                     }

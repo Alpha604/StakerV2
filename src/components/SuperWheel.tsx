@@ -4,6 +4,7 @@ import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn, formatCurrency } from "../lib/utils";
 import { Coins, ChevronDown, Zap } from "lucide-react";
 import { WinPopup } from "./WinPopup";
+import { AutoBetSettingsForm, useAutoBetOptions, useAutoBetLogic } from "./AutoBetSettings";
 
 const MULTIPLIERS = {
   10: {
@@ -60,6 +61,17 @@ export function SuperWheel() {
   const [autoBetsCount, setAutoBetsCount] = useState<number>(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
   const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
+
+  const autoBetOptions = useAutoBetOptions();
+  const { startAutoBet, processResult } = useAutoBetLogic();
+
+  const isAutoPlayingRef = useRef(isAutoPlaying);
+  const autoBetOptionsRef = useRef(autoBetOptions);
+  
+  useEffect(() => {
+    isAutoPlayingRef.current = isAutoPlaying;
+    autoBetOptionsRef.current = autoBetOptions;
+  }, [isAutoPlaying, autoBetOptions]);
 
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -118,6 +130,13 @@ export function SuperWheel() {
 
     recordBet("Super Wheel", betAmount, winMultiplier, payout - betAmount);
     setWinInfo({ multiplier: winMultiplier, payout });
+
+    if (isAutoPlayingRef.current) {
+      const profitFromRound = payout - betAmount;
+      processResult(winMultiplier >= 1, profitFromRound, autoBetOptionsRef.current.config, setBetAmount, () => {
+         setIsAutoPlaying(false);
+      });
+    }
   };
 
   useEffect(() => {
@@ -317,6 +336,9 @@ export function SuperWheel() {
                     min="0"
                   />
                 </div>
+                <div className="mt-2 text-left">
+                   <AutoBetSettingsForm config={autoBetOptions.config} actions={autoBetOptions.actions} disabled={isAutoPlaying || isSpinning} />
+                </div>
               </div>
             )}
 
@@ -339,6 +361,7 @@ export function SuperWheel() {
                   if (isAutoPlaying) {
                     setIsAutoPlaying(false);
                   } else {
+                    startAutoBet(betAmount);
                     setIsAutoPlaying(true);
                     setAutoBetsRemaining(autoBetsCount);
                   }

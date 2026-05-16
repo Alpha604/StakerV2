@@ -4,6 +4,7 @@ import { Bomb, Maximize, Minimize } from "lucide-react";
 import { cn, formatCurrency } from "../lib/utils";
 import { WinPopup } from "./WinPopup";
 import { motion, AnimatePresence } from "motion/react";
+import { AutoBetSettingsForm, useAutoBetOptions, useAutoBetLogic } from "./AutoBetSettings";
 
 type CellState = "hidden" | "picked_gem" | "picked_bomb" | "revealed_gem" | "revealed_bomb";
 
@@ -79,6 +80,9 @@ export function Mines() {
   const [autoBetsRemaining, setAutoBetsRemaining] = useState<number>(0);
   const [autoSpeed, setAutoSpeed] = useState<"normal" | "instant">("normal");
   const [isTheaterMode, setIsTheaterMode] = useState(false);
+  
+  const autoBetOptions = useAutoBetOptions();
+  const { startAutoBet, processResult } = useAutoBetLogic();
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [crashed, setCrashed] = useState(false);
@@ -165,6 +169,10 @@ export function Mines() {
           }
 
           recordBet("Mines", betAmount, 0, -betAmount);
+          const stopped = processResult(false, -betAmount, autoBetOptions.config, setBetAmount, () => {
+             setIsAutoPlaying(false);
+          });
+          if (stopped) localCrashed = true; // Stop subsequent runs
           break; // Stop picking
         } else {
           // hit gem
@@ -184,6 +192,7 @@ export function Mines() {
         }
       }
 
+      let shouldBreak = false;
       // 3. Cashout if not crashed
       if (!localCrashed && localRevealed > 0) {
         const mult = calculateMultiplier(minesCount, localRevealed);
@@ -204,12 +213,17 @@ export function Mines() {
           if (cell !== "hidden") return cell;
           return newMines.has(i) ? "revealed_bomb" : "revealed_gem";
         }));
+
+        const stopped = processResult(true, autoPotentialWin - betAmount, autoBetOptions.config, setBetAmount, () => {
+           setIsAutoPlaying(false);
+        });
+        if (stopped) shouldBreak = true;
       }
 
       setIsPlaying(false);
 
       // Decrement and wait
-      if (autoBetsCount > 0) {
+      if (!shouldBreak && !localCrashed && autoBetsCount > 0 || (localCrashed && autoBetsCount > 0)) {
         setAutoBetsRemaining(prev => {
           const next = prev - 1;
           if (next <= 0) {
@@ -471,6 +485,7 @@ export function Mines() {
                     </div>
                   </div>
                 </div>
+                <AutoBetSettingsForm config={autoBetOptions.config} actions={autoBetOptions.actions} disabled={isAutoPlaying || isPlaying} />
               </div>
             )}
 
@@ -493,6 +508,7 @@ export function Mines() {
                         alert("Veuillez sélectionner au moins une case sur la grille d'abord.");
                         return;
                       }
+                      startAutoBet(betAmount);
                       setIsAutoPlaying(true);
                       setAutoBetsRemaining(autoBetsCount);
                     }
