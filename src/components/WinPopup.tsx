@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { useUser, renderCryptoIcon } from "../context/UserContext";
 
 interface WinPopupProps {
   multiplier: number;
@@ -9,6 +10,7 @@ interface WinPopupProps {
 }
 
 let sharedAudioCtx: AudioContext | null = null;
+
 
 const playWinSound = () => {
   try {
@@ -48,6 +50,7 @@ const playWinSound = () => {
 };
 
 export function WinPopup({ multiplier, payout, onClose }: WinPopupProps) {
+  const { activeCrypto } = useUser();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -101,33 +104,33 @@ export function WinPopup({ multiplier, payout, onClose }: WinPopupProps) {
               className="absolute inset-0 shadow-[0_0_50px_rgba(0,230,118,0.5)] z-[-1]"
             />
 
+            <h3 className="text-[#8b9ba5] uppercase tracking-[0.2em] font-bold text-sm mb-4">Gagné !</h3>
+            
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring" }}
-              className="text-[#00e676] text-5xl font-black mb-2 drop-shadow-[0_0_10px_rgba(0,230,118,0.8)]"
+              className="text-[#00e676] text-6xl font-black mb-4 drop-shadow-[0_0_15px_rgba(0,230,118,0.8)] flex items-center justify-center gap-1"
             >
               {multiplier.toLocaleString("fr-FR", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
-              ×
+              <span className="text-4xl">×</span>
             </motion.span>
-
-            <div className="w-20 h-1 bg-[#3a5b6d] rounded-full my-3"></div>
 
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex items-center gap-2"
+              className="flex items-center justify-center gap-2 bg-[#0f212e]/50 px-6 py-3 rounded-full border border-white/5"
             >
-              <span className="text-[#00e676] text-2xl font-bold tracking-tight">
-                €
+              <span className="text-white text-3xl font-bold tracking-tight flex items-center justify-center gap-2">
                 {payout.toLocaleString("fr-FR", {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
+                  maximumFractionDigits: 4,
                 })}
+                {renderCryptoIcon(activeCrypto, "w-8 h-8")}
               </span>
             </motion.div>
           </motion.div>

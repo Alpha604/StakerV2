@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap, Star } from "lucide-react";
+import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap, Star, Ticket } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useUser } from "../context/UserContext";
 
@@ -56,6 +56,11 @@ const ALL_GAMES = [
   {
     name: "FLIP", category: "originals", link: "flip",
     img: "https://mediumrare.imgix.net/1c0de2ee0ce713086ff7735697ad2b5385bc974f206b857c724a5ec84467a73b?w=180&h=236&fit=min&auto=format",
+  },
+  {
+    name: "Ticket à Gratter", category: "grattage", link: "super-scratch", provider: "Stake Originals", badge: "Populaire",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://i.postimg.cc/0j08SCPF/72f4fbe9-1b8b-4ad3-9e22-398ef913d28e.png",
   },
   {
     name: "WHEEL", category: "originals", link: "wheel",
@@ -153,6 +158,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     { name: "Machines à sous", icon: ArrowRightSquare, id: "slots" },
     { name: "Evolution", icon: Zap, id: "evolution" },
     { name: "Stake Gaming", icon: Tv, id: "stake-gaming" },
+    { name: "Grattage", icon: Ticket, id: "grattage" }
   ];
 
   let filteredGames = ALL_GAMES.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -168,6 +174,8 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     filteredGames = filteredGames.filter(g => g.category === "stake-gaming");
   } else if (view === "evolution") {
     filteredGames = filteredGames.filter(g => g.category === "evolution");
+  } else if (view === "grattage") {
+    filteredGames = filteredGames.filter(g => g.category === "grattage"); // show grattage category
   }
 
   const renderGameGrid = (gamesToRender: typeof ALL_GAMES) => {
@@ -429,6 +437,19 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             </button>
           </div>
           {renderGameGrid(filteredGames.filter(g => g.category === "slots"))}
+
+          <div className="flex items-center justify-between mb-4 mt-8">
+            <h2 className="text-white font-bold text-xl flex items-center gap-2">
+              <Ticket className="text-orange-500" size={24} /> <span>Tickets à gratter</span>
+            </h2>
+            <button
+              onClick={() => setView("grattage")}
+              className="text-sm font-bold text-text-secondary hover:text-white transition-colors"
+            >
+              Voir Tout
+            </button>
+          </div>
+          {renderGameGrid(filteredGames.filter(g => g.category === "grattage"))}
         </>
       ) : view === "slots" ? (
         <div className="flex flex-col">

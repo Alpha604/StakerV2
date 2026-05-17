@@ -39,6 +39,7 @@ import { Stats } from "./components/Stats";
 import { Leaderboard } from "./components/Leaderboard";
 import { LiveChat } from "./components/LiveChat";
 import { Toaster } from "react-hot-toast";
+import { SuperScratch } from "./components/SuperScratch";
 
 import { BannedScreen } from "./components/BannedScreen";
 
@@ -82,6 +83,7 @@ export type ViewType =
   | "admin"
   | "profile"
   | "rewards"
+  | "super-scratch"
   | "stake-gaming";
 
 class ErrorBoundary extends React.Component<any, any> {
@@ -241,7 +243,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
           </div>
           <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}>
             <div className="flex-1">
-              {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming" || view === "evolution") && <Home view={view} setView={handleSetView as any} />}
+              {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming" || view === "evolution" || view === "grattage") && <Home view={view} setView={handleSetView as any} />}
               {view === "leaderboard" && (
                   <div className="p-4 md:p-8 relative min-h-full">
                       <Leaderboard onClose={() => handleSetView("home")} isPage={true} />
@@ -277,6 +279,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "sweet-bonanza" && <ApprovalGuard gameName="sweet-bonanza"><SweetBonanza /></ApprovalGuard>}
               {view === "ice-fishing" && <ApprovalGuard gameName="Ice Fishing"><IceFishing /></ApprovalGuard>}
               {view === "blackjack-evolution" && <ApprovalGuard gameName="Blackjack"><Blackjack /></ApprovalGuard>}
+              {view === "super-scratch" && <ApprovalGuard gameName="Super Scratch"><SuperScratch /></ApprovalGuard>}
             </div>
             
             {/* Footer */}

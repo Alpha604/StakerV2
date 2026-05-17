@@ -20,7 +20,8 @@ import {
   ShieldAlert,
   User,
   MoreHorizontal,
-  Gift
+  Gift,
+  Ticket
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -105,6 +106,14 @@ export function Sidebar({
           title="Evolution"
         >
           <Zap size={20} className={view === "evolution" ? "text-emerald-500" : ""} />
+        </button>
+
+        <button
+          onClick={() => { setView("grattage"); setShowSecondarySidebar(false); }}
+          className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", view === "grattage" ? "bg-bg-inner text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white")}
+          title="Grattage"
+        >
+          <Ticket size={20} className={view === "grattage" ? "text-orange-500" : ""} />
         </button>
 
         {/* Divider */}

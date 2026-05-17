@@ -39,7 +39,7 @@ export function Header({
       setBalanceColor("text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]");
       controls.start({
         scale: [1, 1.25, 1],
-        transition: { duration: 0.4, type: "spring", stiffness: 300, damping: 10 }
+        transition: { duration: 0.4, ease: "easeInOut" }
       });
     } else if (balance < prevBalanceRef.current) {
       setBalanceColor("text-rose-400");
