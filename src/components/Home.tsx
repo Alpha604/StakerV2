@@ -58,6 +58,11 @@ const ALL_GAMES = [
     img: "https://mediumrare.imgix.net/1c0de2ee0ce713086ff7735697ad2b5385bc974f206b857c724a5ec84467a73b?w=180&h=236&fit=min&auto=format",
   },
   {
+    name: "BLACKJACK", category: "originals", link: "blackjack",
+    releaseDate: new Date(Date.now()).toISOString(),
+    img: "https://mediumrare.imgix.net/ceb29aff91c7ba3033e44ee289d2eeb4e85088cdb56daac04d2e82a886542b05?w=180&h=236&fit=min&auto=format",
+  },
+  {
     name: "Ticket à Gratter", category: "grattage", link: "super-scratch", provider: "Stake Originals", badge: "Populaire",
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://i.postimg.cc/0j08SCPF/72f4fbe9-1b8b-4ad3-9e22-398ef913d28e.png",
@@ -116,7 +121,7 @@ const ALL_GAMES = [
     img: "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg"
   },
   {
-    name: "Blackjack", category: "evolution", link: "blackjack-evolution", provider: "Evolution",
+    name: "First Person Blackjack", category: "evolution", link: "blackjack-evolution", provider: "Evolution",
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://mediumrare.imgix.net/ceb29aff91c7ba3033e44ee289d2eeb4e85088cdb56daac04d2e82a886542b05?w=180&h=236&fit=min&auto=format"
   }

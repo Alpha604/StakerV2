@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useUser, renderCryptoIcon } from '../context/UserContext';
 import { cn, formatCurrency } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { HelpCircle, MessageSquare, Video, MicOff, Settings, Menu, Grip, Zap } from "lucide-react";
+import { HelpCircle, Settings, Menu, Grip, Zap } from "lucide-react";
 import { WinPopup } from "./WinPopup";
 import { useSound } from '../lib/useSound';
 
@@ -308,9 +308,9 @@ export function Blackjack() {
     <div className="flex-1 flex flex-col min-h-[calc(100vh-80px)] bg-black relative overflow-hidden select-none font-sans">
       <WinPopup multiplier={winInfo?.multiplier || 0} payout={winInfo?.payout || 0} onClose={() => setWinInfo(null)} />
       
-      {/* EVOLUTION LIVE CASINO BACKGROUND */}
+      {/* CLASSIC CASINO BACKGROUND */}
       <div 
-        className="absolute inset-0 z-0 bg-black"
+        className="absolute inset-0 z-0"
         style={{
            backgroundImage: 'radial-gradient(circle at 50% -20%, #173621 0%, #050a06 100%)'
         }}
@@ -331,21 +331,20 @@ export function Blackjack() {
              <div className="absolute top-[8%] left-[20%] w-[90px] h-[140px] bg-black/40 rotate-[15deg] rounded-md shadow-inner skew-x-[10deg] border border-white/5 z-10 hidden md:block pointer-events-none"></div>
              
              {/* Betting Circles / Lines and Golden Table Text */}
-             <div className="absolute top-[10%] left-1/2 -translate-x-1/2 text-center text-yellow-500/30 uppercase tracking-widest font-black leading-tight flex flex-col items-center">
-                 <span className="text-sm md:text-xl">Blackjack pays 3 to 2</span>
+             <div className="absolute top-[10%] left-1/2 -translate-x-1/2 text-center text-yellow-500/40 uppercase tracking-widest font-black leading-tight flex flex-col items-center">
+                 <span className="text-sm md:text-xl drop-shadow-md">Blackjack pays 3 to 2</span>
                  <span className="text-[10px] md:text-xs tracking-widest mt-1">Dealer must draw to 16 and stand on all 17s</span>
                  <span className="text-[10px] md:text-sm mt-3 tracking-[0.3em]">Insurance pays 2:1</span>
              </div>
 
-             <div className="absolute top-[25%] left-1/2 -translate-x-1/2 w-[80%] h-[30%] border-[2px] border-yellow-500/10 rounded-t-[100%] flex justify-center pointer-events-none">
-                 <div className="w-[110px] h-[150px] border-[2px] border-yellow-500/30 mt-4 rounded-xl flex items-center justify-center relative bg-black/10">
-                 </div>
+             {/* Betting Circle Area */}
+             <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[60%] h-[20%] border-[2px] border-yellow-500/20 rounded-t-[100%] flex justify-center pointer-events-none">
              </div>
         </div>
       </div>
 
-      {/* Evolution Info Overlay */}
-      <div className="absolute top-4 left-4 z-40 bg-black/60 rounded-lg px-4 py-2 border border-white/10 flex items-center gap-4">
+      {/* Classic Info Overlay */}
+      <div className="absolute top-6 left-6 z-40 bg-black/40 backdrop-blur-md rounded-lg px-4 py-2 border border-white/10 flex items-center gap-4">
           <div className="text-white font-bold flex flex-col">
               <span className="text-xs text-white/50 uppercase tracking-widest">Table limit</span>
               <span>$1 - $10,000</span>
@@ -361,8 +360,8 @@ export function Blackjack() {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center pb-40">
           
           {/* Dealer's Cards */}
-          <div className="absolute top-[15%] left-1/2 -translate-x-1/2 flex flex-col items-center">
-             <div className="flex relative" style={{ perspective: "1000px" }}>
+          <div className="absolute top-[35%] md:top-[30%] left-1/2 -translate-x-1/2 flex flex-col items-center drop-shadow-2xl">
+             <div className="flex relative" style={{ perspective: "1000px", transform: "rotateX(30deg) scale(0.9)" }}>
                  <AnimatePresence>
                     {dealerHand.map((card, i) => (
                         <div key={i} className="absolute inline-block z-10" style={{ transform: `translateX(${(i - (dealerHand.length-1)/2)*40}px)` }}>
@@ -376,10 +375,10 @@ export function Blackjack() {
                     )}
                  </AnimatePresence>
                  {/* Invisible spacing block for layout */}
-                 <div className="w-[200px] h-24 md:h-40"></div>
+                 <div className="w-[150px] h-20 md:h-32"></div>
              </div>
              {dealerHand.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2 bg-black/80 border border-white/20 text-white font-bold px-3 py-1 rounded shadow-lg backdrop-blur-sm">
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2 bg-black/80 border border-white/20 text-white font-bold px-3 py-1 rounded shadow-lg backdrop-blur-sm z-20">
                    {dVal}
                 </motion.div>
              )}
@@ -391,7 +390,7 @@ export function Blackjack() {
                      initial={{ scale: 1.5, opacity: 0 }} 
                      animate={{ scale: 1, opacity: 1 }} 
                      exit={{ opacity: 0 }}
-                     className="absolute top-[35%] left-1/2 -translate-x-1/2 font-black text-2xl md:text-5xl px-8 py-4 z-50 uppercase tracking-widest whitespace-nowrap text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]"
+                     className="absolute top-[45%] left-1/2 -translate-x-1/2 font-black text-2xl md:text-5xl px-8 py-4 z-50 uppercase tracking-widest whitespace-nowrap text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]"
                   >
                      {displayMessage}
                   </motion.div>
@@ -404,9 +403,9 @@ export function Blackjack() {
                      initial={{ scale: 0.5, opacity: 0 }} 
                      animate={{ scale: 1, opacity: 1 }} 
                      exit={{ scale: 0.5, opacity: 0 }}
-                     className={cn("absolute top-[45%] left-1/2 -translate-x-1/2 font-black text-3xl px-12 py-4 rounded-lg z-50 uppercase tracking-widest border whitespace-nowrap shadow-2xl backdrop-blur-md", 
+                     className={cn("absolute top-[55%] left-1/2 -translate-x-1/2 font-black text-3xl px-12 py-4 rounded-lg z-50 uppercase tracking-widest border whitespace-nowrap shadow-2xl backdrop-blur-md", 
                         resultMsg.includes("GAGNE") || resultMsg.includes("BLACKJACK") ? "bg-gradient-to-b from-[#eab308]/40 to-[#ca8a04]/40 text-yellow-400 border-yellow-500/50" : 
-                        resultMsg.includes("ÉGALITÉ") ? "bg-gray-500/30 text-white border-gray-500/50" : "bg-black/60 text-white border-white/10"
+                        resultMsg.includes("ÉGALITÉ") ? "bg-gray-500/30 text-white border-gray-500/50" : "bg-black/80 text-white border-white/10"
                      )}
                  >
                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse rounded-lg pointer-events-none"></div>
@@ -416,18 +415,18 @@ export function Blackjack() {
           </AnimatePresence>
 
           {/* Player's Cards */}
-          <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
+          <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 flex flex-col items-center z-20 drop-shadow-2xl">
              {pVal > 0 && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 bg-emerald-500/90 text-white font-black text-xl px-4 py-1 rounded shadow-lg backdrop-blur-sm border border-white/20">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-2 bg-emerald-500/90 text-white font-black text-xl px-4 py-1 rounded shadow-lg backdrop-blur-sm border border-white/20 z-20">
                    {pVal}
                 </motion.div>
              )}
-             <div className="flex relative items-center justify-center" style={{ perspective: "1000px" }}>
+             <div className="flex relative items-center justify-center" style={{ perspective: "1000px", transform: "rotateX(40deg) scale(1.1)" }}>
                  {/* Betting Drop interaction zone */}
                  <div className="absolute inset-0 z-0 flex items-center justify-center">
                     <button 
                        onClick={stage === "BETTING" ? placeBet : undefined}
-                       className={cn("w-28 h-40 rounded-xl cursor-pointer transition-colors focus:outline-none border-2 border-transparent", stage === "BETTING" ? "hover:border-white/30" : "")}
+                       className={cn("w-28 h-40 rounded-xl cursor-pointer transition-colors focus:outline-none border-2 border-transparent", stage === "BETTING" ? "hover:border-white/30 bg-white/10" : "")}
                        disabled={stage !== "BETTING"}
                     ></button>
                  </div>
@@ -442,20 +441,20 @@ export function Blackjack() {
 
                  {playerHand.length === 0 && stage === "BETTING" && bet === 0 && (
                     <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute z-0 pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                       <span className="text-yellow-500/80 uppercase font-black tracking-widest text-lg md:text-2xl animate-pulse text-center drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]">PLEASE PLACE<br/>YOUR BETS</span>
+                       <span className="text-yellow-500/80 uppercase font-black tracking-widest text-lg md:text-2xl animate-pulse text-center drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" style={{ transform: "rotateX(-20deg)" }}>PLEASE PLACE<br/>YOUR BETS</span>
                     </motion.div>
                  )}
                  {/* The invisible box for sizing */}
-                 <div className="w-[200px] h-24 md:h-40"></div>
+                 <div className="w-[180px] h-20 md:h-32"></div>
              </div>
 
              {/* Bet Chip shown on table */}
              <AnimatePresence>
                 {bet > 0 && (
                     <motion.div 
-                       initial={{ opacity: 0, scale: 0, y: 50 }} 
-                       animate={{ opacity: 1, scale: 1, y: 0 }} 
-                       className="absolute bottom-[-10px] pointer-events-none z-30"
+                       initial={{ opacity: 0, scale: 0, y: 50, rotateX: 60 }} 
+                       animate={{ opacity: 1, scale: 1, y: 0, rotateX: 60 }} 
+                       className="absolute bottom-[-10px] pointer-events-none z-30 drop-shadow-2xl"
                     >
                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#182a39] border-4 border-dashed border-white/30 flex flex-col items-center justify-center font-bold text-white shadow-2xl">
                             {renderCryptoIcon(activeCrypto, "w-4 h-4")}
@@ -465,35 +464,6 @@ export function Blackjack() {
                 )}
              </AnimatePresence>
           </div>
-      </div>
-
-      {/* PIP Presenter (Evolution UI element) */}
-      <div className="absolute top-[20px] right-[80px] w-[200px] md:w-[250px] aspect-[16/9] rounded-md border-2 border-white/20 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-40 hidden md:flex bg-black items-center justify-center pointer-events-none">
-          <div className="absolute top-1 left-1 bg-black/60 px-1 py-0.5 rounded flex items-center gap-1 z-10">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-              <span className="text-[8px] text-white font-bold uppercase tracking-widest leading-none">Live</span>
-          </div>
-          <div className="w-full h-full relative" style={{ backgroundImage: 'radial-gradient(circle at center, #1f2937 0%, #030712 100%)' }}>
-             {/* Decorative webcam view of dealer */}
-             <div className="absolute inset-0 bg-[url('https://focusgn.com/wp-content/uploads/2021/04/Evolution-Live-Blackjack-2.jpg')] bg-cover bg-center opacity-60 mix-blend-lighten"></div>
-          </div>
-      </div>
-
-      {/* CHAT/SIDE UI (Fake Evolution Side UI) */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2 z-40">
-          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors">
-              <Video size={18} />
-          </button>
-          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors">
-              <MicOff size={18} />
-          </button>
-          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors">
-              <Settings size={18} />
-          </button>
-          <button className="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 backdrop-blur transition-colors hidden md:flex relative mt-4">
-              <MessageSquare size={18} />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-black"></div>
-          </button>
       </div>
 
       {/* FOOTER EVOLUTION ACTION OVERLAYS */}

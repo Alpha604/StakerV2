@@ -24,6 +24,7 @@ import { TomeOfLife } from "./components/TomeOfLife";
 import { LiveSessionWidget } from "./components/LiveSessionWidget";
 import { TruckLoader } from "./components/TruckLoader";
 import { Blackjack } from "./components/Blackjack";
+import { BlackjackOriginal } from "./components/BlackjackOriginal";
 import { Chicken } from "./components/Chicken";
 import { Moles } from "./components/Moles";
 import { Slots } from "./components/Slots";
@@ -70,6 +71,7 @@ export type ViewType =
   | "slide"
   | "video-poker"
   | "baccarat"
+  | "blackjack"
   | "tome-of-life"
   | "chicken"
   | "moles"
@@ -270,6 +272,7 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "slide" && <ApprovalGuard gameName="slide"><Slide /></ApprovalGuard>}
               {view === "video-poker" && <ApprovalGuard gameName="video-poker"><VideoPoker /></ApprovalGuard>}
               {view === "baccarat" && <ApprovalGuard gameName="baccarat"><Baccarat /></ApprovalGuard>}
+              {view === "blackjack" && <ApprovalGuard gameName="blackjack"><BlackjackOriginal /></ApprovalGuard>}
               {view === "tome-of-life" && <ApprovalGuard gameName="tome-of-life"><TomeOfLife /></ApprovalGuard>}
               {view === "slots-game" && <ApprovalGuard gameName="slots-game"><Slots /></ApprovalGuard>}
               {view === "chicken" && <ApprovalGuard gameName="chicken"><Chicken /></ApprovalGuard>}
