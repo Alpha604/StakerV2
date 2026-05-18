@@ -19,6 +19,9 @@ export function ScratchArea({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
+  const lastPosRef = useRef<{x: number, y: number} | null>(null);
+  const lastCheckTimeRef = useRef(0);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -48,7 +51,7 @@ export function ScratchArea({
       }
       ctx.putImageData(imgData, 0, 0);
       
-      // Repeating STAKE logo text
+      // Repeating STRIPES or text
       ctx.fillStyle = "rgba(0,0,0,0.15)";
       ctx.font = "italic 900 24px sans-serif";
       ctx.textAlign = "center";
@@ -65,7 +68,7 @@ export function ScratchArea({
     }
   }, [revealed, coverColors, coverText]);
 
-  const scratch = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
+  const scratch = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent, isStart: boolean = false) => {
     if (revealed) return;
     e.preventDefault();
     const canvas = canvasRef.current;
@@ -81,21 +84,41 @@ export function ScratchArea({
     }
     
     const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
     
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
     
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, 35, 0, Math.PI * 2); 
-    ctx.fill();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 45; 
+    
+    if (isStart || !lastPosRef.current) {
+        ctx.beginPath();
+        ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2); 
+        ctx.fill();
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+    
+    lastPosRef.current = { x, y };
     
     checkReveal();
   };
 
   const checkReveal = () => {
+    const now = Date.now();
+    if (now - lastCheckTimeRef.current < 100) return;
+    lastCheckTimeRef.current = now;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -104,12 +127,13 @@ export function ScratchArea({
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
     let transparentPixels = 0;
-    for (let i = 3; i < data.length; i += 4) {
+    // stepping by a larger amount for faster checking
+    for (let i = 3; i < data.length; i += 16) {
       if (data[i] === 0) transparentPixels++;
     }
     
-    const totalPixels = canvas.width * canvas.height;
-    if (transparentPixels / totalPixels > 0.4) {
+    const totalPixelsChecked = data.length / 16;
+    if (transparentPixels / totalPixelsChecked > 0.4) {
       onReveal();
     }
   };
@@ -117,15 +141,18 @@ export function ScratchArea({
   const handleDown = (e: any) => {
       if(revealed) return;
       setIsDrawing(true);
-      scratch(e);
+      scratch(e, true);
   };
   
   const handleMove = (e: any) => {
       if (!isDrawing) return;
-      scratch(e);
+      scratch(e, false);
   };
   
-  const handleUp = () => setIsDrawing(false);
+  const handleUp = () => {
+      setIsDrawing(false);
+      lastPosRef.current = null;
+  };
 
   return (
     <div className={cn("relative overflow-hidden select-none touch-none", className)}>
