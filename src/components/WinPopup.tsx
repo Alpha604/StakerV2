@@ -64,6 +64,8 @@ export function WinPopup({ multiplier, payout, onClose }: WinPopupProps) {
       }, 4000); // Show for 4 seconds
 
       return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
     }
   }, [multiplier, payout, onClose]);
 

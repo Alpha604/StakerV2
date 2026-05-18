@@ -3,7 +3,7 @@ import { useUser } from "../context/UserContext";
 import { ShieldAlert, AlertTriangle } from "lucide-react";
 
 export function ApprovalGuard({ children, gameName }: { children: React.ReactNode, gameName?: string }) {
-  const { user } = useUser();
+  const { user, globalGameStatus } = useUser() as any;
 
   if (user && user.status !== "approved" && user.role !== "admin") {
     return (
@@ -49,7 +49,10 @@ export function ApprovalGuard({ children, gameName }: { children: React.ReactNod
   }
 
   // Check game restriction
-  if (user && gameName && user.permissions?.blockedGames?.[gameName]) {
+  const isGloballyBanned = gameName && globalGameStatus?.[gameName]?.banned;
+  const isUserBanned = user && gameName && user.permissions?.blockedGames?.[gameName];
+
+  if ((isGloballyBanned || isUserBanned) && user?.role !== "admin") {
     return (
       <div className="relative w-full h-full flex items-center justify-center min-h-[500px] p-4 flex-col">
           <div className="absolute inset-0 z-0 blur-md pointer-events-none opacity-40 select-none overflow-hidden flex items-center justify-center">
@@ -62,7 +65,9 @@ export function ApprovalGuard({ children, gameName }: { children: React.ReactNod
              </div>
              <h2 className="text-2xl font-bold text-white mb-2">Jeu Restreint</h2>
              <p className="text-[#8b9ba5] mb-6 font-medium leading-relaxed">
-                L'administration a restreint votre accès à ce jeu pour le moment.
+                {isGloballyBanned 
+                  ? `Ce jeu est actuellement bloqué par l'administration (${globalGameStatus[gameName].reason}).`
+                  : `L'administration a restreint votre accès à ce jeu pour le moment.`}
              </p>
           </div>
       </div>

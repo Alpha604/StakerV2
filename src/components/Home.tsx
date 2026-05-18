@@ -9,7 +9,7 @@ const calculateIsNew = (releaseDate?: string) => {
   return Date.now() - new Date(releaseDate).getTime() < SEVEN_DAYS_MS;
 };
 
-const ALL_GAMES = [
+export const ALL_GAMES = [
   // Originals
   {
     name: "MINES", category: "originals", link: "mines",
@@ -142,9 +142,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
   };
 
   const isGameBanned = (gameName: string) => {
-    if (gameName === "Ice Fishing") return true;
-    if (globalGameStatus?.[gameName]) return globalGameStatus[gameName].banned;
-    return ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => gameName.toLowerCase() === n.toLowerCase());
+    return globalGameStatus?.[gameName]?.banned || false;
   };
 
   const toggleLike = (e: React.MouseEvent, gameName: string) => {

@@ -7,6 +7,8 @@ import { db } from "../lib/firebase";
 import { collection, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer, increment } from "firebase/firestore";
 import { AreaChart, Area, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from "recharts";
 
+import { ALL_GAMES } from "./Home";
+
 export function AdminPanel() {
   const { user } = useUser();
   const [users, setUsers] = useState<CustomUser[]>([]);
@@ -673,7 +675,7 @@ export function AdminPanel() {
               <Gamepad className="text-emerald-500" /> Gestion Globale des Jeux
            </h2>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
-             {["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash", "Le Bandit"].map(game => {
+             {ALL_GAMES.map(g => g.name).map(game => {
                 const config = gamesConfig?.[game] || { banned: false, reason: "" };
                 const isBanned = config.banned;
                 

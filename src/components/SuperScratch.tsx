@@ -24,14 +24,14 @@ export const TICKETS = {
     title: "CASH MAX",
     tagline: "Grattez et Gagnez jusqu'à 100x!",
     symbols: [
-      { id: "dollar", icon: "💵", multi: 100, prob: 0.05 },
-      { id: "gold", icon: "💰", multi: 50, prob: 0.1 },
-      { id: "cherry", icon: "🍒", multi: 20, prob: 0.5 },
-      { id: "watermelon", icon: "🍉", multi: 10, prob: 2 },
-      { id: "lemon", icon: "🍋", multi: 5, prob: 4 },
-      { id: "grape", icon: "🍇", multi: 2, prob: 10 },
-      { id: "star", icon: "⭐", multi: 1, prob: 10 },
-      { id: "miss", icon: "❌", multi: 0, prob: 73.35 },
+      { id: "dollar", icon: "💵", multi: 100, prob: 0.1 },
+      { id: "gold", icon: "💰", multi: 50, prob: 0.2 },
+      { id: "cherry", icon: "🍒", multi: 20, prob: 1 },
+      { id: "watermelon", icon: "🍉", multi: 10, prob: 4 },
+      { id: "lemon", icon: "🍋", multi: 5, prob: 8 },
+      { id: "grape", icon: "🍇", multi: 2, prob: 15 },
+      { id: "star", icon: "⭐", multi: 1, prob: 15 },
+      { id: "miss", icon: "❌", multi: 0, prob: 56.7 },
     ]
   },
   maxiblackjack: {
@@ -50,13 +50,13 @@ export const TICKETS = {
     title: "MAXI BLACKJACK",
     tagline: "Trouvez le 21 pour le jackpot!",
     symbols: [
-      { id: "bj21", icon: "🃏", multi: 500, prob: 0.01 },
-      { id: "bj20", icon: "K♠", multi: 50, prob: 0.05 },
-      { id: "bj19", icon: "Q♥", multi: 20, prob: 0.5 },
-      { id: "bj18", icon: "10♦", multi: 10, prob: 2 },
-      { id: "bj17", icon: "9♣", multi: 5, prob: 4 },
-      { id: "chips", icon: "🪙", multi: 2, prob: 10 },
-      { id: "miss", icon: "❌", multi: 0, prob: 83.44 },
+      { id: "bj21", icon: "🃏", multi: 500, prob: 0.05 },
+      { id: "bj20", icon: "K♠", multi: 50, prob: 0.2 },
+      { id: "bj19", icon: "Q♥", multi: 20, prob: 2 },
+      { id: "bj18", icon: "10♦", multi: 10, prob: 5 },
+      { id: "bj17", icon: "9♣", multi: 5, prob: 10 },
+      { id: "chips", icon: "🪙", multi: 2, prob: 20 },
+      { id: "miss", icon: "❌", multi: 0, prob: 62.75 },
     ]
   },
   millionaire: {
@@ -75,13 +75,13 @@ export const TICKETS = {
     title: "MILLIONNAIRE",
     tagline: "Un gratage = un million?!",
     symbols: [
-      { id: "diamant", icon: "💍", multi: 1000, prob: 0.005 },
-      { id: "or", icon: "👑", multi: 100, prob: 0.05 },
-      { id: "lingot", icon: "🧱", multi: 50, prob: 0.1 },
-      { id: "billets", icon: "💸", multi: 10, prob: 2.5 },
-      { id: "sac", icon: "💰", multi: 5, prob: 5 },
-      { id: "piece", icon: "🪙", multi: 2, prob: 10 },
-      { id: "miss", icon: "❌", multi: 0, prob: 82.345 },
+      { id: "diamant", icon: "💍", multi: 1000, prob: 0.05 },
+      { id: "or", icon: "👑", multi: 100, prob: 0.2 },
+      { id: "lingot", icon: "🧱", multi: 50, prob: 0.5 },
+      { id: "billets", icon: "💸", multi: 10, prob: 5 },
+      { id: "sac", icon: "💰", multi: 5, prob: 10 },
+      { id: "piece", icon: "🪙", multi: 2, prob: 20 },
+      { id: "miss", icon: "❌", multi: 0, prob: 64.25 },
     ]
   },
   wheel: {
@@ -100,12 +100,12 @@ export const TICKETS = {
     title: "WHEEL SCRATCH",
     tagline: "Faites tourner la roue (en grattant)!",
     symbols: [
-      { id: "wheel_gold", icon: "🎡", multi: 250, prob: 0.02 },
-      { id: "ticket", icon: "🎟", multi: 50, prob: 0.1 },
-      { id: "bell", icon: "🔔", multi: 20, prob: 0.5 },
-      { id: "seven", icon: "7️⃣", multi: 10, prob: 2 },
-      { id: "bar", icon: "🍫", multi: 5, prob: 4 },
-      { id: "miss", icon: "❌", multi: 0, prob: 93.38 },
+      { id: "wheel_gold", icon: "🎡", multi: 250, prob: 0.1 },
+      { id: "ticket", icon: "🎟", multi: 50, prob: 0.5 },
+      { id: "bell", icon: "🔔", multi: 20, prob: 2 },
+      { id: "seven", icon: "7️⃣", multi: 10, prob: 5 },
+      { id: "bar", icon: "🍫", multi: 5, prob: 10 },
+      { id: "miss", icon: "❌", multi: 0, prob: 82.4 },
     ]
   }
 };
@@ -339,6 +339,7 @@ export function SuperScratch() {
     if (balance < totalCost || isPlaying || ticketBought) return;
 
     subtractBalance(totalCost);
+    setWinInfo(null);
     setIsPlaying(true);
     setWinInfo(null);
     setWinSymbolId(null);
