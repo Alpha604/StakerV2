@@ -121,6 +121,24 @@ export function AdminPanel() {
     } catch(e) { console.error(e); }
   };
 
+  const updateCategoryBanned = async (categoryName: string, isBanned: boolean, reason: string) => {
+    try {
+      await updateDoc(doc(db, "config", "games"), {
+        [`categories.${categoryName}`]: {
+          banned: isBanned,
+          reason,
+          date: new Date().toISOString()
+        }
+      });
+    } catch {
+      await setDoc(doc(db, "config", "games"), {
+         categories: {
+            [`${categoryName}`]: { banned: isBanned, reason, date: new Date().toISOString() }
+         }
+      }, { merge: true });
+    }
+  };
+
   const deleteUser = async (userToDelete: CustomUser) => {
     if (["lafrancaise.desjeux@outlook.fr", "romeo.brawlstars59@gmail.com", "mimizerzer27@gmail.com"].includes(userToDelete.email || "")) return alert("Impossible de supprimer cet administrateur protégé.");
     if (userToDelete.id === user?.id) return alert("Vous ne pouvez pas vous supprimer vous-même.");
@@ -670,12 +688,54 @@ export function AdminPanel() {
         </div>
       </div>
       ) : mainTab === "games" ? (
-        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col">
-           <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
-              <Gamepad className="text-emerald-500" /> Gestion Globale des Jeux
-           </h2>
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
-             {ALL_GAMES.map(g => g.name).map(game => {
+        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col gap-8">
+           <div>
+              <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
+                 <Gamepad className="text-emerald-500" /> Gestion Globale des Catégories
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max mb-8">
+                 {["originals", "slots", "evolution", "stake-gaming", "grattage"].map(cat => {
+                    const config = gamesConfig?.["categories"]?.[cat] || { banned: false, reason: "" };
+                    const isBanned = config.banned;
+                    
+                    return (
+                       <div key={cat} className="bg-black/40 border border-gray-800 rounded-xl p-5 flex flex-col gap-4">
+                          <div className="flex justify-between items-center">
+                             <span className="font-bold text-lg text-white capitalize">{cat}</span>
+                             <span className={`text-xs px-2 py-1 rounded font-bold ${isBanned ? "bg-red-500/20 text-red-500" : "bg-emerald-500/20 text-emerald-500"}`}>
+                                {isBanned ? "BLOQUÉ" : "ACTIF"}
+                             </span>
+                          </div>
+                          
+                          {isBanned ? (
+                             <button
+                               onClick={() => updateCategoryBanned(cat, false, "")}
+                               className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded mt-auto"
+                             >Débloquer</button>
+                          ) : (
+                             <div className="flex flex-col gap-2 mt-auto">
+                                <input id={`cat-reason-${cat}`} type="text" placeholder="Raison (ex: Maintenance)" className="bg-black/50 border border-gray-700 rounded p-2 text-sm text-white" />
+                                <button
+                                   onClick={() => {
+                                       const r = (document.getElementById(`cat-reason-${cat}`) as HTMLInputElement)?.value || "Maintenance";
+                                       updateCategoryBanned(cat, true, r);
+                                   }}
+                                   className="w-full py-2 bg-red-500/20 hover:bg-red-500/40 text-red-500 font-bold rounded border border-red-500/50"
+                                >Bloquer</button>
+                             </div>
+                          )}
+                       </div>
+                    );
+                 })}
+              </div>
+           </div>
+
+           <div>
+             <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
+                <Gamepad className="text-emerald-500" /> Gestion Globale des Jeux
+             </h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+               {ALL_GAMES.map(g => g.name).map(game => {
                 const config = gamesConfig?.[game] || { banned: false, reason: "" };
                 const isBanned = config.banned;
                 
@@ -713,6 +773,7 @@ export function AdminPanel() {
                 )
              })}
            </div>
+          </div>
         </div>
       ) : mainTab === "security" ? (
         <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col animate-in fade-in zoom-in-95 duration-300">

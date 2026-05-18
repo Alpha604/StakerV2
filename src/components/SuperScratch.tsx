@@ -3,6 +3,7 @@ import { useUser } from "../context/UserContext";
 import { cn, formatCurrency } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { WinPopup } from "./WinPopup";
+import { ScratchArea } from "./ui/ScratchArea";
 import { Maximize, Minimize } from "lucide-react";
 import { useSound } from "../lib/useSound";
 import { AutoBetSettingsForm, useAutoBetOptions, useAutoBetLogic } from "./AutoBetSettings";
@@ -705,16 +706,42 @@ export function SuperScratch() {
                </div>
              </div>
 
-             <div className={`grid grid-cols-3 gap-3 sm:gap-4 w-full p-4 sm:p-5 bg-black/40 rounded-xl shadow-inner border border-white/10 relative z-10 backdrop-blur-sm`}>
+             <div className="relative z-10 p-2 bg-black/40 rounded-2xl shadow-inner backdrop-blur-sm border border-white/5 w-full">
+               <ScratchArea 
+                    revealed={revealedStates.every(Boolean)} 
+                    onReveal={() => {
+                        if (!ticketBought || isAutoPlayingRef.current) return;
+                        playHit();
+                        const nextStates = Array(9).fill(true);
+                        setRevealedStates(nextStates);
+                        
+                        setTimeout(() => {
+                          const amount = betAmount * ticketsCount * (winInfo?.wMulti || 0);
+                          if (winInfo?.wMulti && winInfo.wMulti > 0) {
+                            addBalance(amount);
+                            playWin();
+                            recordBet(TICKETS[ticketType].name, betAmount * ticketsCount, winInfo.wMulti, amount - (betAmount * ticketsCount));
+                          } else {
+                            playLoss();
+                            recordBet(TICKETS[ticketType].name, betAmount * ticketsCount, 0, -(betAmount * ticketsCount));
+                          }
+                          setIsPlaying(false);
+                        }, 500);
+                    }}
+                    coverColors={ticketData.colors.scratchGradient}
+                    coverText="STAKE"
+                    className="w-full rounded-xl"
+               >
+               <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full p-4 sm:p-5 relative aspect-square">
                 {grid.map((cellId, i) => {
                   const symbolData = ticketData.symbols.find(s => s.id === cellId) || ticketData.symbols[ticketData.symbols.length - 1];
-               const revealed = revealedStates[i];
+               const revealed = revealedStates[i] || revealedStates.every(Boolean);
                const isWinningCell = winSymbolId && winSymbolId === symbolData.id && revealed;
                const notWinningCell = winSymbolId && winSymbolId !== symbolData.id && revealed;
                
                return (
                   <div key={i} className="aspect-square">
-                    <ScratchCell revealed={revealed} onReveal={() => revealCell(i)} colors={ticketData.colors}>
+                    <div className="aspect-square">
                        <div className={cn(
                           `w-full h-full flex items-center justify-center text-4xl sm:text-5xl transition-all duration-300 ${ticketData.colors.bgCell}`,
                           isWinningCell ? `${ticketData.colors.winHighlight} rounded-xl` : "rounded-xl",
@@ -722,10 +749,12 @@ export function SuperScratch() {
                        )}>
                           {symbolData.icon}
                        </div>
-                    </ScratchCell>
+                    </div>
                   </div>
                );
              })}
+               </div>
+              </ScratchArea>
           </div>
         </div>
 

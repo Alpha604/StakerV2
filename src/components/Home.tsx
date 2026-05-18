@@ -62,10 +62,22 @@ export const ALL_GAMES = [
     releaseDate: new Date(Date.now()).toISOString(),
     img: "https://mediumrare.imgix.net/ceb29aff91c7ba3033e44ee289d2eeb4e85088cdb56daac04d2e82a886542b05?w=180&h=236&fit=min&auto=format",
   },
+  // Scratch Games
   {
-    name: "Ticket à Gratter", category: "grattage", link: "super-scratch", provider: "Stake Originals", badge: "Populaire",
-    releaseDate: new Date(Date.now()).toISOString(),
-    img: "https://i.postimg.cc/0j08SCPF/72f4fbe9-1b8b-4ad3-9e22-398ef913d28e.png",
+    name: "Cash", category: "grattage", link: "scratch-cash",
+    img: "https://i.postimg.cc/HkCNWdbG/Gemini-Generated-Image-ig2bjbig2bjbig2b.png",
+  },
+  {
+    name: "Maxi Cash", category: "grattage", link: "scratch-maxi-cash",
+    img: "https://i.postimg.cc/09QvwQsk/Gemini-Generated-Image-xicu6qxicu6qxicu.png",
+  },
+  {
+    name: "Super Millionnaire", category: "grattage", link: "scratch-millionnaire",
+    img: "https://i.postimg.cc/W3fMK1bv/Gemini-Generated-Image-a5qj2da5qj2da5qj.png",
+  },
+  {
+    name: "Supra Halla", category: "grattage", link: "scratch-supra-halla",
+    img: "https://i.postimg.cc/RFjRPLRC/Gemini-Generated-Image-d74tcwd74tcwd74t.png",
   },
   {
     name: "WHEEL", category: "originals", link: "wheel",
@@ -141,8 +153,11 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     return sessionBets.filter((b: any) => (typeof b.game === 'string' ? b.game : '').toLowerCase() === gameName.toLowerCase()).length;
   };
 
-  const isGameBanned = (gameName: string) => {
-    return globalGameStatus?.[gameName]?.banned || false;
+  const isGameBanned = (gameName: string, categoryName: string) => {
+    if (globalGameStatus?.["categories"]?.[categoryName]?.banned) return true;
+    if (["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => gameName.toLowerCase() === n.toLowerCase())) return true;
+    if (globalGameStatus?.[gameName]) return globalGameStatus[gameName].banned;
+    return false;
   };
 
   const toggleLike = (e: React.MouseEvent, gameName: string) => {
@@ -194,8 +209,11 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
         {gamesToRender.map((game) => {
-          const isBanned = isGameBanned(game.name);
-          const banInfo = globalGameStatus?.[game.name] || { reason: "En construction", date: new Date().toISOString() };
+          const isBanned = isGameBanned(game.name, game.category);
+          const isCategoryBanned = globalGameStatus?.["categories"]?.[game.category]?.banned;
+          const banInfo = isCategoryBanned 
+             ? globalGameStatus?.["categories"]?.[game.category] 
+             : (globalGameStatus?.[game.name] || { reason: "En construction", date: new Date().toISOString() });
           return (
           <div
             key={game.name}
@@ -358,7 +376,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
                   <span className="text-blue-400 font-mono font-bold bg-blue-400/10 border border-blue-400/20 px-2 py-1 rounded">Evolution</span>
                </div>
             </div>
-            {isGameBanned("Ice Fishing") ? (
+            {isGameBanned("Ice Fishing", "evolution") ? (
                <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed w-fit">
                   <Lock size={18} /> Bloqué : {globalGameStatus?.["Ice Fishing"]?.reason || "Maintenance"}
                </div>

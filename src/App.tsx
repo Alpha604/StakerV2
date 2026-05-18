@@ -38,6 +38,10 @@ import { ApprovalGuard } from "./components/ApprovalGuard";
 import { Profile } from "./components/Profile";
 import { Stats } from "./components/Stats";
 import { Leaderboard } from "./components/Leaderboard";
+import { ScratchCash } from "./components/ScratchCash";
+import { ScratchMaxiCash } from "./components/ScratchMaxiCash";
+import { ScratchMillionnaire } from "./components/ScratchMillionnaire";
+import { ScratchSupraHalla } from "./components/ScratchSupraHalla";
 import { LiveChat } from "./components/LiveChat";
 import { Toaster } from "react-hot-toast";
 import { SuperScratch } from "./components/SuperScratch";
@@ -86,6 +90,10 @@ export type ViewType =
   | "profile"
   | "rewards"
   | "super-scratch"
+  | "scratch-cash"
+  | "scratch-maxi-cash"
+  | "scratch-millionnaire"
+  | "scratch-supra-halla"
   | "stake-gaming";
 
 class ErrorBoundary extends React.Component<any, any> {
@@ -283,6 +291,10 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
               {view === "ice-fishing" && <ApprovalGuard gameName="Ice Fishing"><IceFishing /></ApprovalGuard>}
               {view === "blackjack-evolution" && <ApprovalGuard gameName="Blackjack"><Blackjack /></ApprovalGuard>}
               {view === "super-scratch" && <ApprovalGuard gameName="Super Scratch"><SuperScratch /></ApprovalGuard>}
+              {view === "scratch-cash" && <ApprovalGuard gameName="Cash"><ScratchCash /></ApprovalGuard>}
+              {view === "scratch-maxi-cash" && <ApprovalGuard gameName="Maxi Cash"><ScratchMaxiCash /></ApprovalGuard>}
+              {view === "scratch-millionnaire" && <ApprovalGuard gameName="Super Millionnaire"><ScratchMillionnaire /></ApprovalGuard>}
+              {view === "scratch-supra-halla" && <ApprovalGuard gameName="Supra Halla"><ScratchSupraHalla /></ApprovalGuard>}
             </div>
             
             {/* Footer */}
