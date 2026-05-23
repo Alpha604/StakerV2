@@ -260,7 +260,7 @@ interface UserContextType {
   logoutProgress: number;
   logoutMessage: string;
   globalGameStatus: Record<string, { banned: boolean, reason: string, date: string }>;
-  globalAppStatus: { maintenance: boolean, mode?: 'active' | 'maintenance' | 'arret' | 'moderation', message?: string, blockedDevices?: string[] };
+  globalAppStatus: { maintenance: boolean, mode?: 'active' | 'maintenance' | 'arret' | 'moderation', message?: string, blockedDevices?: string[], endTime?: number, autoUnlock?: boolean };
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -313,7 +313,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [logoutMessage, setLogoutMessage] = useState("");
 
   const [globalGameStatus, setGlobalGameStatus] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
-  const [globalAppStatus, setGlobalAppStatus] = useState<{ maintenance: boolean, mode?: 'active' | 'maintenance' | 'arret' | 'moderation', message?: string, blockedDevices?: string[] }>({ maintenance: false, mode: 'active', blockedDevices: [] });
+  const [globalAppStatus, setGlobalAppStatus] = useState<{ maintenance: boolean, mode?: 'active' | 'maintenance' | 'arret' | 'moderation', message?: string, blockedDevices?: string[], endTime?: number, autoUnlock?: boolean }>({ maintenance: false, mode: 'active', blockedDevices: [] });
 
   useEffect(() => {
     // Listen to global config for games

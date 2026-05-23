@@ -188,8 +188,22 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
 
   const currentDeviceType = isIos ? 'ios' : isAndroid ? 'android' : isDesktop ? 'desktop' : 'unknown';
 
+  const [now, setNow] = useState(Date.now());
+  
+  useEffect(() => {
+     if (globalAppStatus?.maintenance && globalAppStatus?.endTime) {
+        const interval = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(interval);
+     }
+  }, [globalAppStatus]);
+
   const shouldBlockDevice = () => {
      if (!globalAppStatus?.maintenance) return false;
+     
+     if (globalAppStatus.autoUnlock && globalAppStatus.endTime && Date.now() > globalAppStatus.endTime) {
+        return false;
+     }
+
      if (user?.role === "admin") return false;
      
      const blockedDevices = globalAppStatus?.blockedDevices || [];
@@ -241,10 +255,31 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
             <p className="text-[#a2bbd2] max-w-sm mx-auto font-medium">
               {modeDesc}
             </p>
-            <div className="flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase mt-4" style={{ color: modeColor }}>
-               <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: modeColor }}></span>
-               Nous revenons bientôt !
-            </div>
+            {globalAppStatus.endTime ? (
+              <div className="flex flex-col items-center justify-center gap-2 mt-4">
+                 <div className="text-sm font-bold tracking-widest uppercase" style={{ color: modeColor }}>
+                    Temps Restant Estimé :
+                 </div>
+                 <div className="font-mono text-2xl font-bold bg-[#1a2c38] px-4 py-2 rounded-lg border border-[#2f4553] text-white">
+                    {(() => {
+                       const remaining = Math.max(0, globalAppStatus.endTime - now);
+                       const d = Math.floor(remaining / 86400000);
+                       const h = Math.floor((remaining % 86400000) / 3600000);
+                       const m = Math.floor((remaining % 3600000) / 60000);
+                       const s = Math.floor((remaining % 60000) / 1000);
+                       
+                       if (d > 0) return `${d}j ${h}h ${m}m ${s}s`;
+                       if (h > 0) return `${h}h ${m}m ${s}s`;
+                       return `${m}m ${s}s`;
+                    })()}
+                 </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase mt-4" style={{ color: modeColor }}>
+                 <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: modeColor }}></span>
+                 Nous revenons bientôt !
+              </div>
+            )}
           </div>
           
           <button 

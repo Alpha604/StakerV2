@@ -20,6 +20,9 @@ export function AdminPanel() {
   const [showLockModal, setShowLockModal] = useState(false);
   const [lockTargetMode, setLockTargetMode] = useState<'maintenance' | 'arret' | 'moderation'>('maintenance');
   const [lockBlockedDevices, setLockBlockedDevices] = useState<string[]>([]);
+  const [lockAutoUnlock, setLockAutoUnlock] = useState(false);
+  const [lockDurationValue, setLockDurationValue] = useState(1);
+  const [lockDurationUnit, setLockDurationUnit] = useState<'minutes' | 'hours' | 'days'>('hours');
 
   const [searchQuery, setSearchQuery] = useState("");
   const [globalBetsCount, setGlobalBetsCount] = useState(0);
@@ -806,7 +809,7 @@ export function AdminPanel() {
                  <div className="flex flex-wrap items-center gap-4">
                    <button 
                       onClick={async () => {
-                         await setDoc(doc(db, "config", "app"), { maintenance: false, mode: 'active', blockedDevices: [] }, { merge: true });
+                         await setDoc(doc(db, "config", "app"), { maintenance: false, mode: 'active', blockedDevices: [], endTime: null, autoUnlock: false }, { merge: true });
                       }}
                       className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'active' || (!globalAppStatus?.maintenance && !globalAppStatus?.mode) ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
                    >
@@ -1483,6 +1486,42 @@ export function AdminPanel() {
                  </label>
               </div>
 
+              <div className="mb-4">
+                 <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${lockAutoUnlock ? 'bg-[#2f4553]/50 border-[#00e701]/50' : 'bg-[#0f212e]/50 border-[#2f4553] hover:border-gray-500'}`}>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 accent-[#00e701]"
+                      checked={lockAutoUnlock}
+                      onChange={e => setLockAutoUnlock(e.target.checked)}
+                    />
+                    <div className="flex flex-col">
+                       <span className="font-bold text-sm text-white">Fin Programmée (Compte à rebours)</span>
+                       <span className="text-xs text-gray-400">Si activé, l'application se débloquera toute seule et affichera un compte à rebours aux utilisateurs.</span>
+                    </div>
+                 </label>
+              </div>
+
+              {lockAutoUnlock && (
+                <div className="flex gap-3 mb-6 bg-black/20 p-3 rounded-lg border border-[#2f4553]">
+                   <input 
+                     type="number"
+                     min="1"
+                     value={lockDurationValue}
+                     onChange={e => setLockDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
+                     className="w-24 bg-[#0c0c0e] border border-gray-800 p-2 rounded-lg text-white font-mono placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50"
+                   />
+                   <select
+                     value={lockDurationUnit}
+                     onChange={e => setLockDurationUnit(e.target.value as any)}
+                     className="flex-1 bg-[#0c0c0e] border border-gray-800 p-2 rounded-lg text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                   >
+                     <option value="minutes">Minutes</option>
+                     <option value="hours">Heures</option>
+                     <option value="days">Jours</option>
+                   </select>
+                </div>
+              )}
+
               <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-[#2f4553]">
                  <button 
                    onClick={() => setShowLockModal(false)}
@@ -1493,10 +1532,19 @@ export function AdminPanel() {
                  <button 
                    onClick={async () => {
                       const mode = lockTargetMode;
+                      let endTime = null;
+                      
+                      if (lockAutoUnlock) {
+                         const msMultiplier = lockDurationUnit === 'minutes' ? 60000 : lockDurationUnit === 'hours' ? 3600000 : 86400000;
+                         endTime = Date.now() + (lockDurationValue * msMultiplier);
+                      }
+
                       await setDoc(doc(db, "config", "app"), { 
                          maintenance: true, 
                          mode, 
-                         blockedDevices: lockBlockedDevices 
+                         blockedDevices: lockBlockedDevices,
+                         endTime,
+                         autoUnlock: lockAutoUnlock
                       }, { merge: true });
                       setShowLockModal(false);
                    }}
