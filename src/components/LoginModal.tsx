@@ -100,7 +100,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
               className="flex items-center gap-2 text-emerald-600"
             >
-              <span className="font-bold tracking-widest uppercase text-sm">Authentifié</span>
+              <span className="font-bold tracking-widest uppercase text-sm">Connexion réussie</span>
             </motion.div>
           ) : (
              <>

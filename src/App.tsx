@@ -181,39 +181,53 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
   const [chatOpen, setChatOpen] = useState(false);
 
   if (globalAppStatus?.maintenance && user?.role !== "admin") {
+    let modeTitle = "Maintenance En Cours";
+    let modeDesc = "Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.";
+    let modeColor = "#00e701"; // default stake green
+    
+    if (globalAppStatus.mode === "arret") {
+      modeTitle = "Service Interrompu";
+      modeDesc = "L'application est temporairement fermée. Veuillez réessayer plus tard.";
+      modeColor = "#f43f5e"; // rose 500
+    } else if (globalAppStatus.mode === "moderation") {
+      modeTitle = "Modération Globale";
+      modeDesc = "L'accès à la plateforme est restreint pour des raisons de modération. Merci de patienter.";
+      modeColor = "#3b82f6"; // blue 500
+    }
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f212e] text-white relative overflow-hidden">
         {/* Background Patterns */}
-        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #1475e1 0%, transparent 60%)' }}></div>
-        <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00e701] to-transparent"></div>
+        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at center, ${modeColor} 0%, transparent 40%)` }}></div>
+        <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-transparent to-transparent" style={{ backgroundImage: `linear-gradient(to right, transparent, ${modeColor}, transparent)` }}></div>
         
         <div className="z-10 flex flex-col items-center space-y-8 animate-in fade-in zoom-in duration-500">
           <div className="relative">
-            <div className="absolute inset-0 bg-[#00e701] blur-3xl opacity-20 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 blur-3xl opacity-20 rounded-full animate-pulse" style={{ backgroundColor: modeColor }}></div>
             {/* Stake Box Logo */}
             <div className="w-24 h-24 bg-[#14232e] border border-[#2f4553] rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden">
-              <div className="absolute inset-0 border-[3px] border-[#00e701]/30 rounded-2xl animate-[spin_4s_linear_infinite]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 10%, 0 10%)' }}></div>
+              <div className="absolute inset-0 border-[3px] rounded-2xl animate-[spin_4s_linear_infinite] opacity-30" style={{ borderColor: modeColor, clipPath: 'polygon(0 0, 100% 0, 100% 10%, 0 10%)' }}></div>
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
                 alt="Stake Logo" 
-                className="w-16 opacity-30 brightness-[100] invert"
+                className="w-16 opacity-50 brightness-[100] invert"
               />
             </div>
             
             {/* Ping indicator */}
-            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[#00e701] shadow-[0_0_15px_#00e701] animate-ping"></div>
-            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[#00e701]"></div>
+            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full animate-ping opacity-75" style={{ backgroundColor: modeColor, boxShadow: `0 0 15px ${modeColor}` }}></div>
+            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full" style={{ backgroundColor: modeColor }}></div>
           </div>
           
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
-              Maintenance En Cours
+              {modeTitle}
             </h1>
             <p className="text-[#a2bbd2] max-w-sm mx-auto font-medium">
-              Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.
+              {modeDesc}
             </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-[#00e701] font-bold tracking-widest uppercase mt-4">
-               <span className="w-2 h-2 rounded-full bg-[#00e701] animate-bounce"></span>
+            <div className="flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase mt-4" style={{ color: modeColor }}>
+               <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: modeColor }}></span>
                Nous revenons bientôt !
             </div>
           </div>

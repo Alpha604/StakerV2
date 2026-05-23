@@ -784,19 +784,45 @@ export function AdminPanel() {
            <div className="flex flex-col gap-6">
               <div className="bg-black/40 border border-gray-800 rounded-xl p-6">
                  <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                   <Lock className="text-amber-500 w-5 h-5" /> Mode Maintenance
+                   <Lock className="text-amber-500 w-5 h-5" /> Mode d'Accès de l'Application
                  </h3>
-                 <p className="text-gray-400 mb-6 text-sm">Bloque temporairement l'application pour tous les utilisateurs non-administrateurs avec un écran de maintenance.</p>
+                 <p className="text-gray-400 mb-6 text-sm">Bloque temporairement l'application pour tous les utilisateurs non-administrateurs avec un écran spécifique.</p>
                  
-                 <div className="flex items-center gap-4">
+                 <div className="flex flex-wrap items-center gap-4">
                    <button 
                       onClick={async () => {
-                         const current = globalAppStatus?.maintenance;
-                         await setDoc(doc(db, "config", "app"), { maintenance: !current }, { merge: true });
+                         await setDoc(doc(db, "config", "app"), { maintenance: false, mode: 'active' }, { merge: true });
                       }}
-                      className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.maintenance ? "bg-amber-500 hover:bg-amber-600 text-black shadow-[0_0_15px_rgba(245,158,11,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
+                      className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'active' || (!globalAppStatus?.maintenance && !globalAppStatus?.mode) ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
                    >
-                     {globalAppStatus?.maintenance ? <><Lock size={18} /> Site Verrouillé (Mode Maintenance ACTIF)</> : <><Unlock size={18} /> Activer le Mode Maintenance</>}
+                     <Unlock size={18} /> Actif
+                   </button>
+                   
+                   <button 
+                      onClick={async () => {
+                         await setDoc(doc(db, "config", "app"), { maintenance: true, mode: 'maintenance' }, { merge: true });
+                      }}
+                      className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'maintenance' || (globalAppStatus?.maintenance && !globalAppStatus?.mode) ? "bg-amber-500 hover:bg-amber-600 text-black shadow-[0_0_15px_rgba(245,158,11,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
+                   >
+                     <Lock size={18} /> Maintenance
+                   </button>
+
+                   <button 
+                      onClick={async () => {
+                         await setDoc(doc(db, "config", "app"), { maintenance: true, mode: 'arret' }, { merge: true });
+                      }}
+                      className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'arret' ? "bg-rose-500 hover:bg-rose-600 text-black shadow-[0_0_15px_rgba(244,63,94,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
+                   >
+                     <Lock size={18} /> Arrêt
+                   </button>
+
+                   <button 
+                      onClick={async () => {
+                         await setDoc(doc(db, "config", "app"), { maintenance: true, mode: 'moderation' }, { merge: true });
+                      }}
+                      className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'moderation' ? "bg-blue-500 hover:bg-blue-600 text-black shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
+                   >
+                     <Lock size={18} /> Modération
                    </button>
                  </div>
               </div>

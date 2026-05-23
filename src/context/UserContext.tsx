@@ -260,7 +260,7 @@ interface UserContextType {
   logoutProgress: number;
   logoutMessage: string;
   globalGameStatus: Record<string, { banned: boolean, reason: string, date: string }>;
-  globalAppStatus: { maintenance: boolean, maintenanceMessage?: string };
+  globalAppStatus: { maintenance: boolean, mode?: 'active' | 'maintenance' | 'arret' | 'moderation', message?: string };
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -313,7 +313,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [logoutMessage, setLogoutMessage] = useState("");
 
   const [globalGameStatus, setGlobalGameStatus] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
-  const [globalAppStatus, setGlobalAppStatus] = useState<{ maintenance: boolean, maintenanceMessage?: string }>({ maintenance: false });
+  const [globalAppStatus, setGlobalAppStatus] = useState<{ maintenance: boolean, mode?: 'active' | 'maintenance' | 'arret' | 'moderation', message?: string }>({ maintenance: false, mode: 'active' });
 
   useEffect(() => {
     // Listen to global config for games
