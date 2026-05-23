@@ -10,6 +10,7 @@ export function ScratchCash() {
   const [betAmount, setBetAmount] = useState(2);
   const [isPlaying, setIsPlaying] = useState(false);
   const [ticketBought, setTicketBought] = useState(false);
+  const [ticketId, setTicketId] = useState(0);
   const [revealedBoxes, setRevealedBoxes] = useState([false, false]);
   
   const [box1Val, setBox1Val] = useState(0);
@@ -23,21 +24,35 @@ export function ScratchCash() {
     subtractBalance(betAmount);
     setWinInfo(null);
     setIsPlaying(true);
-    setTicketBought(true);
     setRevealedBoxes([false, false]);
+    setTicketBought(false); // disable scratching while generating
+    setTicketId(prev => prev + 1);
     
-    // Win logic: 40% chance to win something
-    let val1 = 0;
-    let val2 = 0;
-    if (Math.random() < 0.4) {
-       // Win
-       val1 = Math.random() < 0.5 ? (Math.floor(Math.random() * 5) + 1) * betAmount : 0;
-       val2 = Math.random() < 0.5 ? (Math.floor(Math.random() * 5) + 1) * betAmount : 0;
-       if (val1 === 0 && val2 === 0) val1 = betAmount * 2;
-    }
-    
-    setBox1Val(val1);
-    setBox2Val(val2);
+    // Win logic: 30% chance to win
+    setTimeout(() => {
+        let totalWin = 0;
+        const rand = Math.random();
+        if (rand < 0.05) totalWin = betAmount * 5;      // 5% 5x
+        else if (rand < 0.15) totalWin = betAmount * 2; // 10% 2x
+        else if (rand < 0.30) totalWin = betAmount * 1; // 15% 1x
+        
+        let val1 = 0;
+        let val2 = 0;
+        if (totalWin > 0) {
+            if (Math.random() < 0.5) {
+                val1 = totalWin;
+            } else {
+                val2 = totalWin;
+            }
+        } else {
+            val1 = 0;
+            val2 = 0;
+        }
+        
+        setBox1Val(val1);
+        setBox2Val(val2);
+        setTicketBought(true);
+    }, 400); // 400ms is enough for the canvas to cover and be fully opaque.
   };
 
   const handleReveal = (index: number) => {
@@ -62,8 +77,29 @@ export function ScratchCash() {
           }
           setIsPlaying(false);
           setTicketBought(false);
-       }, 500);
+       }, 2000);
     }
+  };
+
+  const revealAll = () => {
+    if (!ticketBought || revealedBoxes.every(Boolean)) return;
+    setRevealedBoxes([true, true]);
+    playHit();
+    
+    const totalWin = box1Val + box2Val;
+    setTimeout(() => {
+        if (totalWin > 0) {
+            const multiplier = totalWin / betAmount;
+            addBalance(totalWin);
+            setWinInfo({ multiplier, payout: totalWin });
+            playWin();
+            recordBet("Cash Original", betAmount, multiplier, totalWin - betAmount);
+        } else {
+            playLoss();
+            recordBet("Cash Original", betAmount, 0, -betAmount);
+        }
+        setIsPlaying(false);
+    }, 500);
   };
 
   return (
@@ -115,11 +151,11 @@ export function ScratchCash() {
 
           <div className="mt-auto pt-4">
              <button 
-                onClick={buyTicket}
-                disabled={balance < betAmount || isPlaying || ticketBought}
+                onClick={ticketBought && !revealedBoxes.every(Boolean) ? revealAll : buyTicket}
+                disabled={(!ticketBought && balance < betAmount) || (isPlaying && !ticketBought)}
                 className="w-full py-3.5 bg-[#00e701] hover:bg-[#1fff20] text-black font-black uppercase text-[15px] rounded-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_#00c701] active:shadow-none active:translate-y-1"
              >
-                {ticketBought ? "Grattez le ticket!" : "Acheter (" + formatCurrency(betAmount) + ")"}
+                {ticketBought && !revealedBoxes.every(Boolean) ? "Tout Gratter" : (isPlaying && !ticketBought ? "Génération..." : "Acheter (" + formatCurrency(betAmount) + ")")}
              </button>
           </div>
         </div>
@@ -135,6 +171,7 @@ export function ScratchCash() {
                 <ScratchArea 
                    revealed={revealedBoxes[0]} 
                    onReveal={() => handleReveal(0)}
+                   resetKey={ticketId}
                    coverColors={["#34d399", "#10b981", "#059669"]}
                    coverText="$"
                    className="w-full aspect-square rounded-xl shadow-inner border-[3px] border-emerald-500"
@@ -151,6 +188,7 @@ export function ScratchCash() {
                 <ScratchArea 
                    revealed={revealedBoxes[1]} 
                    onReveal={() => handleReveal(1)}
+                   resetKey={ticketId}
                    coverColors={["#34d399", "#10b981", "#059669"]}
                    coverText="$"
                    className="w-full aspect-square rounded-xl shadow-inner border-[3px] border-emerald-500"

@@ -10,6 +10,7 @@ export function ScratchSupraHalla() {
   const [betAmount, setBetAmount] = useState(5); 
   const [isPlaying, setIsPlaying] = useState(false);
   const [ticketBought, setTicketBought] = useState(false);
+  const [ticketId, setTicketId] = useState(0);
   const [revealedBoxes, setRevealedBoxes] = useState([false, false]); // 0: grid, 1: cup
   
   const [grid, setGrid] = useState<string[]>([]);
@@ -63,9 +64,14 @@ export function ScratchSupraHalla() {
     subtractBalance(betAmount);
     setWinInfo(null);
     setIsPlaying(true);
-    setTicketBought(true);
+    setTicketBought(false);
     setRevealedBoxes([false, false]);
-    generateGame();
+    setTicketId(prev => prev + 1);
+    
+    setTimeout(() => {
+        generateGame();
+        setTicketBought(true);
+    }, 400);
   };
 
   const handleReveal = (index: number) => {
@@ -89,8 +95,28 @@ export function ScratchSupraHalla() {
           }
           setIsPlaying(false);
           setTicketBought(false);
-       }, 500);
+       }, 2000);
     }
+  };
+
+  const revealAll = () => {
+    if (!ticketBought || revealedBoxes.every(Boolean)) return;
+    setRevealedBoxes([true, true]);
+    playHit();
+    
+    setTimeout(() => {
+       if (hasWon && cupAmount > 0) {
+          const multiplier = cupAmount / betAmount;
+          addBalance(cupAmount);
+          setWinInfo({ multiplier, payout: cupAmount });
+          playWin();
+          recordBet("Supra Halla", betAmount, multiplier, cupAmount - betAmount);
+       } else {
+          playLoss();
+          recordBet("Supra Halla", betAmount, 0, -betAmount);
+       }
+       setIsPlaying(false);
+    }, 500);
   };
 
   return (
@@ -142,11 +168,11 @@ export function ScratchSupraHalla() {
 
           <div className="mt-auto pt-4">
              <button 
-                onClick={buyTicket}
-                disabled={balance < betAmount || isPlaying || ticketBought}
+                onClick={ticketBought && !revealedBoxes.every(Boolean) ? revealAll : buyTicket}
+                disabled={(!ticketBought && balance < betAmount) || (isPlaying && !ticketBought)}
                 className="w-full py-3.5 bg-[#00e701] hover:bg-[#1fff20] text-black font-black uppercase text-[15px] rounded-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_#00c701] active:shadow-none active:translate-y-1"
              >
-                {ticketBought ? "Grattez le ticket!" : "Acheter (" + formatCurrency(betAmount) + ")"}
+                {ticketBought && !revealedBoxes.every(Boolean) ? "Tout Gratter" : (isPlaying && !ticketBought ? "Génération..." : "Acheter (" + formatCurrency(betAmount) + ")")}
              </button>
           </div>
         </div>
@@ -164,6 +190,7 @@ export function ScratchSupraHalla() {
                 <ScratchArea 
                    revealed={revealedBoxes[0]} 
                    onReveal={() => handleReveal(0)}
+                   resetKey={ticketId}
                    coverColors={["#ef4444", "#dc2626", "#b91c1c"]}
                    coverText="GRATTEZ LES 12 CASES"
                    className="w-full h-80 rounded-lg shadow-inner border-2 border-[#b82a2a] bg-black/40"
@@ -186,6 +213,7 @@ export function ScratchSupraHalla() {
                 <ScratchArea 
                    revealed={revealedBoxes[1]} 
                    onReveal={() => handleReveal(1)}
+                   resetKey={ticketId}
                    coverColors={["#eab308", "#ca8a04", "#a16207"]}
                    coverText="🏆"
                    className="w-40 h-32 rounded-lg shadow-inner border-2 border-yellow-500 bg-black/40 mx-auto"

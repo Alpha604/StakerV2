@@ -10,6 +10,7 @@ export function ScratchMaxiCash() {
   const [betAmount, setBetAmount] = useState(10); // costs more
   const [isPlaying, setIsPlaying] = useState(false);
   const [ticketBought, setTicketBought] = useState(false);
+  const [ticketId, setTicketId] = useState(0);
   const [revealedBoxes, setRevealedBoxes] = useState([false, false]); // 0: winning numbers, 1: player numbers
   
   const [winningNums, setWinningNums] = useState<number[]>([]);
@@ -20,7 +21,7 @@ export function ScratchMaxiCash() {
 
   const generateNumbers = () => {
      let wins: number[] = [];
-     while(wins.length < 5) {
+     while(wins.length < 3) {
         let n = Math.floor(Math.random() * 50) + 1;
         if (!wins.includes(n)) wins.push(n);
      }
@@ -32,7 +33,7 @@ export function ScratchMaxiCash() {
      const isWin = Math.random() < 0.35; // 35% win rate
      let wonAmount = 0;
      
-     for (let i = 0; i < 30; i++) {
+     for (let i = 0; i < 10; i++) {
         let n = Math.floor(Math.random() * 50) + 1;
         let isWinningNum = wins.includes(n);
         
@@ -63,9 +64,14 @@ export function ScratchMaxiCash() {
     subtractBalance(betAmount);
     setWinInfo(null);
     setIsPlaying(true);
-    setTicketBought(true);
+    setTicketBought(false);
     setRevealedBoxes([false, false]);
-    generateNumbers();
+    setTicketId(prev => prev + 1);
+    
+    setTimeout(() => {
+        generateNumbers();
+        setTicketBought(true);
+    }, 400);
   };
 
   const handleReveal = (index: number) => {
@@ -94,8 +100,33 @@ export function ScratchMaxiCash() {
           }
           setIsPlaying(false);
           setTicketBought(false);
-       }, 500);
+       }, 2000);
     }
+  };
+
+  const revealAll = () => {
+    if (!ticketBought || revealedBoxes.every(Boolean)) return;
+    setRevealedBoxes([true, true]);
+    playHit();
+    
+    let totalWin = 0;
+    playerNums.forEach(p => {
+       if (winningNums.includes(p.num)) totalWin += p.val;
+    });
+    
+    setTimeout(() => {
+       if (totalWin > 0) {
+          const multiplier = totalWin / betAmount;
+          addBalance(totalWin);
+          setWinInfo({ multiplier, payout: totalWin });
+          playWin();
+          recordBet("Maxi Cash", betAmount, multiplier, totalWin - betAmount);
+       } else {
+          playLoss();
+          recordBet("Maxi Cash", betAmount, 0, -betAmount);
+       }
+       setIsPlaying(false);
+    }, 500);
   };
 
   return (
@@ -147,11 +178,11 @@ export function ScratchMaxiCash() {
 
           <div className="mt-auto pt-4">
              <button 
-                onClick={buyTicket}
-                disabled={balance < betAmount || isPlaying || ticketBought}
+                onClick={ticketBought && !revealedBoxes.every(Boolean) ? revealAll : buyTicket}
+                disabled={(!ticketBought && balance < betAmount) || (isPlaying && !ticketBought)}
                 className="w-full py-3.5 bg-[#00e701] hover:bg-[#1fff20] text-black font-black uppercase text-[15px] rounded-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_#00c701] active:shadow-none active:translate-y-1"
              >
-                {ticketBought ? "Grattez le ticket!" : "Acheter (" + formatCurrency(betAmount) + ")"}
+                {ticketBought && !revealedBoxes.every(Boolean) ? "Tout Gratter" : (isPlaying && !ticketBought ? "Génération..." : "Acheter (" + formatCurrency(betAmount) + ")")}
              </button>
           </div>
         </div>
@@ -170,6 +201,7 @@ export function ScratchMaxiCash() {
                 <ScratchArea 
                    revealed={revealedBoxes[0]} 
                    onReveal={() => handleReveal(0)}
+                   resetKey={ticketId}
                    coverColors={["#3b82f6", "#2563eb", "#1d4ed8"]}
                    coverText="?"
                    className="w-full h-24 rounded-lg shadow-inner border-2 border-blue-500"
@@ -187,11 +219,12 @@ export function ScratchMaxiCash() {
                 <ScratchArea 
                    revealed={revealedBoxes[1]} 
                    onReveal={() => handleReveal(1)}
+                   resetKey={ticketId}
                    coverColors={["#3b82f6", "#2563eb", "#1d4ed8"]}
-                   coverText="GRATTEZ LES 30 NUMÉROS"
-                   className="w-full min-h-[350px] rounded-lg shadow-inner border-2 border-blue-500"
+                   coverText="GRATTEZ LES 10 NUMÉROS"
+                   className="w-full min-h-[300px] rounded-lg shadow-inner border-2 border-blue-500"
                 >
-                    <div className="absolute inset-0 grid grid-cols-5 sm:grid-cols-6 gap-2 bg-[#0f212e] p-2">
+                    <div className="absolute inset-0 grid grid-cols-5 gap-2 bg-[#0f212e] p-2">
                        {playerNums.map((p, i) => {
                           const isMatch = winningNums.includes(p.num);
                           return (

@@ -260,6 +260,7 @@ interface UserContextType {
   logoutProgress: number;
   logoutMessage: string;
   globalGameStatus: Record<string, { banned: boolean, reason: string, date: string }>;
+  globalAppStatus: { maintenance: boolean, maintenanceMessage?: string };
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -312,17 +313,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [logoutMessage, setLogoutMessage] = useState("");
 
   const [globalGameStatus, setGlobalGameStatus] = useState<Record<string, { banned: boolean, reason: string, date: string }>>({});
+  const [globalAppStatus, setGlobalAppStatus] = useState<{ maintenance: boolean, maintenanceMessage?: string }>({ maintenance: false });
 
   useEffect(() => {
     // Listen to global config for games
-    const unsubscribe = onSnapshot(doc(db, "config", "games"), (docSnap) => {
+    const unsubscribeGames = onSnapshot(doc(db, "config", "games"), (docSnap) => {
        if (docSnap.exists()) {
           setGlobalGameStatus(docSnap.data() as any);
        }
     }, (error) => {
        console.error("Error fetching games config", error);
     });
-    return () => unsubscribe();
+    
+    // Listen to global app status
+    const unsubscribeApp = onSnapshot(doc(db, "config", "app"), (docSnap) => {
+       if (docSnap.exists()) {
+          setGlobalAppStatus(docSnap.data() as any);
+       }
+    }, (error) => {});
+
+    return () => {
+        unsubscribeGames();
+        unsubscribeApp();
+    };
   }, []);
 
   const balance = user?.balance || 0;
@@ -731,6 +744,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         logoutProgress,
         logoutMessage,
         globalGameStatus,
+        globalAppStatus,
       }}
     >
       {!loading ? (

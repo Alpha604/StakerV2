@@ -10,6 +10,7 @@ export function ScratchMillionnaire() {
   const [betAmount, setBetAmount] = useState(25); 
   const [isPlaying, setIsPlaying] = useState(false);
   const [ticketBought, setTicketBought] = useState(false);
+  const [ticketId, setTicketId] = useState(0);
   const [revealedBoxes, setRevealedBoxes] = useState([false, false, false]); // game 1, 2, 3
   
   const [segments, setSegments] = useState<{s1: string, s2: string, val: number}[]>([]);
@@ -25,24 +26,23 @@ export function ScratchMillionnaire() {
 
   const generateGame = () => {
      let currentWin = 0;
-     const isG1Win = Math.random() < 0.2;
+     const isG1Win = Math.random() < 0.35;
      let segs = [];
      for(let i=0; i<8; i++) {
-        if(isG1Win && currentWin === 0 && Math.random() < 0.2) {
+        if(isG1Win && currentWin === 0 && Math.random() < 0.25) {
            let val = betAmount * (Math.floor(Math.random() * 5) + 1);
            currentWin += val;
            segs.push({s1: "🍎", s2: "🍎", val});
         } else {
            segs.push({s1: ICONS[Math.floor(Math.random()*ICONS.length)], s2: ICONS[Math.floor(Math.random()*ICONS.length)], val: betAmount*2});
            if (segs[i].s1 === segs[i].s2) {
-               // Prevent accidental win
                segs[i].s2 = "🥑"; 
            }
         }
      }
      setSegments(segs);
      
-     const isG2Win = Math.random() < 0.15;
+     const isG2Win = Math.random() < 0.35;
      if (isG2Win) {
          let val = betAmount * (Math.floor(Math.random() * 10) + 2);
          currentWin += val;
@@ -51,7 +51,7 @@ export function ScratchMillionnaire() {
          setWeights({ diamond: 50 + Math.floor(Math.random()*40), sapphire: 100 + Math.floor(Math.random()*50), val: betAmount*5});
      }
      
-     const isG3Win = Math.random() < 0.05;
+     const isG3Win = Math.random() < 0.20;
      if (isG3Win) {
          let val = betAmount * (Math.floor(Math.random() * 50) + 10);
          currentWin += val;
@@ -68,9 +68,14 @@ export function ScratchMillionnaire() {
     subtractBalance(betAmount);
     setWinInfo(null);
     setIsPlaying(true);
-    setTicketBought(true);
+    setTicketBought(false);
     setRevealedBoxes([false, false, false]);
-    generateGame();
+    setTicketId(prev => prev + 1);
+    
+    setTimeout(() => {
+        generateGame();
+        setTicketBought(true);
+    }, 400);
   };
 
   const handleReveal = (index: number) => {
@@ -94,8 +99,28 @@ export function ScratchMillionnaire() {
           }
           setIsPlaying(false);
           setTicketBought(false);
-       }, 500);
+       }, 2000);
     }
+  };
+
+  const revealAll = () => {
+    if (!ticketBought || revealedBoxes.every(Boolean)) return;
+    setRevealedBoxes([true, true, true]);
+    playHit();
+    
+    setTimeout(() => {
+       if (totalWinAmount > 0) {
+          const multiplier = totalWinAmount / betAmount;
+          addBalance(totalWinAmount);
+          setWinInfo({ multiplier, payout: totalWinAmount });
+          playWin();
+          recordBet("Super Millionnaire", betAmount, multiplier, totalWinAmount - betAmount);
+       } else {
+          playLoss();
+          recordBet("Super Millionnaire", betAmount, 0, -betAmount);
+       }
+       setIsPlaying(false);
+    }, 500);
   };
 
   const g2Win = weights.diamond > weights.sapphire;
@@ -149,11 +174,11 @@ export function ScratchMillionnaire() {
 
           <div className="mt-auto pt-4">
              <button 
-                onClick={buyTicket}
-                disabled={balance < betAmount || isPlaying || ticketBought}
+                onClick={ticketBought && !revealedBoxes.every(Boolean) ? revealAll : buyTicket}
+                disabled={(!ticketBought && balance < betAmount) || (isPlaying && !ticketBought)}
                 className="w-full py-3.5 bg-[#00e701] hover:bg-[#1fff20] text-black font-black uppercase text-[15px] rounded-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_#00c701] active:shadow-none active:translate-y-1"
              >
-                {ticketBought ? "Grattez TOUT le ticket!" : "Acheter (" + formatCurrency(betAmount) + ")"}
+                {ticketBought && !revealedBoxes.every(Boolean) ? "Tout Gratter" : (isPlaying && !ticketBought ? "Génération..." : "Acheter (" + formatCurrency(betAmount) + ")")}
              </button>
           </div>
         </div>
@@ -172,6 +197,7 @@ export function ScratchMillionnaire() {
                 <ScratchArea 
                    revealed={revealedBoxes[0]} 
                    onReveal={() => handleReveal(0)}
+                   resetKey={ticketId}
                    coverColors={["#eab308", "#ca8a04", "#a16207"]}
                    coverText="?"
                    className="w-full min-h-[160px] md:min-h-[120px] rounded-lg shadow-inner border-2 border-yellow-500 bg-black/40"
@@ -200,6 +226,7 @@ export function ScratchMillionnaire() {
                     <ScratchArea 
                        revealed={revealedBoxes[1]} 
                        onReveal={() => handleReveal(1)}
+                       resetKey={ticketId}
                        coverColors={["#eab308", "#ca8a04", "#a16207"]}
                        coverText="GRATTEZ"
                        className="w-full h-32 rounded-lg shadow-inner border-2 border-yellow-500 bg-black/40"
@@ -226,6 +253,7 @@ export function ScratchMillionnaire() {
                     <ScratchArea 
                        revealed={revealedBoxes[2]} 
                        onReveal={() => handleReveal(2)}
+                       resetKey={ticketId}
                        coverColors={["#eab308", "#ca8a04", "#a16207"]}
                        coverText="TICKET D'OR"
                        className="w-full h-32 rounded-lg shadow-inner border-2 border-yellow-500 bg-black/40"

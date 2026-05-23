@@ -7,14 +7,16 @@ export function ScratchArea({
   children,
   coverColors = ["#a0aec0", "#cbd5e1", "#94a3b8"],
   coverText = "STAKE",
-  className
+  className,
+  resetKey
 }: { 
   onReveal: () => void, 
   revealed: boolean, 
   children: React.ReactNode, 
   coverColors?: string[],
   coverText?: string,
-  className?: string
+  className?: string,
+  resetKey?: string | number
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -66,7 +68,7 @@ export function ScratchArea({
     } else {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-  }, [revealed, coverColors, coverText]);
+  }, [revealed, coverColors, coverText, resetKey]);
 
   const scratch = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent, isStart: boolean = false) => {
     if (revealed) return;
@@ -96,7 +98,7 @@ export function ScratchArea({
     ctx.globalCompositeOperation = 'destination-out';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 45; 
+    ctx.lineWidth = 55; // Slightly larger brush
     
     if (isStart || !lastPosRef.current) {
         ctx.beginPath();
@@ -107,6 +109,15 @@ export function ScratchArea({
         ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
         ctx.lineTo(x, y);
         ctx.stroke();
+        
+        // Add random "scratches" to roughen the edge
+        for (let i=0; i<3; i++) {
+           ctx.lineWidth = Math.random() * 10 + 2;
+           ctx.beginPath();
+           ctx.moveTo(x + (Math.random() * 30 - 15), y + (Math.random() * 30 - 15));
+           ctx.lineTo(lastPosRef.current.x + (Math.random() * 30 - 15), lastPosRef.current.y + (Math.random() * 30 - 15));
+           ctx.stroke();
+        }
     }
     
     lastPosRef.current = { x, y };
@@ -116,7 +127,7 @@ export function ScratchArea({
 
   const checkReveal = () => {
     const now = Date.now();
-    if (now - lastCheckTimeRef.current < 100) return;
+    if (now - lastCheckTimeRef.current < 150) return; // Slightly longer debounce
     lastCheckTimeRef.current = now;
 
     const canvas = canvasRef.current;
@@ -133,7 +144,7 @@ export function ScratchArea({
     }
     
     const totalPixelsChecked = data.length / 16;
-    if (transparentPixels / totalPixelsChecked > 0.4) {
+    if (transparentPixels / totalPixelsChecked > 0.85) { // 85% threshold for reveal
       onReveal();
     }
   };
@@ -154,12 +165,17 @@ export function ScratchArea({
       lastPosRef.current = null;
   };
 
+  // Preload a custom cursor image if we want, or just leave it crosshair
   return (
     <div className={cn("relative overflow-hidden select-none touch-none", className)}>
         {children}
         <canvas
             ref={canvasRef}
-            className={cn("absolute inset-0 w-full h-full cursor-crosshair transition-opacity duration-500", revealed ? "opacity-0 pointer-events-none" : "opacity-100 z-10")}
+            className={cn(
+                "absolute inset-0 w-full h-full",
+                revealed ? "opacity-0 pointer-events-none transition-opacity duration-500" : "opacity-100 z-10 transition-none",
+                isDrawing ? "cursor-grabbing" : "cursor-grab"
+            )}
             onMouseDown={handleDown}
             onMouseMove={handleMove}
             onMouseUp={handleUp}

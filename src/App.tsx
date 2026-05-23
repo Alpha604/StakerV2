@@ -177,8 +177,57 @@ function InnerApp() {
 }
 
 function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, setSidebarOpen }: any) {
-  const { user, isLoggingOut, showLogoutConfirm, setShowLogoutConfirm, logoutUser } = useUser() as any;
+  const { user, isLoggingOut, showLogoutConfirm, setShowLogoutConfirm, logoutUser, globalAppStatus } = useUser() as any;
   const [chatOpen, setChatOpen] = useState(false);
+
+  if (globalAppStatus?.maintenance && user?.role !== "admin") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f212e] text-white relative overflow-hidden">
+        {/* Background Patterns */}
+        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #1475e1 0%, transparent 60%)' }}></div>
+        <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00e701] to-transparent"></div>
+        
+        <div className="z-10 flex flex-col items-center space-y-8 animate-in fade-in zoom-in duration-500">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#00e701] blur-3xl opacity-20 rounded-full animate-pulse"></div>
+            {/* Stake Box Logo */}
+            <div className="w-24 h-24 bg-[#14232e] border border-[#2f4553] rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden">
+              <div className="absolute inset-0 border-[3px] border-[#00e701]/30 rounded-2xl animate-[spin_4s_linear_infinite]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 10%, 0 10%)' }}></div>
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
+                alt="Stake Logo" 
+                className="w-16 opacity-30 brightness-[100] invert"
+              />
+            </div>
+            
+            {/* Ping indicator */}
+            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[#00e701] shadow-[0_0_15px_#00e701] animate-ping"></div>
+            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[#00e701]"></div>
+          </div>
+          
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
+              Maintenance En Cours
+            </h1>
+            <p className="text-[#a2bbd2] max-w-sm mx-auto font-medium">
+              Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-[#00e701] font-bold tracking-widest uppercase mt-4">
+               <span className="w-2 h-2 rounded-full bg-[#00e701] animate-bounce"></span>
+               Nous revenons bientôt !
+            </div>
+          </div>
+          
+          <button 
+             onClick={() => window.location.reload()}
+             className="mt-8 px-8 py-3 bg-[#1a2c38] hover:bg-[#203746] text-[#b1cadd] font-bold rounded-lg border border-[#2f4553] transition-all"
+          >
+             Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (user?.status === "banned" || user?.status === "suspended") {
     return <BannedScreen user={user} />;

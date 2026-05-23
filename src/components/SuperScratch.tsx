@@ -249,6 +249,7 @@ export function SuperScratch() {
   const [ticketsCount, setTicketsCount] = useState<number>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [ticketBought, setTicketBought] = useState<boolean>(false);
+  const [ticketId, setTicketId] = useState<number>(0);
   const [grid, setGrid] = useState<string[]>(Array(9).fill("hidden"));
   const [revealedStates, setRevealedStates] = useState<boolean[]>(Array(9).fill(false));
   const [winInfo, setWinInfo] = useState<{ multiplier: number; payout: number } | null>(null);
@@ -346,10 +347,14 @@ export function SuperScratch() {
     setWinSymbolId(null);
 
     if (ticketsCount === 1) {
-      setTicketBought(true);
-      const { resultGrid } = generateTicket();
-      setGrid(resultGrid);
+      setTicketBought(false);
       setRevealedStates(Array(9).fill(false));
+      setTicketId(prev => prev + 1);
+      setTimeout(() => {
+          const { resultGrid } = generateTicket();
+          setGrid(resultGrid);
+          setTicketBought(true);
+      }, 400);
     } else {
        // Multi-ticket instant play
        let totalPayout = 0;
@@ -401,7 +406,7 @@ export function SuperScratch() {
     if (revealedStates.some(s => !s)) {
       playHit();
       setRevealedStates(Array(9).fill(true));
-      finishTicket();
+      setTimeout(() => finishTicket(), 500);
     }
   };
 
@@ -634,16 +639,16 @@ export function SuperScratch() {
               </div>
             ) : (
                <div className="flex gap-2">
-                 {!ticketBought ? (
+                 {!ticketBought || revealedStates.every(s => s) ? (
                    <button
                     onClick={buyTicket}
-                    disabled={balance < (betAmount * ticketsCount) || betAmount <= 0 || isPlaying}
+                    disabled={balance < (betAmount * ticketsCount) || betAmount <= 0 || (isPlaying && !ticketBought)}
                     className={cn(
                       "flex-1 py-4 rounded font-bold transition-all text-sm shadow-[0_4px_0_#149e53] hover:translate-y-1 hover:shadow-[0_0px_0_#149e53] active:translate-y-1 active:shadow-none bg-[#1bc86a] hover:bg-[#1bc86a] text-black",
-                      (balance < (betAmount * ticketsCount) || betAmount <= 0 || isPlaying) && "opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-[0_4px_0_#149e53]"
+                      (balance < (betAmount * ticketsCount) || betAmount <= 0 || (isPlaying && !ticketBought)) && "opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-[0_4px_0_#149e53]"
                     )}
                    >
-                    Acheter {ticketsCount > 1 ? `${ticketsCount} Tickets` : "Ticket"}
+                    {isPlaying && !ticketBought ? "Génération..." : `Acheter ${ticketsCount > 1 ? `${ticketsCount} Tickets` : "Ticket"}`}
                    </button>
                  ) : (
                    <button
@@ -654,7 +659,7 @@ export function SuperScratch() {
                       (revealedStates.every(s => s) || isAutoPlaying) && "opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-[0_4px_0_#149e53]"
                     )}
                    >
-                    Gratter Tout
+                    Tout Gratter
                    </button>
                  )}
                </div>
@@ -709,24 +714,13 @@ export function SuperScratch() {
              <div className="relative z-10 p-2 bg-black/40 rounded-2xl shadow-inner backdrop-blur-sm border border-white/5 w-full">
                <ScratchArea 
                     revealed={revealedStates.every(Boolean)} 
+                    resetKey={ticketId}
                     onReveal={() => {
                         if (!ticketBought || isAutoPlayingRef.current) return;
                         playHit();
                         const nextStates = Array(9).fill(true);
                         setRevealedStates(nextStates);
-                        
-                        setTimeout(() => {
-                          const amount = betAmount * ticketsCount * (winInfo?.wMulti || 0);
-                          if (winInfo?.wMulti && winInfo.wMulti > 0) {
-                            addBalance(amount);
-                            playWin();
-                            recordBet(TICKETS[ticketType].name, betAmount * ticketsCount, winInfo.wMulti, amount - (betAmount * ticketsCount));
-                          } else {
-                            playLoss();
-                            recordBet(TICKETS[ticketType].name, betAmount * ticketsCount, 0, -(betAmount * ticketsCount));
-                          }
-                          setIsPlaying(false);
-                        }, 500);
+                        setTimeout(() => finishTicket(), 2000);
                     }}
                     coverColors={ticketData.colors.scratchGradient}
                     coverText="STAKE"
