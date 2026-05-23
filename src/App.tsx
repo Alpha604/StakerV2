@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, Lock } from "lucide-react";
 import { UserProvider, useUser } from "./context/UserContext";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -23,6 +23,7 @@ import { Baccarat } from "./components/Baccarat";
 import { TomeOfLife } from "./components/TomeOfLife";
 import { LiveSessionWidget } from "./components/LiveSessionWidget";
 import { TruckLoader } from "./components/TruckLoader";
+import { LoginModal } from "./components/LoginModal";
 import { Blackjack } from "./components/Blackjack";
 import { BlackjackOriginal } from "./components/BlackjackOriginal";
 import { Chicken } from "./components/Chicken";
@@ -202,6 +203,7 @@ function InnerAppContent({
     globalAppStatus,
   } = useUser() as any;
   const [chatOpen, setChatOpen] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   // Device detection
   const isIos =
@@ -356,6 +358,19 @@ function InnerAppContent({
             Réessayer
           </button>
         </div>
+
+        {/* Secret Admin Login Button */}
+        <button
+          onClick={() => setShowAdminLogin(true)}
+          className="absolute bottom-6 right-6 p-3 bg-black/20 hover:bg-black/40 text-gray-500 hover:text-white rounded-full transition-all border border-transparent hover:border-gray-700"
+          title="Accès Administrateur"
+        >
+          <Lock size={18} />
+        </button>
+
+        {showAdminLogin && (
+          <LoginModal onClose={() => setShowAdminLogin(false)} />
+        )}
       </div>
     );
   }
