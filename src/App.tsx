@@ -202,24 +202,21 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
         <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-transparent to-transparent" style={{ backgroundImage: `linear-gradient(to right, transparent, ${modeColor}, transparent)` }}></div>
         
         <div className="z-10 flex flex-col items-center space-y-8 animate-in fade-in zoom-in duration-500">
-          <div className="relative">
-            <div className="absolute inset-0 blur-3xl opacity-20 rounded-full animate-pulse" style={{ backgroundColor: modeColor }}></div>
-            {/* Stake Box Logo */}
-            <div className="w-24 h-24 bg-[#14232e] border border-[#2f4553] rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden">
-              <div className="absolute inset-0 border-[3px] rounded-2xl animate-[spin_4s_linear_infinite] opacity-30" style={{ borderColor: modeColor, clipPath: 'polygon(0 0, 100% 0, 100% 10%, 0 10%)' }}></div>
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
-                alt="Stake Logo" 
-                className="w-16 opacity-50 brightness-[100] invert"
-              />
-            </div>
+          <div className="relative group">
+            <div className="absolute inset-0 blur-2xl opacity-10 rounded-full animate-pulse" style={{ backgroundColor: modeColor }}></div>
             
-            {/* Ping indicator */}
-            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full animate-ping opacity-75" style={{ backgroundColor: modeColor, boxShadow: `0 0 15px ${modeColor}` }}></div>
-            <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full" style={{ backgroundColor: modeColor }}></div>
+            <div className="relative w-24 h-24 flex items-center justify-center bg-gradient-to-b from-[#1a2c38] to-[#0f212e] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-[#2f4553]/50 overflow-hidden">
+               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-[150%] animate-[shimmer_2s_infinite]"></div>
+               
+               <img 
+                 src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
+                 alt="Stake Logo" 
+                 className="w-14 opacity-90 brightness-[100] invert drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] animate-pulse"
+               />
+            </div>
           </div>
           
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 pt-4">
             <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
               {modeTitle}
             </h1>
