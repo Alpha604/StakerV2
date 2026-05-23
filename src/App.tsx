@@ -98,13 +98,17 @@ export type ViewType =
 
 class ErrorBoundary extends React.Component<any, any> {
   state = { hasError: false, error: null };
-  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) { console.error("Uncaught error:", error, errorInfo); }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
   render() {
     if (this.state && (this.state as any).hasError) {
       return (
         <div className="text-red-500 font-bold p-8">
-          App crashed: {(this.state as any).error?.message} 
+          App crashed: {(this.state as any).error?.message}
           <pre>{(this.state as any).error?.stack}</pre>
         </div>
       );
@@ -138,14 +142,14 @@ function InnerApp() {
       }
     };
     window.addEventListener("resize", handleResize);
-    
+
     // Check for updates
     const currentVersion = "v1.1";
     const seenVersion = localStorage.getItem("seenUpdateVersion");
     if (seenVersion !== currentVersion) {
       setShowUpdate(true);
     }
-    
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -170,84 +174,132 @@ function InnerApp() {
     <UserProvider>
       <IPGuard>
         <UpdateModal isOpen={showUpdate} onClose={closeUpdate} />
-        <InnerAppContent view={view} sidebarOpen={sidebarOpen} isChangingView={isChangingView} handleSetView={handleSetView} setSidebarOpen={setSidebarOpen} />
+        <InnerAppContent
+          view={view}
+          sidebarOpen={sidebarOpen}
+          isChangingView={isChangingView}
+          handleSetView={handleSetView}
+          setSidebarOpen={setSidebarOpen}
+        />
       </IPGuard>
     </UserProvider>
   );
 }
 
-function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, setSidebarOpen }: any) {
-  const { user, isLoggingOut, showLogoutConfirm, setShowLogoutConfirm, logoutUser, globalAppStatus } = useUser() as any;
+function InnerAppContent({
+  view,
+  sidebarOpen,
+  isChangingView,
+  handleSetView,
+  setSidebarOpen,
+}: any) {
+  const {
+    user,
+    isLoggingOut,
+    showLogoutConfirm,
+    setShowLogoutConfirm,
+    logoutUser,
+    globalAppStatus,
+  } = useUser() as any;
   const [chatOpen, setChatOpen] = useState(false);
 
   // Device detection
-  const isIos = /iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIos =
+    /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const isAndroid = /android/i.test(navigator.userAgent);
-  const isMobile = isIos || isAndroid || /Mobi|Android/i.test(navigator.userAgent);
+  const isMobile =
+    isIos || isAndroid || /Mobi|Android/i.test(navigator.userAgent);
   const isDesktop = !isMobile;
 
-  const currentDeviceType = isIos ? 'ios' : isAndroid ? 'android' : isDesktop ? 'desktop' : 'unknown';
+  const currentDeviceType = isIos
+    ? "ios"
+    : isAndroid
+      ? "android"
+      : isDesktop
+        ? "desktop"
+        : "unknown";
 
   const [now, setNow] = useState(Date.now());
-  
+
   useEffect(() => {
-     if (globalAppStatus?.maintenance && globalAppStatus?.endTime) {
-        const interval = setInterval(() => setNow(Date.now()), 1000);
-        return () => clearInterval(interval);
-     }
+    if (globalAppStatus?.maintenance && globalAppStatus?.endTime) {
+      const interval = setInterval(() => setNow(Date.now()), 1000);
+      return () => clearInterval(interval);
+    }
   }, [globalAppStatus]);
 
   const shouldBlockDevice = () => {
-     if (!globalAppStatus?.maintenance) return false;
-     
-     if (globalAppStatus.autoUnlock && globalAppStatus.endTime && Date.now() > globalAppStatus.endTime) {
-        return false;
-     }
+    if (!globalAppStatus?.maintenance) return false;
 
-     if (user?.role === "admin") return false;
-     
-     const blockedDevices = globalAppStatus?.blockedDevices || [];
-     if (blockedDevices.length === 0) return true; // Empty array means NO filter -> ALL blocked
-     
-     return blockedDevices.includes(currentDeviceType);
+    if (
+      globalAppStatus.autoUnlock &&
+      globalAppStatus.endTime &&
+      Date.now() > globalAppStatus.endTime
+    ) {
+      return false;
+    }
+
+    if (user?.role === "admin") return false;
+
+    const blockedDevices = globalAppStatus?.blockedDevices || [];
+    if (blockedDevices.length === 0) return true; // Empty array means NO filter -> ALL blocked
+
+    return blockedDevices.includes(currentDeviceType);
   };
 
   if (shouldBlockDevice()) {
     let modeTitle = "Maintenance En Cours";
-    let modeDesc = "Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.";
+    let modeDesc =
+      "Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.";
     let modeColor = "#00e701"; // default stake green
-    
+
     if (globalAppStatus.mode === "arret") {
       modeTitle = "Service Interrompu";
-      modeDesc = "L'application est temporairement fermée. Veuillez réessayer plus tard.";
+      modeDesc =
+        "L'application est temporairement fermée. Veuillez réessayer plus tard.";
       modeColor = "#f43f5e"; // rose 500
     } else if (globalAppStatus.mode === "moderation") {
       modeTitle = "Modération Globale";
-      modeDesc = "L'accès à la plateforme est restreint pour des raisons de modération. Merci de patienter.";
+      modeDesc =
+        "L'accès à la plateforme est restreint pour des raisons de modération. Merci de patienter.";
       modeColor = "#3b82f6"; // blue 500
     }
 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f212e] text-white relative overflow-hidden">
         {/* Background Patterns */}
-        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at center, ${modeColor} 0%, transparent 40%)` }}></div>
-        <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-transparent to-transparent" style={{ backgroundImage: `linear-gradient(to right, transparent, ${modeColor}, transparent)` }}></div>
-        
+        <div
+          className="absolute inset-0 z-0 opacity-20 pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at center, ${modeColor} 0%, transparent 40%)`,
+          }}
+        ></div>
+        <div
+          className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-transparent to-transparent"
+          style={{
+            backgroundImage: `linear-gradient(to right, transparent, ${modeColor}, transparent)`,
+          }}
+        ></div>
+
         <div className="z-10 flex flex-col items-center space-y-8 animate-in fade-in zoom-in duration-500">
           <div className="relative group">
-            <div className="absolute inset-0 blur-2xl opacity-10 rounded-full animate-pulse" style={{ backgroundColor: modeColor }}></div>
-            
+            <div
+              className="absolute inset-0 blur-2xl opacity-10 rounded-full animate-pulse"
+              style={{ backgroundColor: modeColor }}
+            ></div>
+
             <div className="relative w-24 h-24 flex items-center justify-center bg-gradient-to-b from-[#1a2c38] to-[#0f212e] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-[#2f4553]/50 overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-[150%] animate-[shimmer_2s_infinite]"></div>
-               
-               <img 
-                 src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
-                 alt="Stake Logo" 
-                 className="w-14 opacity-90 brightness-[100] invert drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] animate-pulse"
-               />
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-[150%] animate-[shimmer_2s_infinite]"></div>
+
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg"
+                alt="Stake Logo"
+                className="w-14 opacity-90 brightness-[100] invert drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] animate-pulse"
+              />
             </div>
           </div>
-          
+
           <div className="text-center space-y-4 pt-4">
             <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
               {modeTitle}
@@ -257,36 +309,51 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
             </p>
             {globalAppStatus.endTime ? (
               <div className="flex flex-col items-center justify-center gap-2 mt-4">
-                 <div className="text-sm font-bold tracking-widest uppercase" style={{ color: modeColor }}>
-                    Temps Restant Estimé :
-                 </div>
-                 <div className="font-mono text-2xl font-bold bg-[#1a2c38] px-4 py-2 rounded-lg border border-[#2f4553] text-white">
-                    {(() => {
-                       const remaining = Math.max(0, globalAppStatus.endTime - now);
-                       const d = Math.floor(remaining / 86400000);
-                       const h = Math.floor((remaining % 86400000) / 3600000);
-                       const m = Math.floor((remaining % 3600000) / 60000);
-                       const s = Math.floor((remaining % 60000) / 1000);
-                       
-                       if (d > 0) return `${d}j ${h}h ${m}m ${s}s`;
-                       if (h > 0) return `${h}h ${m}m ${s}s`;
-                       return `${m}m ${s}s`;
-                    })()}
-                 </div>
+                <div
+                  className="text-sm font-bold tracking-widest uppercase"
+                  style={{ color: modeColor }}
+                >
+                  Temps Restant Estimé :
+                </div>
+                <div className="font-mono text-2xl font-bold bg-[#1a2c38] px-4 py-2 rounded-lg border border-[#2f4553] text-white">
+                  {(() => {
+                    const remaining = Math.max(
+                      0,
+                      globalAppStatus.endTime - now,
+                    );
+                    const d = Math.floor(remaining / 86400000);
+                    const h = Math.floor((remaining % 86400000) / 3600000);
+                    const m = Math.floor((remaining % 3600000) / 60000);
+                    const s = Math.floor((remaining % 60000) / 1000);
+
+                    const pad = (num: number) =>
+                      num.toString().padStart(2, "0");
+
+                    if (d > 0) return `${d}j ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+                    if (h > 0) return `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+                    return `${pad(m)}m ${pad(s)}s`;
+                  })()}
+                </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase mt-4" style={{ color: modeColor }}>
-                 <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: modeColor }}></span>
-                 Nous revenons bientôt !
+              <div
+                className="flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase mt-4"
+                style={{ color: modeColor }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ backgroundColor: modeColor }}
+                ></span>
+                Nous revenons bientôt !
               </div>
             )}
           </div>
-          
-          <button 
-             onClick={() => window.location.reload()}
-             className="mt-8 px-8 py-3 bg-[#1a2c38] hover:bg-[#203746] text-[#b1cadd] font-bold rounded-lg border border-[#2f4553] transition-all"
+
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-8 px-8 py-3 bg-[#1a2c38] hover:bg-[#203746] text-[#b1cadd] font-bold rounded-lg border border-[#2f4553] transition-all"
           >
-             Réessayer
+            Réessayer
           </button>
         </div>
       </div>
@@ -303,13 +370,27 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
         <Toaster position="top-center" reverseOrder={false} />
         <div className="bg-bg-panel border border-border-subtle p-8 md:p-12 rounded-2xl max-w-xl w-full mx-4 relative z-10 flex flex-col items-center text-center shadow-2xl">
           <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6">
-            <svg className="text-yellow-500 w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="text-yellow-500 w-12 h-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
-          <h1 className="text-3xl font-black text-white mb-2">Compte en attente de vérification</h1>
+          <h1 className="text-3xl font-black text-white mb-2">
+            Compte en attente de vérification
+          </h1>
           <p className="text-text-secondary mb-8">
-            Votre compte vient d'être créé. Un administrateur doit l'approuver avant que vous puissiez commencer à jouer, déposer ou retirer des fonds. Merci de votre patience.
+            Votre compte vient d'être créé. Un administrateur doit l'approuver
+            avant que vous puissiez commencer à jouer, déposer ou retirer des
+            fonds. Merci de votre patience.
           </p>
           <button
             onClick={() => logoutUser()}
@@ -323,112 +404,268 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
   }
 
   return (
-      <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
-        <Toaster position="top-right" reverseOrder={true} toastOptions={{ className: 'min-w-[250px]' }} />
-        {showLogoutConfirm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm transition-opacity duration-300 px-4">
-            <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-sm w-full border border-[#374151] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
-              <LogOut className="text-red-500 mb-4 h-12 w-12" />
-              <h2 className="text-2xl font-black text-white mb-2">Déconnexion</h2>
-              <p className="text-text-secondary mb-8 font-medium">Êtes-vous sûr de vouloir vous déconnecter ?</p>
-              <div className="flex gap-4 w-full">
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 py-3 bg-bg-panel hover:bg-bg-inner border border-border-subtle hover:border-white text-white font-bold rounded-lg transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLogoutConfirm(false);
-                    logoutUser();
-                  }}
-                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors border-b-4 border-red-700 active:border-b-0 active:translate-y-1"
-                >
-                  Confirmer
-                </button>
-              </div>
+    <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
+      <Toaster
+        position="top-right"
+        reverseOrder={true}
+        toastOptions={{ className: "min-w-[250px]" }}
+      />
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm transition-opacity duration-300 px-4">
+          <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-sm w-full border border-[#374151] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+            <LogOut className="text-red-500 mb-4 h-12 w-12" />
+            <h2 className="text-2xl font-black text-white mb-2">Déconnexion</h2>
+            <p className="text-text-secondary mb-8 font-medium">
+              Êtes-vous sûr de vouloir vous déconnecter ?
+            </p>
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3 bg-bg-panel hover:bg-bg-inner border border-border-subtle hover:border-white text-white font-bold rounded-lg transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  logoutUser();
+                }}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors border-b-4 border-red-700 active:border-b-0 active:translate-y-1"
+              >
+                Confirmer
+              </button>
             </div>
           </div>
-        )}
-        <Header
-          setView={handleSetView as any}
-          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          toggleChat={() => setChatOpen(!chatOpen)}
-        />
-        <div className="flex flex-1 relative items-stretch">
-          {/* Mobile Sidebar Overlay */}
-          {sidebarOpen && (
-             <div className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>
-          )}
-          <div className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r pointer-events-auto" : "w-0 min-w-0 border-r-0 opacity-0 pointer-events-none md:pointer-events-auto md:opacity-100 overflow-hidden"} flex-shrink-0 absolute md:relative top-0 bottom-0 left-0 bg-[#0f212e]`}>
-            <Sidebar view={view} setView={handleSetView as any} isOpen={sidebarOpen} />
-          </div>
-          <main className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}>
-            <div className="flex-1">
-              {(view === "home" || view === "favorites" || view === "originals" || view === "slots" || view === "stake-gaming" || view === "evolution" || view === "grattage") && <Home view={view} setView={handleSetView as any} />}
-              {view === "leaderboard" && (
-                  <div className="p-4 md:p-8 relative min-h-full">
-                      <Leaderboard onClose={() => handleSetView("home")} isPage={true} />
-                  </div>
-              )}
-              {view === "verify" && <VerifyBet />}
-              {view === "stats" && <Stats />}
-              {view === "admin" && <AdminPanel />}
-              {view === "profile" && <Profile />}
-              {view === "rewards" && <Rewards />}
-              {view === "mines" && <ApprovalGuard gameName="mines"><Mines /></ApprovalGuard>}
-              {view === "roulette" && <ApprovalGuard gameName="roulette"><Roulette /></ApprovalGuard>}
-              {view === "keno" && <ApprovalGuard gameName="keno"><Keno /></ApprovalGuard>}
-              {view === "dice" && <ApprovalGuard gameName="dice"><Dice /></ApprovalGuard>}
-              {view === "plinko" && <ApprovalGuard gameName="plinko"><Plinko /></ApprovalGuard>}
-              {view === "crash" && <ApprovalGuard gameName="crash"><Crash /></ApprovalGuard>}
-              {view === "limbo" && <ApprovalGuard gameName="limbo"><Limbo /></ApprovalGuard>}
-              {view === "wheel" && <ApprovalGuard gameName="wheel"><Wheel /></ApprovalGuard>}
-              {view === "super-wheel" && <ApprovalGuard gameName="super-wheel"><SuperWheel /></ApprovalGuard>}
-              {view === "super-dragon-tower" && <ApprovalGuard gameName="super-dragon-tower"><SuperDragonTower /></ApprovalGuard>}
-              {view === "hilo" && <ApprovalGuard gameName="hilo"><Hilo /></ApprovalGuard>}
-              {view === "dragon-tower" && <ApprovalGuard gameName="dragon-tower"><DragonTower /></ApprovalGuard>}
-              {view === "flip" && <ApprovalGuard gameName="flip"><Flip /></ApprovalGuard>}
-              {view === "slide" && <ApprovalGuard gameName="slide"><Slide /></ApprovalGuard>}
-              {view === "video-poker" && <ApprovalGuard gameName="video-poker"><VideoPoker /></ApprovalGuard>}
-              {view === "baccarat" && <ApprovalGuard gameName="baccarat"><Baccarat /></ApprovalGuard>}
-              {view === "blackjack" && <ApprovalGuard gameName="blackjack"><BlackjackOriginal /></ApprovalGuard>}
-              {view === "tome-of-life" && <ApprovalGuard gameName="tome-of-life"><TomeOfLife /></ApprovalGuard>}
-              {view === "slots-game" && <ApprovalGuard gameName="slots-game"><Slots /></ApprovalGuard>}
-              {view === "chicken" && <ApprovalGuard gameName="chicken"><Chicken /></ApprovalGuard>}
-              {view === "moles" && <ApprovalGuard gameName="moles"><Moles /></ApprovalGuard>}
-              {view === "scarab-spin" && <ApprovalGuard gameName="scarab-spin"><ScarabSpin /></ApprovalGuard>}
-              {view === "le-bandit" && <ApprovalGuard gameName="le-bandit"><LeBandit /></ApprovalGuard>}
-              {view === "sweet-bonanza" && <ApprovalGuard gameName="sweet-bonanza"><SweetBonanza /></ApprovalGuard>}
-              {view === "ice-fishing" && <ApprovalGuard gameName="Ice Fishing"><IceFishing /></ApprovalGuard>}
-              {view === "blackjack-evolution" && <ApprovalGuard gameName="Blackjack"><Blackjack /></ApprovalGuard>}
-              {view === "super-scratch" && <ApprovalGuard gameName="Super Scratch"><SuperScratch /></ApprovalGuard>}
-              {view === "scratch-cash" && <ApprovalGuard gameName="Cash"><ScratchCash /></ApprovalGuard>}
-              {view === "scratch-maxi-cash" && <ApprovalGuard gameName="Maxi Cash"><ScratchMaxiCash /></ApprovalGuard>}
-              {view === "scratch-millionnaire" && <ApprovalGuard gameName="Super Millionnaire"><ScratchMillionnaire /></ApprovalGuard>}
-              {view === "scratch-supra-halla" && <ApprovalGuard gameName="Supra Halla"><ScratchSupraHalla /></ApprovalGuard>}
-            </div>
-            
-            {/* Footer */}
-            <footer className="w-full bg-bg-panel/50 border-t border-border-subtle py-8 px-4 flex flex-col items-center justify-center gap-4 mt-12 bg-pattern">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg" 
-                alt="Stake Logo" 
-                className="h-6 opacity-30 brightness-[100] invert transition-opacity hover:opacity-80"
-              />
-              <p className="text-text-secondary text-xs">© 2026 Stake Casino. Tous droits réservés.</p>
-              <p className="text-[#2f4553] text-[10px] uppercase font-bold tracking-widest mt-2 hover:text-[#557086] transition-colors cursor-default">v2.5.0</p>
-            </footer>
-          </main>
         </div>
-        {user && user.permissions?.canChat !== false && (
-          <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      )}
+      <Header
+        setView={handleSetView as any}
+        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        toggleChat={() => setChatOpen(!chatOpen)}
+      />
+      <div className="flex flex-1 relative items-stretch">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
         )}
-        <LiveSessionWidget />
-        {isChangingView && !isLoggingOut && <TruckLoader />}
-        {isLoggingOut && <LogoutScreen />}
+        <div
+          className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r pointer-events-auto" : "w-0 min-w-0 border-r-0 opacity-0 pointer-events-none md:pointer-events-auto md:opacity-100 overflow-hidden"} flex-shrink-0 absolute md:relative top-0 bottom-0 left-0 bg-[#0f212e]`}
+        >
+          <Sidebar
+            view={view}
+            setView={handleSetView as any}
+            isOpen={sidebarOpen}
+          />
+        </div>
+        <main
+          className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}
+        >
+          <div className="flex-1">
+            {(view === "home" ||
+              view === "favorites" ||
+              view === "originals" ||
+              view === "slots" ||
+              view === "stake-gaming" ||
+              view === "evolution" ||
+              view === "grattage") && (
+              <Home view={view} setView={handleSetView as any} />
+            )}
+            {view === "leaderboard" && (
+              <div className="p-4 md:p-8 relative min-h-full">
+                <Leaderboard
+                  onClose={() => handleSetView("home")}
+                  isPage={true}
+                />
+              </div>
+            )}
+            {view === "verify" && <VerifyBet />}
+            {view === "stats" && <Stats />}
+            {view === "admin" && <AdminPanel />}
+            {view === "profile" && <Profile />}
+            {view === "rewards" && <Rewards />}
+            {view === "mines" && (
+              <ApprovalGuard gameName="mines">
+                <Mines />
+              </ApprovalGuard>
+            )}
+            {view === "roulette" && (
+              <ApprovalGuard gameName="roulette">
+                <Roulette />
+              </ApprovalGuard>
+            )}
+            {view === "keno" && (
+              <ApprovalGuard gameName="keno">
+                <Keno />
+              </ApprovalGuard>
+            )}
+            {view === "dice" && (
+              <ApprovalGuard gameName="dice">
+                <Dice />
+              </ApprovalGuard>
+            )}
+            {view === "plinko" && (
+              <ApprovalGuard gameName="plinko">
+                <Plinko />
+              </ApprovalGuard>
+            )}
+            {view === "crash" && (
+              <ApprovalGuard gameName="crash">
+                <Crash />
+              </ApprovalGuard>
+            )}
+            {view === "limbo" && (
+              <ApprovalGuard gameName="limbo">
+                <Limbo />
+              </ApprovalGuard>
+            )}
+            {view === "wheel" && (
+              <ApprovalGuard gameName="wheel">
+                <Wheel />
+              </ApprovalGuard>
+            )}
+            {view === "super-wheel" && (
+              <ApprovalGuard gameName="super-wheel">
+                <SuperWheel />
+              </ApprovalGuard>
+            )}
+            {view === "super-dragon-tower" && (
+              <ApprovalGuard gameName="super-dragon-tower">
+                <SuperDragonTower />
+              </ApprovalGuard>
+            )}
+            {view === "hilo" && (
+              <ApprovalGuard gameName="hilo">
+                <Hilo />
+              </ApprovalGuard>
+            )}
+            {view === "dragon-tower" && (
+              <ApprovalGuard gameName="dragon-tower">
+                <DragonTower />
+              </ApprovalGuard>
+            )}
+            {view === "flip" && (
+              <ApprovalGuard gameName="flip">
+                <Flip />
+              </ApprovalGuard>
+            )}
+            {view === "slide" && (
+              <ApprovalGuard gameName="slide">
+                <Slide />
+              </ApprovalGuard>
+            )}
+            {view === "video-poker" && (
+              <ApprovalGuard gameName="video-poker">
+                <VideoPoker />
+              </ApprovalGuard>
+            )}
+            {view === "baccarat" && (
+              <ApprovalGuard gameName="baccarat">
+                <Baccarat />
+              </ApprovalGuard>
+            )}
+            {view === "blackjack" && (
+              <ApprovalGuard gameName="blackjack">
+                <BlackjackOriginal />
+              </ApprovalGuard>
+            )}
+            {view === "tome-of-life" && (
+              <ApprovalGuard gameName="tome-of-life">
+                <TomeOfLife />
+              </ApprovalGuard>
+            )}
+            {view === "slots-game" && (
+              <ApprovalGuard gameName="slots-game">
+                <Slots />
+              </ApprovalGuard>
+            )}
+            {view === "chicken" && (
+              <ApprovalGuard gameName="chicken">
+                <Chicken />
+              </ApprovalGuard>
+            )}
+            {view === "moles" && (
+              <ApprovalGuard gameName="moles">
+                <Moles />
+              </ApprovalGuard>
+            )}
+            {view === "scarab-spin" && (
+              <ApprovalGuard gameName="scarab-spin">
+                <ScarabSpin />
+              </ApprovalGuard>
+            )}
+            {view === "le-bandit" && (
+              <ApprovalGuard gameName="le-bandit">
+                <LeBandit />
+              </ApprovalGuard>
+            )}
+            {view === "sweet-bonanza" && (
+              <ApprovalGuard gameName="sweet-bonanza">
+                <SweetBonanza />
+              </ApprovalGuard>
+            )}
+            {view === "ice-fishing" && (
+              <ApprovalGuard gameName="Ice Fishing">
+                <IceFishing />
+              </ApprovalGuard>
+            )}
+            {view === "blackjack-evolution" && (
+              <ApprovalGuard gameName="Blackjack">
+                <Blackjack />
+              </ApprovalGuard>
+            )}
+            {view === "super-scratch" && (
+              <ApprovalGuard gameName="Super Scratch">
+                <SuperScratch />
+              </ApprovalGuard>
+            )}
+            {view === "scratch-cash" && (
+              <ApprovalGuard gameName="Cash">
+                <ScratchCash />
+              </ApprovalGuard>
+            )}
+            {view === "scratch-maxi-cash" && (
+              <ApprovalGuard gameName="Maxi Cash">
+                <ScratchMaxiCash />
+              </ApprovalGuard>
+            )}
+            {view === "scratch-millionnaire" && (
+              <ApprovalGuard gameName="Super Millionnaire">
+                <ScratchMillionnaire />
+              </ApprovalGuard>
+            )}
+            {view === "scratch-supra-halla" && (
+              <ApprovalGuard gameName="Supra Halla">
+                <ScratchSupraHalla />
+              </ApprovalGuard>
+            )}
+          </div>
+
+          {/* Footer */}
+          <footer className="w-full bg-bg-panel/50 border-t border-border-subtle py-8 px-4 flex flex-col items-center justify-center gap-4 mt-12 bg-pattern">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Stake_logo.svg"
+              alt="Stake Logo"
+              className="h-6 opacity-30 brightness-[100] invert transition-opacity hover:opacity-80"
+            />
+            <p className="text-text-secondary text-xs">
+              © 2026 Stake Casino. Tous droits réservés.
+            </p>
+            <p className="text-[#2f4553] text-[10px] uppercase font-bold tracking-widest mt-2 hover:text-[#557086] transition-colors cursor-default">
+              v2.5.0
+            </p>
+          </footer>
+        </main>
       </div>
+      {user && user.permissions?.canChat !== false && (
+        <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      )}
+      <LiveSessionWidget />
+      {isChangingView && !isLoggingOut && <TruckLoader />}
+      {isLoggingOut && <LogoutScreen />}
+    </div>
   );
 }
 
@@ -445,19 +682,21 @@ function LogoutScreen() {
             <div className="absolute top-0 right-0 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
           )}
         </div>
-        
-        <h3 className="text-white text-xl font-bold mb-2">Sauvegarde en cours</h3>
+
+        <h3 className="text-white text-xl font-bold mb-2">
+          Sauvegarde en cours
+        </h3>
         <p className="text-[#9ca3af] text-sm text-center mb-6 h-10">
           {logoutMessage || "Veuillez patienter..."}
         </p>
 
         <div className="w-full bg-[#374151] rounded-full h-2 mb-2 overflow-hidden relative">
-          <div 
+          <div
             className="bg-[#10b981] h-2 rounded-full transition-all duration-300 ease-out flex relative"
             style={{ width: `${logoutProgress}%` }}
           >
             <div className="absolute top-0 bottom-0 left-0 right-0 overflow-hidden rounded-md">
-               <div className="w-full h-full bg-white opacity-20 transform -skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]"></div>
+              <div className="w-full h-full bg-white opacity-20 transform -skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]"></div>
             </div>
           </div>
         </div>
@@ -466,7 +705,7 @@ function LogoutScreen() {
           <span className="font-mono text-[#10b981]">{logoutProgress}%</span>
           <span>100%</span>
         </div>
-        
+
         <div className="mt-6 text-xs text-red-400 font-medium tracking-wide flex items-center justify-center gap-2">
           <AlertCircleIcon className="w-4 h-4" /> Ne fermez pas la page
         </div>
@@ -477,16 +716,38 @@ function LogoutScreen() {
 
 function CloudIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+      />
     </svg>
   );
 }
 
 function AlertCircleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
     </svg>
   );
 }
