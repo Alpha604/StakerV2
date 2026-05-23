@@ -1,7 +1,7 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect, useMemo } from "react";
 import { useUser, CustomUser, UserRank } from "../context/UserContext";
-import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle, Monitor } from "lucide-react";
+import { Search, Users, Activity, DollarSign, TrendingUp, Trash2, Shield, ShieldAlert, AlertTriangle, X, Save, History, Settings, Lock, Unlock, Gavel, Cpu, Database, Eye, Gamepad, Mail, CheckCircle, Monitor, Smartphone, Laptop } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
 import { collection, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getCountFromServer, increment } from "firebase/firestore";
@@ -15,6 +15,12 @@ export function AdminPanel() {
   const [recentBets, setRecentBets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  // App Lock Modal States
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [lockTargetMode, setLockTargetMode] = useState<'maintenance' | 'arret' | 'moderation'>('maintenance');
+  const [lockBlockedDevices, setLockBlockedDevices] = useState<string[]>([]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [globalBetsCount, setGlobalBetsCount] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -788,10 +794,19 @@ export function AdminPanel() {
                  </h3>
                  <p className="text-gray-400 mb-6 text-sm">Bloque temporairement l'application pour tous les utilisateurs non-administrateurs avec un écran spécifique.</p>
                  
+                 {globalAppStatus?.maintenance && (
+                   <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+                     <div>
+                       <div className="text-amber-500 font-bold mb-1">Cible : {globalAppStatus.blockedDevices?.length ? globalAppStatus.blockedDevices.join(', ').toUpperCase() : 'TOUS LES APPAREILS'}</div>
+                       <div className="text-amber-400/80 text-sm">Veuillez vous déconnecter ou utiliser le mode navigation privée (sur l'appareil ciblé) pour voir la page de restriction. En tant qu'admin, vous ne serez pas bloqué.</div>
+                     </div>
+                   </div>
+                 )}
+
                  <div className="flex flex-wrap items-center gap-4">
                    <button 
                       onClick={async () => {
-                         await setDoc(doc(db, "config", "app"), { maintenance: false, mode: 'active' }, { merge: true });
+                         await setDoc(doc(db, "config", "app"), { maintenance: false, mode: 'active', blockedDevices: [] }, { merge: true });
                       }}
                       className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'active' || (!globalAppStatus?.maintenance && !globalAppStatus?.mode) ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
                    >
@@ -799,8 +814,10 @@ export function AdminPanel() {
                    </button>
                    
                    <button 
-                      onClick={async () => {
-                         await setDoc(doc(db, "config", "app"), { maintenance: true, mode: 'maintenance' }, { merge: true });
+                      onClick={() => {
+                         setLockTargetMode('maintenance');
+                         setLockBlockedDevices(globalAppStatus?.blockedDevices || []);
+                         setShowLockModal(true);
                       }}
                       className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'maintenance' || (globalAppStatus?.maintenance && !globalAppStatus?.mode) ? "bg-amber-500 hover:bg-amber-600 text-black shadow-[0_0_15px_rgba(245,158,11,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
                    >
@@ -808,8 +825,10 @@ export function AdminPanel() {
                    </button>
 
                    <button 
-                      onClick={async () => {
-                         await setDoc(doc(db, "config", "app"), { maintenance: true, mode: 'arret' }, { merge: true });
+                      onClick={() => {
+                         setLockTargetMode('arret');
+                         setLockBlockedDevices(globalAppStatus?.blockedDevices || []);
+                         setShowLockModal(true);
                       }}
                       className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'arret' ? "bg-rose-500 hover:bg-rose-600 text-black shadow-[0_0_15px_rgba(244,63,94,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
                    >
@@ -817,8 +836,10 @@ export function AdminPanel() {
                    </button>
 
                    <button 
-                      onClick={async () => {
-                         await setDoc(doc(db, "config", "app"), { maintenance: true, mode: 'moderation' }, { merge: true });
+                      onClick={() => {
+                         setLockTargetMode('moderation');
+                         setLockBlockedDevices(globalAppStatus?.blockedDevices || []);
+                         setShowLockModal(true);
                       }}
                       className={`px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2 ${globalAppStatus?.mode === 'moderation' ? "bg-blue-500 hover:bg-blue-600 text-black shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "bg-gray-800 hover:bg-gray-700 text-white"}`}
                    >
@@ -1393,6 +1414,105 @@ export function AdminPanel() {
           </div>
         </div>
       ) : null}
+
+      {/* Lock App Modal */}
+      {showLockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f212e]/90 backdrop-blur-md animate-in fade-in duration-200">
+           <div className="bg-[#1a2c38] w-full max-w-md rounded-2xl border border-[#2f4553] shadow-2xl flex flex-col p-6 animate-in zoom-in-95 duration-200">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                 {lockTargetMode === 'maintenance' && <Lock className="text-amber-500" />}
+                 {lockTargetMode === 'arret' && <AlertTriangle className="text-rose-500" />}
+                 {lockTargetMode === 'moderation' && <Gavel className="text-blue-500" />}
+                 Confirmer le Mode {
+                   lockTargetMode === 'maintenance' ? 'Maintenance' : 
+                   lockTargetMode === 'arret' ? 'Arrêt' : 'Modération'
+                 }
+              </h3>
+              
+              <p className="text-sm text-gray-400 mb-6">
+                 Vous êtes sur le point de restreindre l'accès à l'application. Veuillez sélectionner les plateformes que vous souhaitez bloquer spécifiquement. Laissez vide pour bloquer TOUT LE MONDE.
+              </p>
+
+              <div className="flex pl-1 pr-1 flex-col gap-3 mb-6">
+                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${lockBlockedDevices.includes('desktop') ? 'bg-[#2f4553]/50 border-[#4d7187]' : 'bg-[#0f212e]/50 border-[#2f4553] hover:border-gray-500'}`}>
+                    <div className="flex items-center gap-3 text-white">
+                       <Monitor size={18} className="text-gray-400" />
+                       <span className="font-bold text-sm">Ordinateurs / Navigateurs Web</span>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 accent-[#00e701]"
+                      checked={lockBlockedDevices.includes('desktop')}
+                      onChange={e => {
+                         if (e.target.checked) setLockBlockedDevices(prev => [...prev, 'desktop']);
+                         else setLockBlockedDevices(prev => prev.filter(d => d !== 'desktop'));
+                      }}
+                    />
+                 </label>
+                 
+                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${lockBlockedDevices.includes('ios') ? 'bg-[#2f4553]/50 border-[#4d7187]' : 'bg-[#0f212e]/50 border-[#2f4553] hover:border-gray-500'}`}>
+                    <div className="flex items-center gap-3 text-white">
+                       <Smartphone size={18} className="text-gray-400" />
+                       <span className="font-bold text-sm">Appareils iOS (iPhone / iPad)</span>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 accent-[#00e701]"
+                      checked={lockBlockedDevices.includes('ios')}
+                      onChange={e => {
+                         if (e.target.checked) setLockBlockedDevices(prev => [...prev, 'ios']);
+                         else setLockBlockedDevices(prev => prev.filter(d => d !== 'ios'));
+                      }}
+                    />
+                 </label>
+                 
+                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${lockBlockedDevices.includes('android') ? 'bg-[#2f4553]/50 border-[#4d7187]' : 'bg-[#0f212e]/50 border-[#2f4553] hover:border-gray-500'}`}>
+                    <div className="flex items-center gap-3 text-white">
+                       <Smartphone size={18} className="text-gray-400" />
+                       <span className="font-bold text-sm">Appareils Android</span>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 accent-[#00e701]"
+                      checked={lockBlockedDevices.includes('android')}
+                      onChange={e => {
+                         if (e.target.checked) setLockBlockedDevices(prev => [...prev, 'android']);
+                         else setLockBlockedDevices(prev => prev.filter(d => d !== 'android'));
+                      }}
+                    />
+                 </label>
+              </div>
+
+              <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-[#2f4553]">
+                 <button 
+                   onClick={() => setShowLockModal(false)}
+                   className="px-4 py-2 bg-transparent hover:bg-white/5 text-gray-300 rounded-lg text-sm font-bold transition-colors"
+                 >
+                   Annuler
+                 </button>
+                 <button 
+                   onClick={async () => {
+                      const mode = lockTargetMode;
+                      await setDoc(doc(db, "config", "app"), { 
+                         maintenance: true, 
+                         mode, 
+                         blockedDevices: lockBlockedDevices 
+                      }, { merge: true });
+                      setShowLockModal(false);
+                   }}
+                   className={`px-4 py-2 font-bold rounded-lg text-sm transition-all flex items-center gap-2 text-black ${
+                     lockTargetMode === 'maintenance' ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.3)]' :
+                     lockTargetMode === 'arret' ? 'bg-rose-500 hover:bg-rose-600 shadow-[0_0_15px_rgba(244,63,94,0.3)]' :
+                     'bg-blue-500 hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                   }`}
+                 >
+                   <CheckCircle size={16} /> 
+                   Confirmer le Blocage
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 }

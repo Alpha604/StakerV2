@@ -180,7 +180,25 @@ function InnerAppContent({ view, sidebarOpen, isChangingView, handleSetView, set
   const { user, isLoggingOut, showLogoutConfirm, setShowLogoutConfirm, logoutUser, globalAppStatus } = useUser() as any;
   const [chatOpen, setChatOpen] = useState(false);
 
-  if (globalAppStatus?.maintenance && user?.role !== "admin") {
+  // Device detection
+  const isIos = /iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isMobile = isIos || isAndroid || /Mobi|Android/i.test(navigator.userAgent);
+  const isDesktop = !isMobile;
+
+  const currentDeviceType = isIos ? 'ios' : isAndroid ? 'android' : isDesktop ? 'desktop' : 'unknown';
+
+  const shouldBlockDevice = () => {
+     if (!globalAppStatus?.maintenance) return false;
+     if (user?.role === "admin") return false;
+     
+     const blockedDevices = globalAppStatus?.blockedDevices || [];
+     if (blockedDevices.length === 0) return true; // Empty array means NO filter -> ALL blocked
+     
+     return blockedDevices.includes(currentDeviceType);
+  };
+
+  if (shouldBlockDevice()) {
     let modeTitle = "Maintenance En Cours";
     let modeDesc = "Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.";
     let modeColor = "#00e701"; // default stake green
