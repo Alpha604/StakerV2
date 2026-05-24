@@ -70,6 +70,56 @@ export function VerifyBet() {
         }
       }
 
+      // Numeric pseudo-qrcode decoder (deterministic deciphering from digits)
+      const numericPart = searchId.replace(/[^0-9]/g, "");
+      if (numericPart.length >= 8) {
+        // Deterministic generation based on searchId digits
+        let hash = 0;
+        for (let i = 0; i < numericPart.length; i++) {
+          hash = numericPart.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        const games = ["Mines", "Roulette", "Keno", "Dice", "Plinko", "Crash", "Limbo", "Wheel", "Blackjack", "Slots"];
+        const gameIndex = Math.abs(hash) % games.length;
+        const game = games[gameIndex];
+        
+        // Derive wagered amount from first few digits
+        const wageredStr = numericPart.substring(0, 4);
+        const wagered = (parseInt(wageredStr) || 1500) / 100 + 5.50; // Ensure float
+        
+        // Derive multiplier
+        const multStr = numericPart.substring(3, 7);
+        const multRaw = parseInt(multStr) || 2500;
+        
+        // Win or loss based on parity of a middle digit
+        const midDigit = parseInt(numericPart.substring(numericPart.length / 2, numericPart.length / 2 + 1) || "1");
+        const isWin = midDigit % 2 === 0; 
+        
+        let multiplier = 0;
+        if (isWin) {
+          // multiplier between 1.10x and ~50.00x roughly
+          multiplier = Math.max(1.10, (multRaw % 5000) / 100);
+        }
+        
+        const payout = isWin ? wagered * multiplier : 0;
+        const profit = payout - wagered;
+        
+        // timestamp recent
+        const tsOffset = (Math.abs(hash) % (7 * 24 * 3600 * 1000)); // up to 7 days ago
+        const timestamp = Date.now() - tsOffset;
+
+        setSearchedBet({
+          id: searchId,
+          game,
+          wagered,
+          multiplier,
+          payout,
+          profit,
+          timestamp
+        });
+        return;
+      }
+
       // Check global cache (simulating DB search)
       try {
         const globalBetsStr = localStorage.getItem("stake_global_bets_cache");

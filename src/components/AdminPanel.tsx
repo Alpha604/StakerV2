@@ -728,6 +728,11 @@ export function AdminPanel() {
                     typeColor = "text-amber-500";
                     typeBg = "bg-amber-500/10";
                     typeBorder = "border-amber-500/30";
+                  } else if (req.type === "support_message") {
+                    TypeIcon = Mail;
+                    typeColor = "text-blue-400";
+                    typeBg = "bg-blue-500/10";
+                    typeBorder = "border-blue-500/20";
                   } else if (req.type === "vault_in" || req.type === "vault_out") {
                     TypeIcon = req.type === "vault_in" ? Archive : ArchiveRestore;
                     typeColor = "text-blue-400";
@@ -766,7 +771,9 @@ export function AdminPanel() {
                                         ? "Vault In - Demande"
                                         : req.type === "maxi_vault_unlock"
                                           ? "Débloquer Maxi Vault"
-                                          : "Vault Out - Demande"}
+                                          : req.type === "support_message"
+                                            ? "Message Support"
+                                            : "Vault Out - Demande"}
                             </span>
                             <h3 className="font-black text-xl mt-1 text-white flex items-center gap-2">
                               {req.username}
@@ -795,6 +802,12 @@ export function AdminPanel() {
                       
                       {/* Financial Info */}
                       <div className="bg-black/40 rounded-xl p-4 border border-gray-800 z-10 flex flex-col gap-2">
+                        {req.message && (
+                          <div className="bg-[#0f1923] p-3 rounded-lg border border-gray-700/50 mb-2">
+                            <span className="text-xs text-blue-400 font-bold uppercase tracking-wider block mb-1">Message de l'utilisateur</span>
+                            <div className="text-sm text-gray-300 whitespace-pre-wrap">{req.message}</div>
+                          </div>
+                        )}
                         {req.type === "maxi_vault_unlock" && (
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Maxi Vault Bloqué</span>
