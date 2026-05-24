@@ -27,6 +27,16 @@ import {
   Monitor,
   Smartphone,
   Laptop,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Archive,
+  ArchiveRestore,
+  Filter,
+  Check,
+  XCircle,
+  Inbox,
+  Clock,
+  LockOpen
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
@@ -104,6 +114,7 @@ export function AdminPanel() {
   >("Tous");
 
   const [adminRequests, setAdminRequests] = useState<any[]>([]);
+  const [inboxFilter, setInboxFilter] = useState<"all" | "pending" | "accepted" | "rejected">("pending");
 
   const [gamesConfig, setGamesConfig] = useState<
     Record<string, { banned: boolean; reason: string; date: string }>
@@ -305,6 +316,8 @@ export function AdminPanel() {
     setEditForm({
       balance: u.balance,
       vault: u.vault || 0,
+      balanceLimit: u.balanceLimit || 500000,
+      maxiVault: u.maxiVault || 0,
       totalWagered: u.totalWagered || 0,
       totalWon: u.totalWon || 0,
       role: u.role || "user",
@@ -476,11 +489,13 @@ export function AdminPanel() {
             vault: increment(-req.amount),
           });
         } else if (req.type === "maxi_vault_unlock") {
-          // Admin approves the unlock, moving maxiVault back to balance
+          // Admin approves the unlock, moving actual maxiVault back to balance
+          const targetUser = users.find((u) => u.id === req.userId);
+          const currentMaxiVault = targetUser?.maxiVault || req.maxiVaultAmount || 0;
           await updateDoc(doc(db, "users", req.userId), {
-            balance: increment(req.maxiVaultAmount || 0),
+            balance: increment(currentMaxiVault),
             maxiVault: 0,
-            balanceLimit: increment(500000) // Automatically increase limit to prevent immediate re-lock
+            balanceLimit: increment(currentMaxiVault + 500000) // Increase limit significantly to allow the new balance
           });
         }
       } else {
@@ -637,117 +652,245 @@ export function AdminPanel() {
       </div>
 
       {mainTab === "inbox" ? (
-        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col min-h-[600px] p-6 text-white">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
-            <Mail className="text-blue-400" /> Requêtes Utilisateurs
-          </h2>
-          {adminRequests.length === 0 ? (
-            <div className="text-center text-gray-500 py-12 flex flex-col items-center justify-center">
-              <CheckCircle className="text-gray-600 mb-4 h-12 w-12" />
-              <p>Aucune requête en attente.</p>
+        <div className="bg-[#0f1923]/80 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl flex flex-col h-[700px] p-0 text-white overflow-hidden">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-800 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gradient-to-r from-gray-900 to-[#0f1923]">
+            <div>
+              <h2 className="text-2xl font-black flex items-center gap-3 text-white">
+                <Inbox className="text-blue-400 w-6 h-6" /> 
+                Boîte de réception
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Gérez les demandes utilisateurs avec précision.</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {adminRequests.map((req) => (
-                <div
-                  key={req.id}
-                  className="bg-[#0f1923] border border-gray-800 rounded-xl p-4 flex flex-col gap-4"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span
-                        className={`px-2 py-1 text-xs font-bold uppercase rounded ${req.type === "rank_upgrade" ? "bg-purple-500/10 text-purple-400" : req.type === "ban_appeal" ? "bg-red-500/10 text-red-400" : req.type === "maxi_vault_unlock" ? "bg-amber-500/10 text-amber-500" : "bg-emerald-500/10 text-emerald-400"}`}
-                      >
-                        {req.type === "rank_upgrade"
-                          ? "Évolution de grade"
-                          : req.type === "ban_appeal"
-                            ? "Demande de déban"
-                            : req.type === "deposit"
-                              ? "Achat - Demande"
-                              : req.type === "withdraw"
-                                ? "Retrait - Demande"
-                                : req.type === "vault_in"
-                                  ? "Vault In - Demande"
-                                  : req.type === "maxi_vault_unlock"
-                                    ? "Débloquer Maxi Vault"
-                                    : "Vault Out - Demande"}
-                      </span>
-                      <h3 className="font-bold text-lg mt-2">
-                        {req.username}{" "}
-                        <span className="text-sm font-medium text-gray-400">
-                          ({req.userEmail})
-                        </span>
-                      </h3>
-                      {req.maxiVaultAmount && (
-                        <div className="text-amber-500 font-mono font-bold mt-1 text-xl flex items-center gap-2">
-                          <Lock size={16} /> ${req.maxiVaultAmount.toFixed(2)}
-                        </div>
-                      )}
-                      {req.amount && (
-                        <div className="text-emerald-400 font-mono font-bold mt-1 text-xl">
-                          ${req.amount.toFixed(2)}{" "}
-                          {req.crypto ? `(${req.crypto})` : ""}
-                        </div>
-                      )}
-                      {req.method && (
-                        <p className="text-xs text-gray-500 uppercase">
-                          {req.method}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(req.createdAt).toLocaleString("fr-FR")}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${req.status === "pending" ? "bg-yellow-500/10 text-yellow-500" : req.status === "accepted" ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}
-                    >
-                      {req.status === "pending"
-                        ? "En attente"
-                        : req.status === "accepted"
-                          ? "Accepté"
-                          : "Refusé"}
-                    </span>
-                  </div>
-                  {req.status === "pending" && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const response = prompt(
-                            "Raison ou message (optionnel) :",
-                          );
-                          if (response !== null)
-                            handleAdminRequestVal(req, "accepted", response);
-                        }}
-                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg transition-colors text-sm"
-                      >
-                        Accepter
-                      </button>
-                      <button
-                        onClick={() => {
-                          const response = prompt(
-                            "Raison du refus (optionnel) :",
-                          );
-                          if (response !== null)
-                            handleAdminRequestVal(req, "rejected", response);
-                        }}
-                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors text-sm"
-                      >
-                        Refuser
-                      </button>
-                    </div>
-                  )}
-                  {req.adminResponse && (
-                    <div className="bg-black/30 p-3 rounded-lg border border-gray-800 text-sm">
-                      <span className="font-bold text-gray-400">
-                        Réponse de l'admin:
-                      </span>{" "}
-                      {req.adminResponse}
-                    </div>
-                  )}
+            
+            <div className="flex flex-wrap items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-gray-800 self-stretch lg:self-auto">
+              <button 
+                onClick={() => setInboxFilter("all")} 
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex-1 lg:flex-none text-center ${inboxFilter === "all" ? "bg-white text-black shadow-md" : "text-gray-400 hover:text-white"}`}
+              >
+                Toutes ({adminRequests.length})
+              </button>
+              <button 
+                onClick={() => setInboxFilter("pending")} 
+                className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-colors flex-1 lg:flex-none text-center ${inboxFilter === "pending" ? "bg-yellow-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
+              >
+                <Clock size={14} className={inboxFilter === "pending" ? "text-black" : "text-yellow-500"} /> En attente
+              </button>
+              <button 
+                onClick={() => setInboxFilter("accepted")} 
+                className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-colors flex-1 lg:flex-none text-center ${inboxFilter === "accepted" ? "bg-emerald-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
+              >
+                <Check size={14} className={inboxFilter === "accepted" ? "text-black" : "text-emerald-500"} /> Acceptées
+              </button>
+              <button 
+                onClick={() => setInboxFilter("rejected")} 
+                className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-colors flex-1 lg:flex-none text-center ${inboxFilter === "rejected" ? "bg-red-500 text-white shadow-md" : "text-gray-400 hover:text-white"}`}
+              >
+                <XCircle size={14} className={inboxFilter === "rejected" ? "text-white" : "text-red-500"} /> Refusées
+              </button>
+            </div>
+          </div>
+
+          {/* List Area */}
+          <div className="flex-1 overflow-y-auto p-6 bg-black/20 custom-scrollbar">
+            {adminRequests.filter(r => inboxFilter === "all" || r.status === inboxFilter).length === 0 ? (
+              <div className="text-center text-gray-500 py-16 flex flex-col items-center justify-center">
+                <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mb-6 border border-gray-800">
+                  <Inbox className="text-gray-600 w-10 h-10" />
                 </div>
-              ))}
-            </div>
-          )}
+                <h3 className="text-xl font-bold text-white mb-2">Aucune requête trouvée</h3>
+                <p>Aucune demande ne correspond à ce filtre pour le moment.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {adminRequests.filter(r => inboxFilter === "all" || r.status === inboxFilter).map((req) => {
+                  const targetUser = users.find(u => u.id === req.userId);
+                  const currentMaxiVault = targetUser?.maxiVault || 0;
+                  
+                  // Icon/Color Mapping Based On Request Type
+                  let TypeIcon = ArrowDownCircle;
+                  let typeColor = "text-emerald-400";
+                  let typeBg = "bg-emerald-500/10";
+                  let typeBorder = "border-emerald-500/20";
+                  
+                  if (req.type === "rank_upgrade") {
+                    TypeIcon = ArrowUpCircle;
+                    typeColor = "text-purple-400";
+                    typeBg = "bg-purple-500/10";
+                    typeBorder = "border-purple-500/20";
+                  } else if (req.type === "ban_appeal") {
+                    TypeIcon = ShieldAlert;
+                    typeColor = "text-red-400";
+                    typeBg = "bg-red-500/10";
+                    typeBorder = "border-red-500/20";
+                  } else if (req.type === "maxi_vault_unlock") {
+                    TypeIcon = LockOpen;
+                    typeColor = "text-amber-500";
+                    typeBg = "bg-amber-500/10";
+                    typeBorder = "border-amber-500/30";
+                  } else if (req.type === "vault_in" || req.type === "vault_out") {
+                    TypeIcon = req.type === "vault_in" ? Archive : ArchiveRestore;
+                    typeColor = "text-blue-400";
+                    typeBg = "bg-blue-500/10";
+                    typeBorder = "border-blue-500/20";
+                  }
+
+                  return (
+                    <div
+                      key={req.id}
+                      className={`relative bg-[#111c25] border ${req.status === "pending" ? typeBorder + " shadow-[0_4px_20px_rgba(0,0,0,0.2)]" : "border-gray-800 opacity-80 hover:opacity-100"} rounded-2xl p-5 flex flex-col gap-4 transition-all overflow-hidden group`}
+                    >
+                      {/* Gradient glow for pending */}
+                      {req.status === "pending" && (
+                        <div className={`absolute top-0 right-0 w-32 h-32 ${req.type === "maxi_vault_unlock" ? "bg-amber-500/5" : "bg-white/5"} rounded-full blur-[40px] pointer-events-none -mr-10 -mt-10`}></div>
+                      )}
+
+                      <div className="flex justify-between items-start z-10">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${typeBg} ${typeColor} ${typeBorder}`}>
+                            <TypeIcon size={24} />
+                          </div>
+                          <div>
+                            <span
+                              className={`px-2.5 py-0.5 text-[10px] font-black uppercase rounded bg-black/40 border border-gray-700/50 text-gray-300`}
+                            >
+                              {req.type === "rank_upgrade"
+                                ? "Évolution de grade"
+                                : req.type === "ban_appeal"
+                                  ? "Demande de déban"
+                                  : req.type === "deposit"
+                                    ? "Achat - Demande"
+                                    : req.type === "withdraw"
+                                      ? "Retrait - Demande"
+                                      : req.type === "vault_in"
+                                        ? "Vault In - Demande"
+                                        : req.type === "maxi_vault_unlock"
+                                          ? "Débloquer Maxi Vault"
+                                          : "Vault Out - Demande"}
+                            </span>
+                            <h3 className="font-black text-xl mt-1 text-white flex items-center gap-2">
+                              {req.username}
+                            </h3>
+                            <p className="text-xs font-mono text-gray-500 truncate max-w-[200px]">{req.userEmail}</p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`px-3 py-1 flex items-center gap-1.5 rounded-full text-xs font-bold border ${
+                            req.status === "pending" 
+                              ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" 
+                              : req.status === "accepted" 
+                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                                : "bg-red-500/10 text-red-500 border-red-500/20"
+                          }`}
+                        >
+                          {req.status === "pending" ? <Clock size={12} /> : req.status === "accepted" ? <Check size={12} /> : <XCircle size={12} />}
+                          {req.status === "pending"
+                            ? "En attente"
+                            : req.status === "accepted"
+                              ? "Accepté"
+                              : "Refusé"}
+                        </span>
+                      </div>
+                      
+                      {/* Financial Info */}
+                      <div className="bg-black/40 rounded-xl p-4 border border-gray-800 z-10 flex flex-col gap-2">
+                        {req.type === "maxi_vault_unlock" && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Maxi Vault Bloqué</span>
+                            <div className="text-amber-500 font-mono font-black text-xl flex items-center gap-2">
+                              <Lock size={16} /> ${currentMaxiVault.toFixed(2)}
+                            </div>
+                          </div>
+                        )}
+                        {req.amount !== undefined && req.type !== "maxi_vault_unlock" && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Montant</span>
+                            <div className="text-emerald-400 font-mono font-black text-xl">
+                              ${req.amount.toFixed(2)}{" "}
+                              {req.crypto ? <span className="text-sm text-gray-500 bg-gray-800 px-1 py-0.5 rounded">{req.crypto}</span> : ""}
+                            </div>
+                          </div>
+                        )}
+                        {req.method && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Méthode</span>
+                            <span className="text-sm font-bold text-gray-300 uppercase bg-gray-800/50 px-2 py-0.5 rounded border border-gray-700">
+                              {req.method}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mt-1 pt-2 border-t border-gray-800 border-dashed">
+                           <span className="text-xs text-gray-500 font-mono flex items-center gap-1.5">
+                             <Clock size={12} /> {new Date(req.createdAt).toLocaleString("fr-FR")}
+                           </span>
+                           <button 
+                             className="text-xs text-blue-400 hover:text-blue-300 underline font-medium"
+                             onClick={() => {
+                               const u = users.find(u => u.id === req.userId);
+                               if(u) handleEditClick(u);
+                             }}
+                           >
+                             Voir profil
+                           </button>
+                        </div>
+                      </div>
+
+                      {/* Request Action Area */}
+                      <div className="z-10 mt-auto pt-2">
+                        {req.status === "pending" ? (
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => {
+                                const response = prompt(
+                                  "Message d'acceptation (optionnel) :",
+                                );
+                                if (response !== null)
+                                  handleAdminRequestVal(req, "accepted", response);
+                              }}
+                              className="flex-1 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/30 hover:border-emerald-500 font-black rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] text-[13px] uppercase tracking-wider flex items-center justify-center gap-2"
+                            >
+                              <Check size={16} /> Accepter
+                            </button>
+                            <button
+                              onClick={() => {
+                                const response = prompt(
+                                  "Raison du refus (optionnel) :",
+                                );
+                                if (response !== null)
+                                  handleAdminRequestVal(req, "rejected", response);
+                              }}
+                              className="flex-1 py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/30 hover:border-red-500 font-black rounded-xl transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] text-[13px] uppercase tracking-wider flex items-center justify-center gap-2"
+                            >
+                              <X size={16} /> Refuser
+                            </button>
+                          </div>
+                        ) : (
+                          req.adminResponse ? (
+                            <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-800 text-sm flex gap-2 items-start mt-2">
+                              <div className="mt-1">
+                                <Monitor size={14} className="text-gray-500" />
+                              </div>
+                              <div className="flex-1 text-left">
+                                <span className="font-bold text-gray-500 text-[10px] uppercase tracking-wider block mb-0.5">
+                                  Réponse SYS.ADMIN
+                                </span>
+                                <span className="text-gray-300 font-medium">"{req.adminResponse}"</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center text-xs font-bold text-gray-600 bg-gray-900/40 py-2 rounded-lg border border-gray-800/50 uppercase tracking-widest mt-2 flex items-center justify-center gap-2">
+                              <Archive size={14} /> Requête Archivée
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       ) : mainTab === "users" ? (
         /* Main Table Interface */
@@ -1836,6 +1979,34 @@ export function AdminPanel() {
                                 }
                                 className="bg-[#0c0c0e] text-amber-500 font-mono text-xl p-4 pl-4 rounded-xl border border-amber-500/30 focus:border-amber-500 outline-none flex-1 transition-all group-hover:border-amber-500/50"
                               />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    balance: (prev.balance || 0) + (prev.maxiVault || 0),
+                                    balanceLimit: (prev.balanceLimit || 500000) + (prev.maxiVault || 0) + 500000,
+                                    maxiVault: 0
+                                  }));
+                                }}
+                                className="px-3 py-1.5 text-xs font-bold rounded bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
+                              >
+                                Débloquer vers Solde Courant
+                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditForm(prev => ({
+                                      ...prev,
+                                      maxiVault: 0
+                                    }));
+                                  }}
+                                  className="px-3 py-1.5 text-xs font-bold rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+                                >
+                                  Vider (Brûler)
+                                </button>
                             </div>
                             <p className="text-xs text-gray-500">Peut être vidé vers la balance principale par l'admin.</p>
                           </div>
