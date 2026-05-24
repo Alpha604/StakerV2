@@ -17,7 +17,10 @@ import {
   serverTimestamp,
   runTransaction,
   increment,
+  query,
+  where,
 } from "firebase/firestore";
+import toast from "react-hot-toast";
 
 export type UserRank =
   | "None"
@@ -331,6 +334,8 @@ export interface CustomUser {
   email?: string;
   balance: number;
   vault: number;
+  maxiVault?: number;
+  balanceLimit?: number;
   totalWagered?: number;
   totalWon?: number;
   role?: "admin" | "user";
@@ -422,6 +427,9 @@ interface UserContextType {
     endTime?: number;
     autoUnlock?: boolean;
   };
+  showMaxiVaultModal: boolean;
+  setShowMaxiVaultModal: (val: boolean) => void;
+  requestMaxiVaultUnlock: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -434,6 +442,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [sessionBets, setSessionBets] = useState<SessionBet[]>([]);
   const [showSessionStats, setShowSessionStats] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showMaxiVaultModal, setShowMaxiVaultModal] = useState(false);
   const [activeCrypto, setActiveCryptoState] = useState<CryptoType>(CRYPTOS[0]);
 
   // Load from user document first, fallback to localStorage
@@ -560,6 +569,95 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const balance = user?.balance || 0;
   const vault = user?.vault || 0;
+
+  // Enforce MaxiVault balance limit
+  useEffect(() => {
+    if (!user || user.role === "admin") return;
+    const limit = user.balanceLimit || 500000;
+    if (balance > limit) {
+      const surplus = balance - limit;
+      const userRef = doc(db, "users", user.id);
+      updateDoc(userRef, {
+        balance: limit,
+        maxiVault: increment(surplus)
+      }).then(() => {
+        setShowMaxiVaultModal(true);
+      }).catch(console.error);
+    }
+  }, [balance, user]);
+
+  const requestMaxiVaultUnlock = async () => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, "admin_requests", `vault_${user.id}_${Date.now()}`), {
+        type: "maxi_vault_unlock",
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        maxiVaultAmount: user.maxiVault || 0,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      });
+      // Optionally could show a success message here, but throwing/resolving is fine
+    } catch (e) {
+      console.error("Failed to request maxi vault unlock", e);
+      throw e;
+    }
+  };
+
+  // Improved Admin Notifications: Global listener for new requests
+  useEffect(() => {
+    if (user?.role !== "admin") return;
+    
+    // Only fetch requests that are 'pending'
+    const q = query(collection(db, "admin_requests"), where("status", "==", "pending"));
+    let isInitialLoad = true;
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      // Don't alert for existing pending requests on initial view
+      if (isInitialLoad) {
+        isInitialLoad = false;
+        return;
+      }
+      
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          // Create custom toast for new admin request
+          toast((t) => (
+            <div className="flex flex-col gap-1 w-full relative group p-1 pr-6 cursor-pointer" onClick={() => toast.dismiss(t.id)}>
+              <span className="font-bold text-emerald-500 uppercase tracking-widest text-[10px]">
+                NOUVELLE REQUÊTE ADMIN
+              </span>
+              <span className="text-white text-sm">
+                <b>{data.username}</b> a envoyé une demande:
+              </span>
+              <span className="text-xs text-gray-400 capitalize">
+                {String(data.type).replace(/_/g, ' ')}
+              </span>
+              {(data.amount || data.maxiVaultAmount) && (
+                <span className="text-emerald-400 font-mono font-bold text-sm">
+                  ${(data.amount || data.maxiVaultAmount).toFixed(2)}
+                </span>
+              )}
+            </div>
+          ), {
+            duration: 8000,
+            style: {
+              background: 'rgba(15, 33, 46, 0.95)',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+            }
+          });
+        }
+      });
+    }, (error) => {
+      console.error("Error listening to admin requests:", error);
+    });
+    
+    return () => unsubscribe();
+  }, [user?.role]);
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | null = null;
@@ -1026,6 +1124,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         logoutMessage,
         globalGameStatus,
         globalAppStatus,
+        showMaxiVaultModal,
+        setShowMaxiVaultModal,
+        requestMaxiVaultUnlock,
       }}
     >
       {!loading ? (

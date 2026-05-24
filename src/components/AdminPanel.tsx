@@ -475,6 +475,13 @@ export function AdminPanel() {
             balance: increment(req.amount),
             vault: increment(-req.amount),
           });
+        } else if (req.type === "maxi_vault_unlock") {
+          // Admin approves the unlock, moving maxiVault back to balance
+          await updateDoc(doc(db, "users", req.userId), {
+            balance: increment(req.maxiVaultAmount || 0),
+            maxiVault: 0,
+            balanceLimit: increment(500000) // Automatically increase limit to prevent immediate re-lock
+          });
         }
       } else {
         if (req.type === "ban_appeal") {
@@ -649,7 +656,7 @@ export function AdminPanel() {
                   <div className="flex justify-between items-start">
                     <div>
                       <span
-                        className={`px-2 py-1 text-xs font-bold uppercase rounded ${req.type === "rank_upgrade" ? "bg-purple-500/10 text-purple-400" : req.type === "ban_appeal" ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400"}`}
+                        className={`px-2 py-1 text-xs font-bold uppercase rounded ${req.type === "rank_upgrade" ? "bg-purple-500/10 text-purple-400" : req.type === "ban_appeal" ? "bg-red-500/10 text-red-400" : req.type === "maxi_vault_unlock" ? "bg-amber-500/10 text-amber-500" : "bg-emerald-500/10 text-emerald-400"}`}
                       >
                         {req.type === "rank_upgrade"
                           ? "Évolution de grade"
@@ -661,7 +668,9 @@ export function AdminPanel() {
                                 ? "Retrait - Demande"
                                 : req.type === "vault_in"
                                   ? "Vault In - Demande"
-                                  : "Vault Out - Demande"}
+                                  : req.type === "maxi_vault_unlock"
+                                    ? "Débloquer Maxi Vault"
+                                    : "Vault Out - Demande"}
                       </span>
                       <h3 className="font-bold text-lg mt-2">
                         {req.username}{" "}
@@ -669,6 +678,11 @@ export function AdminPanel() {
                           ({req.userEmail})
                         </span>
                       </h3>
+                      {req.maxiVaultAmount && (
+                        <div className="text-amber-500 font-mono font-bold mt-1 text-xl flex items-center gap-2">
+                          <Lock size={16} /> ${req.maxiVaultAmount.toFixed(2)}
+                        </div>
+                      )}
                       {req.amount && (
                         <div className="text-emerald-400 font-mono font-bold mt-1 text-xl">
                           ${req.amount.toFixed(2)}{" "}
@@ -1783,6 +1797,47 @@ export function AdminPanel() {
                                 className="bg-[#0c0c0e] text-gray-200 font-mono text-2xl p-4 pl-4 rounded-xl border border-gray-800 focus:border-gray-500 outline-none w-full transition-all group-hover:border-gray-700"
                               />
                             </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                              Limite Balance Avant Verrouillage
+                            </label>
+                            <div className="relative group">
+                              <input
+                                type="number"
+                                value={editForm.balanceLimit ?? 500000}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    balanceLimit: Number(e.target.value),
+                                  })
+                                }
+                                className="bg-[#0c0c0e] text-purple-400 font-mono text-xl p-4 pl-4 rounded-xl border border-gray-800 focus:border-purple-500/50 outline-none w-full transition-all group-hover:border-gray-700"
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">Par défaut: 500,000</p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                              <Lock size={14} /> Maxi Vault (Bloqué)
+                            </label>
+                            <div className="relative group flex gap-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={editForm.maxiVault ?? 0}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    maxiVault: Number(e.target.value),
+                                  })
+                                }
+                                className="bg-[#0c0c0e] text-amber-500 font-mono text-xl p-4 pl-4 rounded-xl border border-amber-500/30 focus:border-amber-500 outline-none flex-1 transition-all group-hover:border-amber-500/50"
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">Peut être vidé vers la balance principale par l'admin.</p>
                           </div>
                         </div>
                       </FormSection>

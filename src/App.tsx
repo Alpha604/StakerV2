@@ -43,6 +43,8 @@ import { ScratchCash } from "./components/ScratchCash";
 import { ScratchMaxiCash } from "./components/ScratchMaxiCash";
 import { ScratchMillionnaire } from "./components/ScratchMillionnaire";
 import { ScratchSupraHalla } from "./components/ScratchSupraHalla";
+import { ScratchAstroFdj } from "./components/ScratchAstroFdj";
+import { ScratchPatrimoine } from "./components/ScratchPatrimoine";
 import { LiveChat } from "./components/LiveChat";
 import { Toaster } from "react-hot-toast";
 import { SuperScratch } from "./components/SuperScratch";
@@ -95,6 +97,8 @@ export type ViewType =
   | "scratch-maxi-cash"
   | "scratch-millionnaire"
   | "scratch-supra-halla"
+  | "scratch-astro"
+  | "scratch-patrimoine"
   | "stake-gaming";
 
 class ErrorBoundary extends React.Component<any, any> {
@@ -201,6 +205,9 @@ function InnerAppContent({
     setShowLogoutConfirm,
     logoutUser,
     globalAppStatus,
+    showMaxiVaultModal,
+    setShowMaxiVaultModal,
+    requestMaxiVaultUnlock
   } = useUser() as any;
   const [chatOpen, setChatOpen] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -425,6 +432,42 @@ function InnerAppContent({
         reverseOrder={true}
         toastOptions={{ className: "min-w-[250px]" }}
       />
+      
+      {showMaxiVaultModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm transition-opacity duration-300 px-4">
+          <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-md w-full border border-amber-500/30 flex flex-col items-center text-center animate-in zoom-in-95 duration-200 relative overflow-hidden">
+             
+            <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 relative">
+              <Lock className="text-amber-500 w-10 h-10" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wide">Maxi Vault</h2>
+            <p className="text-text-secondary mb-6 font-medium text-sm">
+              Votre solde a dépassé la limite autorisée ({user?.balanceLimit || 500000} CHF). <br/>
+              Le surplus a été automatiquement transféré dans votre Maxi Vault sécurisé.
+            </p>
+            
+            <div className="flex flex-col gap-3 w-full">
+              <button
+                onClick={async () => {
+                   await requestMaxiVaultUnlock();
+                   setShowMaxiVaultModal(false);
+                }}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg transition-all uppercase tracking-wider text-sm shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+              >
+                Demander un déblocage à l'Admin
+              </button>
+              <button
+                onClick={() => setShowMaxiVaultModal(false)}
+                className="w-full justify-center flex items-center gap-2 py-3 bg-[#2a3a4a] hover:bg-[#34485a] text-white border border-[#4d7187] font-bold rounded-lg transition-colors uppercase tracking-wider text-xs"
+              >
+                Continuer à jouer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm transition-opacity duration-300 px-4">
           <div className="bg-[#1f2937] p-8 rounded-xl shadow-2xl max-w-sm w-full border border-[#374151] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
@@ -654,6 +697,16 @@ function InnerAppContent({
             {view === "scratch-supra-halla" && (
               <ApprovalGuard gameName="Supra Halla">
                 <ScratchSupraHalla />
+              </ApprovalGuard>
+            )}
+            {view === "scratch-astro" && (
+              <ApprovalGuard gameName="Astro FDJ">
+                <ScratchAstroFdj />
+              </ApprovalGuard>
+            )}
+            {view === "scratch-patrimoine" && (
+              <ApprovalGuard gameName="Mission Patrimoine">
+                <ScratchPatrimoine />
               </ApprovalGuard>
             )}
           </div>

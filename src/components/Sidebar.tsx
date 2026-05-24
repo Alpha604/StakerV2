@@ -21,7 +21,8 @@ import {
   User,
   MoreHorizontal,
   Gift,
-  Ticket
+  Ticket,
+  Lock
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -204,6 +205,20 @@ export function Sidebar({
             >
               <ShieldAlert size={18} /> <span className="font-medium text-sm">Administration FDJS</span>
             </button>
+          )}
+
+          {user && (user.maxiVault || 0) > 0 && (
+             <div className="mt-4 mx-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase mb-1">
+                   <Lock size={14} /> Maxi Vault
+                </div>
+                <div className="text-white font-mono font-medium text-sm">
+                   {user.maxiVault?.toFixed(2)}
+                </div>
+                <div className="text-xs text-text-secondary mt-1 whitespace-normal">
+                   Verrouillé par limite dépassée.
+                </div>
+             </div>
           )}
 
           <div className="mt-auto px-2 pb-2">

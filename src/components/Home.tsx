@@ -80,6 +80,16 @@ export const ALL_GAMES = [
     img: "https://i.postimg.cc/RFjRPLRC/Gemini-Generated-Image-d74tcwd74tcwd74t.png",
   },
   {
+    name: "Astro FDJ", category: "grattage", link: "scratch-astro",
+    img: "https://www.fdj.fr/assets/img/svg/fdj.svg", 
+    provider: "FDJ",
+  },
+  {
+    name: "Mission Patrimoine", category: "grattage", link: "scratch-patrimoine",
+    img: "https://www.fdj.fr/assets/img/svg/fdj.svg", 
+    provider: "FDJ",
+  },
+  {
     name: "WHEEL", category: "originals", link: "wheel",
     img: "https://mediumrare.imgix.net/e0a4131a16c28a1c1516958c93ec90c6f0f1bb00f41de87f72f6800c535b9c6f?w=180&h=236&fit=min&auto=format",
   },
