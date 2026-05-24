@@ -54,6 +54,7 @@ import { BannedScreen } from "./components/BannedScreen";
 import { Rewards } from "./components/Rewards";
 import { ScreenSizeGuard, IPGuard } from "./components/SecurityGuards";
 import { UpdateModal } from "./components/UpdateModal";
+import { Infos } from "./components/Infos";
 
 export type ViewType =
   | "home"
@@ -99,6 +100,7 @@ export type ViewType =
   | "scratch-supra-halla"
   | "scratch-astro"
   | "scratch-patrimoine"
+  | "infos"
   | "stake-gaming";
 
 class ErrorBoundary extends React.Component<any, any> {
@@ -709,6 +711,7 @@ function InnerAppContent({
                 <ScratchPatrimoine />
               </ApprovalGuard>
             )}
+            {view === "infos" && <Infos />}
           </div>
 
           {/* Footer */}

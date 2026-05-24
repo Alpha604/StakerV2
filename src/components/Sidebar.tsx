@@ -22,7 +22,8 @@ import {
   MoreHorizontal,
   Gift,
   Ticket,
-  Lock
+  Lock,
+  Info
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -196,6 +197,13 @@ export function Sidebar({
             className={cn("w-full h-10 px-4 flex items-center gap-3 transition-colors", view === "stats" ? "bg-bg-inner text-white border-l-2 border-accent" : "text-text-secondary hover:bg-bg-inner hover:text-white border-l-2 border-transparent")}
           >
             <Activity size={18} /> <span className="font-medium text-sm">Stats Détaillées</span>
+          </button>
+
+          <button
+            onClick={() => { setView("infos"); setShowSecondarySidebar(false); }}
+            className={cn("w-full h-10 px-4 flex items-center gap-3 transition-colors", view === "infos" ? "bg-bg-inner text-white border-l-2 border-amber-500" : "text-text-secondary hover:bg-bg-inner hover:text-white border-l-2 border-transparent")}
+          >
+            <Info size={18} /> <span className="font-medium text-sm">Informations</span>
           </button>
 
           {user?.role === "admin" && (
