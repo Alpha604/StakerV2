@@ -36,6 +36,7 @@ import {
   XCircle,
   Inbox,
   Clock,
+  RotateCcw,
   LockOpen
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
