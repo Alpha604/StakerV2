@@ -360,6 +360,7 @@ export interface CustomUser {
   banAppealRequested?: boolean;
   lastRankAppealTime?: number;
   canAppealRank?: boolean;
+  canUseSupport?: boolean;
   activeCryptoSymbol?: string;
   dailyDeposits?: { date: string; count: number; totalAmount: number };
   permissions?: {

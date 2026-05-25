@@ -91,19 +91,19 @@ export function VerifyBet() {
         const multStr = numericPart.substring(3, 7);
         const multRaw = parseInt(multStr) || 2500;
         
-        // Win or loss based on parity of a middle digit
-        const midDigit = parseInt(numericPart.substring(numericPart.length / 2, numericPart.length / 2 + 1) || "1");
-        const isWin = midDigit % 2 === 0; 
-        
+        // win or loss based on parity of a middle digit
+        const midDigit = parseInt(numericPart.substring(Math.floor(numericPart.length / 2), Math.floor(numericPart.length / 2) + 1) || "1");
+        const isWin = midDigit % 2 === 0;
+
         let multiplier = 0;
         if (isWin) {
           // multiplier between 1.10x and ~50.00x roughly
           multiplier = Math.max(1.10, (multRaw % 5000) / 100);
         }
-        
+
         const payout = isWin ? wagered * multiplier : 0;
         const profit = payout - wagered;
-        
+
         // timestamp recent
         const tsOffset = (Math.abs(hash) % (7 * 24 * 3600 * 1000)); // up to 7 days ago
         const timestamp = Date.now() - tsOffset;
@@ -115,8 +115,9 @@ export function VerifyBet() {
           multiplier,
           payout,
           profit,
-          timestamp
-        });
+          timestamp,
+          isDecoded: true
+        } as SessionBet & { isDecoded?: boolean });
         return;
       }
 
@@ -185,12 +186,15 @@ export function VerifyBet() {
             <div className="bg-[#0f212e] rounded-xl border border-[#2f4553] overflow-hidden shadow-2xl relative">
               {/* Header */}
               <div className={cn(
-                "p-6 flex items-center justify-between border-b border-[#2f4553]",
+                "p-6 flex items-center justify-between border-b border-[#2f4553] relative",
                 searchedBet.profit > 0 ? "bg-[#1bc86a]/5" : "bg-[#ed4163]/5"
               )}>
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">
+                  <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
                     Play {searchedBet.game}
+                    {(searchedBet as any).isDecoded && (
+                      <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full uppercase tracking-widest font-black ml-2 animate-pulse">Décodé (Algorithme Numérique)</span>
+                    )}
                   </h3>
                   <p className="text-[#8b9ba5] text-sm">
                     {new Date(searchedBet.timestamp).toLocaleString()}

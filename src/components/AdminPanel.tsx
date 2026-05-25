@@ -69,6 +69,7 @@ export function AdminPanel() {
   const [recentBets, setRecentBets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [userToDeleteConfirm, setUserToDeleteConfirm] = useState<CustomUser | null>(null);
 
   // App Lock Modal States
   const [showLockModal, setShowLockModal] = useState(false);
@@ -274,7 +275,7 @@ export function AdminPanel() {
     }
   };
 
-  const deleteUser = async (userToDelete: CustomUser) => {
+  const deleteUser = (userToDelete: CustomUser) => {
     if (
       [
         "lafrancaise.desjeux@outlook.fr",
@@ -285,16 +286,16 @@ export function AdminPanel() {
       return alert("Impossible de supprimer cet administrateur protégé.");
     if (userToDelete.id === user?.id)
       return alert("Vous ne pouvez pas vous supprimer vous-même.");
-    if (
-      !confirm(
-        `Attention ! Supprimer ${userToDelete.username} implique l'effacement total de la base. Confirmer ?`,
-      )
-    )
-      return;
+    
+    setUserToDeleteConfirm(userToDelete);
+  };
 
-    setActionLoading(userToDelete.id + "delete");
+  const performDeleteUser = async () => {
+    if (!userToDeleteConfirm) return;
+    setActionLoading(userToDeleteConfirm.id + "delete");
     try {
-      await deleteDoc(doc(db, "users", userToDelete.id));
+      await deleteDoc(doc(db, "users", userToDeleteConfirm.id));
+      setUserToDeleteConfirm(null);
     } catch (e) {
       console.warn(e);
     }
@@ -325,6 +326,7 @@ export function AdminPanel() {
       rank: u.rank || "None",
       permissions: u.permissions || {},
       canAppealRank: u.canAppealRank !== false,
+      canUseSupport: u.canUseSupport !== false,
     });
     setSuspensionMinutes("");
     setSuspensionDate("");
@@ -692,17 +694,18 @@ export function AdminPanel() {
           </div>
 
           {/* List Area */}
-          <div className="flex-1 overflow-y-auto p-6 bg-black/20 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#09090b] custom-scrollbar shadow-inner relative">
+            <div className="absolute top-0 right-0 p-32 bg-blue-500/5 blur-[120px] pointer-events-none rounded-full"></div>
             {adminRequests.filter(r => inboxFilter === "all" || r.status === inboxFilter).length === 0 ? (
-              <div className="text-center text-gray-500 py-16 flex flex-col items-center justify-center">
-                <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mb-6 border border-gray-800">
-                  <Inbox className="text-gray-600 w-10 h-10" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">Aucune requête trouvée</h3>
-                <p>Aucune demande ne correspond à ce filtre pour le moment.</p>
-              </div>
+               <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-black/40 rounded-3xl border border-gray-800/50 border-dashed backdrop-blur-sm mx-auto max-w-lg mt-10">
+                 <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mb-6 border border-gray-800">
+                   <Inbox className="text-gray-600 w-10 h-10" />
+                 </div>
+                 <h3 className="text-xl font-bold text-white mb-2">Aucune requête trouvée</h3>
+                 <p className="text-gray-500 font-medium">Aucune demande ne correspond à ce filtre pour le moment.</p>
+               </div>
             ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max relative z-10 w-full">
                 {adminRequests.filter(r => inboxFilter === "all" || r.status === inboxFilter).map((req) => {
                   const targetUser = users.find(u => u.id === req.userId);
                   const currentMaxiVault = targetUser?.maxiVault || 0;
@@ -711,148 +714,149 @@ export function AdminPanel() {
                   let TypeIcon = ArrowDownCircle;
                   let typeColor = "text-emerald-400";
                   let typeBg = "bg-emerald-500/10";
-                  let typeBorder = "border-emerald-500/20";
+                  let typeBorder = "border-emerald-500/30";
+                  let glowColor = "bg-emerald-500/10";
                   
                   if (req.type === "rank_upgrade") {
                     TypeIcon = ArrowUpCircle;
                     typeColor = "text-purple-400";
                     typeBg = "bg-purple-500/10";
-                    typeBorder = "border-purple-500/20";
+                    typeBorder = "border-purple-500/30";
+                    glowColor = "bg-purple-500/10";
                   } else if (req.type === "ban_appeal") {
                     TypeIcon = ShieldAlert;
-                    typeColor = "text-red-400";
-                    typeBg = "bg-red-500/10";
-                    typeBorder = "border-red-500/20";
+                    typeColor = "text-rose-400";
+                    typeBg = "bg-rose-500/10";
+                    typeBorder = "border-rose-500/30";
+                    glowColor = "bg-rose-500/10";
                   } else if (req.type === "maxi_vault_unlock") {
                     TypeIcon = LockOpen;
-                    typeColor = "text-amber-500";
+                    typeColor = "text-amber-400";
                     typeBg = "bg-amber-500/10";
-                    typeBorder = "border-amber-500/30";
+                    typeBorder = "border-amber-500/40";
+                    glowColor = "bg-amber-500/10";
                   } else if (req.type === "support_message") {
                     TypeIcon = Mail;
                     typeColor = "text-blue-400";
                     typeBg = "bg-blue-500/10";
-                    typeBorder = "border-blue-500/20";
+                    typeBorder = "border-blue-500/30";
+                    glowColor = "bg-blue-500/10";
                   } else if (req.type === "vault_in" || req.type === "vault_out") {
                     TypeIcon = req.type === "vault_in" ? Archive : ArchiveRestore;
-                    typeColor = "text-blue-400";
-                    typeBg = "bg-blue-500/10";
-                    typeBorder = "border-blue-500/20";
+                    typeColor = "text-indigo-400";
+                    typeBg = "bg-indigo-500/10";
+                    typeBorder = "border-indigo-500/30";
+                    glowColor = "bg-indigo-500/10";
                   }
 
                   return (
                     <div
                       key={req.id}
-                      className={`relative bg-[#111c25] border ${req.status === "pending" ? typeBorder + " shadow-[0_4px_20px_rgba(0,0,0,0.2)]" : "border-gray-800 opacity-80 hover:opacity-100"} rounded-2xl p-5 flex flex-col gap-4 transition-all overflow-hidden group`}
+                      className={`relative bg-[#0b1219] border ${req.status === "pending" ? typeBorder + " shadow-xl shadow-black/50" : "border-gray-800 opacity-70 hover:opacity-100"} rounded-3xl p-6 flex flex-col gap-4 transition-all overflow-hidden group w-full`}
                     >
                       {/* Gradient glow for pending */}
                       {req.status === "pending" && (
-                        <div className={`absolute top-0 right-0 w-32 h-32 ${req.type === "maxi_vault_unlock" ? "bg-amber-500/5" : "bg-white/5"} rounded-full blur-[40px] pointer-events-none -mr-10 -mt-10`}></div>
+                        <div className={`absolute top-0 right-0 w-48 h-48 ${glowColor} rounded-full blur-[60px] pointer-events-none -mr-10 -mt-10 opacity-70`}></div>
                       )}
 
-                      <div className="flex justify-between items-start z-10">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${typeBg} ${typeColor} ${typeBorder}`}>
+                      <div className="flex justify-between items-start z-10 w-full relative">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${typeBg} ${typeColor} ${typeBorder} shadow-lg shrink-0`}>
                             <TypeIcon size={24} />
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0 pr-2">
                             <span
-                              className={`px-2.5 py-0.5 text-[10px] font-black uppercase rounded bg-black/40 border border-gray-700/50 text-gray-300`}
+                              className={`inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded bg-black/50 border border-gray-700/60 text-gray-300 mb-2 truncate max-w-full`}
                             >
                               {req.type === "rank_upgrade"
                                 ? "Évolution de grade"
                                 : req.type === "ban_appeal"
-                                  ? "Demande de déban"
+                                  ? "Dmd de déban"
                                   : req.type === "deposit"
-                                    ? "Achat - Demande"
+                                    ? "Achat - Dmd"
                                     : req.type === "withdraw"
-                                      ? "Retrait - Demande"
+                                      ? "Retrait - Dmd"
                                       : req.type === "vault_in"
-                                        ? "Vault In - Demande"
+                                        ? "Vault In - Dmd"
                                         : req.type === "maxi_vault_unlock"
                                           ? "Débloquer Maxi Vault"
                                           : req.type === "support_message"
                                             ? "Message Support"
-                                            : "Vault Out - Demande"}
+                                            : "Vault Out - Dmd"}
                             </span>
-                            <h3 className="font-black text-xl mt-1 text-white flex items-center gap-2">
+                            <h3 className="font-black text-lg text-white mb-0.5 truncate w-full" title={req.username}>
                               {req.username}
                             </h3>
-                            <p className="text-xs font-mono text-gray-500 truncate max-w-[200px]">{req.userEmail}</p>
+                            <button 
+                              className="text-[10px] text-blue-400 hover:text-blue-300 underline font-mono tracking-tight text-left block truncate w-full"
+                              onClick={() => {
+                                const u = users.find(u => u.id === req.userId);
+                                if(u) handleEditClick(u);
+                              }}
+                            >
+                              {req.userEmail}
+                            </button>
                           </div>
                         </div>
 
-                        <span
-                          className={`px-3 py-1 flex items-center gap-1.5 rounded-full text-xs font-bold border ${
+                        <div
+                          className={`flex items-center justify-center w-8 h-8 rounded-full border ${
                             req.status === "pending" 
                               ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" 
                               : req.status === "accepted" 
                                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                                : "bg-red-500/10 text-red-500 border-red-500/20"
-                          }`}
+                                : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                          } shrink-0 mt-1`}
+                          title={req.status === "pending" ? "En attente" : req.status === "accepted" ? "Accepté" : "Refusé"}
                         >
-                          {req.status === "pending" ? <Clock size={12} /> : req.status === "accepted" ? <Check size={12} /> : <XCircle size={12} />}
-                          {req.status === "pending"
-                            ? "En attente"
-                            : req.status === "accepted"
-                              ? "Accepté"
-                              : "Refusé"}
-                        </span>
+                          {req.status === "pending" ? <Clock size={14} /> : req.status === "accepted" ? <Check size={14} /> : <XCircle size={14} />}
+                        </div>
                       </div>
                       
-                      {/* Financial Info */}
-                      <div className="bg-black/40 rounded-xl p-4 border border-gray-800 z-10 flex flex-col gap-2">
+                      {/* Detailed Module Content */}
+                      <div className="bg-gradient-to-br from-[#121c26] to-[#0c131a] rounded-2xl p-4 border border-gray-800/80 z-10 flex flex-col gap-3 flex-1 shadow-inner mt-2">
                         {req.message && (
-                          <div className="bg-[#0f1923] p-3 rounded-lg border border-gray-700/50 mb-2">
-                            <span className="text-xs text-blue-400 font-bold uppercase tracking-wider block mb-1">Message de l'utilisateur</span>
-                            <div className="text-sm text-gray-300 whitespace-pre-wrap">{req.message}</div>
+                          <div className="bg-black/60 p-4 rounded-xl border border-gray-700/50 mb-1 flex-1 shadow-inner">
+                            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest block mb-2 font-mono">Message utilisateur</span>
+                            <div className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{req.message}</div>
                           </div>
                         )}
                         {req.type === "maxi_vault_unlock" && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Maxi Vault Bloqué</span>
-                            <div className="text-amber-500 font-mono font-black text-xl flex items-center gap-2">
-                              <Lock size={16} /> ${currentMaxiVault.toFixed(2)}
+                          <div className="flex items-center justify-between p-3 bg-amber-500/5 rounded-xl border border-amber-500/10">
+                            <span className="text-[10px] text-amber-500/70 font-bold uppercase tracking-widest">Maxi Vault Bloqué</span>
+                            <div className="text-amber-500 font-mono font-black text-lg flex items-center gap-1.5">
+                              <Lock size={14} /> ${currentMaxiVault.toFixed(2)}
                             </div>
                           </div>
                         )}
                         {req.amount !== undefined && req.type !== "maxi_vault_unlock" && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Montant</span>
+                          <div className="flex items-center justify-between p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                            <span className="text-[10px] text-emerald-500/70 font-bold uppercase tracking-widest">Montant Exigé</span>
                             <div className="text-emerald-400 font-mono font-black text-xl">
                               ${req.amount.toFixed(2)}{" "}
-                              {req.crypto ? <span className="text-sm text-gray-500 bg-gray-800 px-1 py-0.5 rounded">{req.crypto}</span> : ""}
+                              {req.crypto ? <span className="text-[10px] text-emerald-900 bg-emerald-400 px-1.5 py-0.5 rounded ml-1 font-bold">{req.crypto}</span> : ""}
                             </div>
                           </div>
                         )}
                         {req.method && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Méthode</span>
-                            <span className="text-sm font-bold text-gray-300 uppercase bg-gray-800/50 px-2 py-0.5 rounded border border-gray-700">
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Moyen Transfert</span>
+                            <span className="text-xs font-bold text-gray-300 uppercase bg-gray-800 px-3 py-1 rounded-lg border border-gray-700">
                               {req.method}
                             </span>
                           </div>
                         )}
-                        <div className="flex items-center justify-between mt-1 pt-2 border-t border-gray-800 border-dashed">
-                           <span className="text-xs text-gray-500 font-mono flex items-center gap-1.5">
-                             <Clock size={12} /> {new Date(req.createdAt).toLocaleString("fr-FR")}
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-800/60">
+                           <span className="text-[10px] text-gray-500 font-mono flex items-center gap-1.5">
+                             <Clock size={12} className="text-gray-600" /> {new Date(req.createdAt).toLocaleString("fr-FR")}
                            </span>
-                           <button 
-                             className="text-xs text-blue-400 hover:text-blue-300 underline font-medium"
-                             onClick={() => {
-                               const u = users.find(u => u.id === req.userId);
-                               if(u) handleEditClick(u);
-                             }}
-                           >
-                             Voir profil
-                           </button>
                         </div>
                       </div>
 
                       {/* Request Action Area */}
-                      <div className="z-10 mt-auto pt-2">
+                      <div className="z-10 mt-1">
                         {req.status === "pending" ? (
-                          <div className="flex gap-3">
+                          <div className="flex gap-2">
                             <button
                               onClick={() => {
                                 const response = prompt(
@@ -861,7 +865,7 @@ export function AdminPanel() {
                                 if (response !== null)
                                   handleAdminRequestVal(req, "accepted", response);
                               }}
-                              className="flex-1 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/30 hover:border-emerald-500 font-black rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] text-[13px] uppercase tracking-wider flex items-center justify-center gap-2"
+                              className="flex-1 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/30 hover:border-emerald-500 font-black rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.05)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-xs uppercase tracking-widest flex items-center justify-center gap-2"
                             >
                               <Check size={16} /> Accepter
                             </button>
@@ -873,27 +877,28 @@ export function AdminPanel() {
                                 if (response !== null)
                                   handleAdminRequestVal(req, "rejected", response);
                               }}
-                              className="flex-1 py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/30 hover:border-red-500 font-black rounded-xl transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] text-[13px] uppercase tracking-wider flex items-center justify-center gap-2"
+                              className="flex-1 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/30 hover:border-rose-500 font-black rounded-xl transition-all shadow-[0_0_15px_rgba(244,63,94,0.05)] hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] text-xs uppercase tracking-widest flex items-center justify-center gap-1.5"
                             >
                               <X size={16} /> Refuser
                             </button>
                           </div>
                         ) : (
                           req.adminResponse ? (
-                            <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-800 text-sm flex gap-2 items-start mt-2">
-                              <div className="mt-1">
-                                <Monitor size={14} className="text-gray-500" />
+                            <div className="bg-indigo-900/10 p-4 rounded-xl border border-indigo-500/20 text-sm flex gap-3 items-start relative overflow-hidden">
+                              <div className="absolute top-0 left-0 bottom-0 w-1 bg-indigo-500"></div>
+                              <div className="mt-0.5">
+                                <Monitor size={16} className="text-indigo-400" />
                               </div>
                               <div className="flex-1 text-left">
-                                <span className="font-bold text-gray-500 text-[10px] uppercase tracking-wider block mb-0.5">
+                                <span className="font-bold text-indigo-400/80 text-[10px] uppercase tracking-wider block mb-1">
                                   Réponse SYS.ADMIN
                                 </span>
-                                <span className="text-gray-300 font-medium">"{req.adminResponse}"</span>
+                                <span className="text-gray-200 font-medium italic">"{req.adminResponse}"</span>
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center text-xs font-bold text-gray-600 bg-gray-900/40 py-2 rounded-lg border border-gray-800/50 uppercase tracking-widest mt-2 flex items-center justify-center gap-2">
-                              <Archive size={14} /> Requête Archivée
+                            <div className="text-center text-xs font-bold text-gray-500 bg-gray-900/50 py-3 rounded-xl border border-gray-800/60 uppercase tracking-widest flex items-center justify-center gap-2">
+                              <Archive size={14} className="text-gray-600" /> Archivée / Traitée
                             </div>
                           )
                         )}
@@ -1911,159 +1916,167 @@ export function AdminPanel() {
                   {editTab === "finances" && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                       <FormSection
-                        title="Allocation des Ressources"
-                        icon={<Database className="text-emerald-400" />}
+                        title="Ressources & Capital"
+                        icon={<DollarSign className="text-emerald-400" />}
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                              Opérations Courantes (Liquide)
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                          {/* Liquidité Container */}
+                          <div className="bg-gradient-to-br from-[#0c0c0e] to-black p-5 rounded-2xl border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.05)] relative overflow-hidden group">
+                            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500/0 via-emerald-500 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                               <Database size={14} className="text-emerald-400" /> Solde Courant (Liquide)
                             </label>
-                            <div className="relative group">
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xl">$</span>
                               <input
                                 type="number"
                                 step="0.01"
                                 value={editForm.balance ?? ""}
                                 onChange={(e) =>
-                                  setEditForm({
-                                    ...editForm,
-                                    balance: Number(e.target.value),
-                                  })
+                                  setEditForm({ ...editForm, balance: Number(e.target.value) })
                                 }
-                                className="bg-[#0c0c0e] text-emerald-400 font-mono text-2xl p-4 pl-4 rounded-xl border border-gray-800 focus:border-emerald-500/50 outline-none w-full transition-all group-hover:border-gray-700"
+                                className="bg-black/50 text-emerald-400 font-mono font-black text-2xl p-4 pl-10 rounded-xl border border-gray-800 focus:border-emerald-500/50 outline-none w-full transition-all hover:bg-black"
                               />
                             </div>
+                            <p className="text-[10px] text-gray-500 mt-2 text-right">Montant directement jouable.</p>
                           </div>
 
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                              Réserve Cryptée (Safe)
+                          {/* Vault Container */}
+                          <div className="bg-gradient-to-br from-[#0c0c0e] to-black p-5 rounded-2xl border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)] relative overflow-hidden group">
+                            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                               <Lock size={14} className="text-blue-400" /> Réserve Sécurisée (Coffre)
                             </label>
-                            <div className="relative group">
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xl">$</span>
                               <input
                                 type="number"
                                 step="0.01"
                                 value={editForm.vault ?? ""}
                                 onChange={(e) =>
-                                  setEditForm({
-                                    ...editForm,
-                                    vault: Number(e.target.value),
-                                  })
+                                  setEditForm({ ...editForm, vault: Number(e.target.value) })
                                 }
-                                className="bg-[#0c0c0e] text-gray-200 font-mono text-2xl p-4 pl-4 rounded-xl border border-gray-800 focus:border-gray-500 outline-none w-full transition-all group-hover:border-gray-700"
+                                className="bg-black/50 text-blue-400 font-mono font-black text-2xl p-4 pl-10 rounded-xl border border-gray-800 focus:border-blue-500/50 outline-none w-full transition-all hover:bg-black"
                               />
                             </div>
+                            <p className="text-[10px] text-gray-500 mt-2 text-right">Fonds stockés par l'utilisateur.</p>
                           </div>
-                          
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                              Limite Balance Avant Verrouillage
-                            </label>
-                            <div className="relative group">
-                              <input
-                                type="number"
-                                value={editForm.balanceLimit ?? 500000}
-                                onChange={(e) =>
-                                  setEditForm({
-                                    ...editForm,
-                                    balanceLimit: Number(e.target.value),
-                                  })
-                                }
-                                className="bg-[#0c0c0e] text-purple-400 font-mono text-xl p-4 pl-4 rounded-xl border border-gray-800 focus:border-purple-500/50 outline-none w-full transition-all group-hover:border-gray-700"
-                              />
+                        </div>
+
+                        {/* Limits and Maxi Vault container */}
+                        <div className="mt-6 p-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-amber-500/20 to-red-500/20 p-[1px]">
+                          <div className="bg-[#09090b] p-5 rounded-[15px] grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div className="space-y-3">
+                              <label className="text-xs font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                                <TrendingUp size={14} /> Seuil Lock (Balance Limit)
+                              </label>
+                              <div className="relative flex items-center gap-2">
+                                <div className="relative flex-1">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">$</span>
+                                  <input
+                                    type="number"
+                                    value={editForm.balanceLimit ?? 500000}
+                                    onChange={(e) =>
+                                      setEditForm({ ...editForm, balanceLimit: Number(e.target.value) })
+                                    }
+                                    className="bg-black/80 text-purple-300 font-mono text-lg p-3 pl-8 rounded-lg border border-purple-500/30 focus:border-purple-500 outline-none w-full transition-all hover:bg-black"
+                                  />
+                                </div>
+                                <button className="p-3 bg-purple-500/10 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors border border-purple-500/20" title="Reset default (500k)" onClick={() => setEditForm({...editForm, balanceLimit: 500000})}>
+                                  <RotateCcw size={16} />
+                                </button>
+                              </div>
+                              <p className="text-[10px] text-gray-500 flex items-center gap-1.5"><ShieldAlert size={10} /> Déclenche le transfert Maxi Vault automatique.</p>
                             </div>
-                            <p className="text-xs text-gray-500">Par défaut: 500,000</p>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
-                              <Lock size={14} /> Maxi Vault (Bloqué)
-                            </label>
-                            <div className="relative group flex gap-2">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={editForm.maxiVault ?? 0}
-                                onChange={(e) =>
-                                  setEditForm({
-                                    ...editForm,
-                                    maxiVault: Number(e.target.value),
-                                  })
-                                }
-                                className="bg-[#0c0c0e] text-amber-500 font-mono text-xl p-4 pl-4 rounded-xl border border-amber-500/30 focus:border-amber-500 outline-none flex-1 transition-all group-hover:border-amber-500/50"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditForm(prev => ({
-                                    ...prev,
-                                    balance: (prev.balance || 0) + (prev.maxiVault || 0),
-                                    balanceLimit: (prev.balanceLimit || 500000) + (prev.maxiVault || 0) + 500000,
-                                    maxiVault: 0
-                                  }));
-                                }}
-                                className="px-3 py-1.5 text-xs font-bold rounded bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
-                              >
-                                Débloquer vers Solde Courant
-                              </button>
+
+                            <div className="space-y-3 relative">
+                              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 blur-[30px] rounded-full pointer-events-none"></div>
+                              <label className="text-xs font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                                <Lock size={14} /> Vault Administratif (Maxi Vault)
+                              </label>
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50 font-mono text-sm">$</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={editForm.maxiVault ?? 0}
+                                  onChange={(e) =>
+                                    setEditForm({ ...editForm, maxiVault: Number(e.target.value) })
+                                  }
+                                  className="bg-[#110e05] text-amber-400 font-mono font-bold text-lg p-3 pl-8 rounded-lg border border-amber-500/30 focus:border-amber-500 outline-none w-full transition-all shadow-[0_0_15px_rgba(245,158,11,0.1)] focus:shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+                                />
+                              </div>
+                              <div className="flex gap-2 w-full">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setEditForm(prev => ({
                                       ...prev,
+                                      balance: (prev.balance || 0) + (prev.maxiVault || 0),
+                                      balanceLimit: (prev.balanceLimit || 500000) + (prev.maxiVault || 0) + 500000,
                                       maxiVault: 0
                                     }));
                                   }}
-                                  className="px-3 py-1.5 text-xs font-bold rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+                                  className="flex-1 py-1.5 px-2 text-[10px] uppercase tracking-wider font-bold rounded flex items-center justify-center gap-1.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
                                 >
-                                  Vider (Brûler)
+                                  <Unlock size={12} /> Débloquer vers Solde
                                 </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if(confirm("Confirmer la purge de ce maxi vault ? Cet argent disparaîtra définitivement.")) {
+                                        setEditForm(prev => ({ ...prev, maxiVault: 0 }));
+                                      }
+                                    }}
+                                    className="py-1.5 px-3 flex items-center justify-center text-red-500 hover:text-white bg-red-500/10 hover:bg-red-500 border border-red-500/20 rounded transition-colors"
+                                    title="Brûler (Effacer)"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-500">Peut être vidé vers la balance principale par l'admin.</p>
                           </div>
                         </div>
                       </FormSection>
 
                       <FormSection
-                        title="Falsification Statistique"
-                        icon={<TrendingUp className="text-purple-400" />}
+                        title="Statistiques & Falsification"
+                        icon={<Monitor className="text-indigo-400" />}
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-900/30 p-6 rounded-2xl border border-gray-800/80 border-dashed">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/40 p-5 rounded-2xl border border-gray-800/80 shadow-inner">
                           <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 tracking-wider">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
                               Volume Parié Total Fictif
                             </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={editForm.totalWagered ?? ""}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  totalWagered: Number(e.target.value),
-                                })
-                              }
-                              className="bg-black text-gray-300 font-mono p-3 rounded-lg border border-gray-800 outline-none w-full focus:border-purple-500/50"
-                            />
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 font-mono text-sm">$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={editForm.totalWagered ?? ""}
+                                onChange={(e) =>
+                                  setEditForm({ ...editForm, totalWagered: Number(e.target.value) })
+                                }
+                                className="bg-[#09090b] text-gray-300 font-mono p-2.5 pl-7 rounded-lg border border-gray-800 outline-none w-full focus:border-indigo-500/50 text-sm"
+                              />
+                            </div>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 tracking-wider">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
                               Gains Totaux Fictifs
                             </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={editForm.totalWon ?? ""}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  totalWon: Number(e.target.value),
-                                })
-                              }
-                              className="bg-black text-gray-300 font-mono p-3 rounded-lg border border-gray-800 outline-none w-full focus:border-purple-500/50"
-                            />
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 font-mono text-sm">$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={editForm.totalWon ?? ""}
+                                onChange={(e) =>
+                                  setEditForm({ ...editForm, totalWon: Number(e.target.value) })
+                                }
+                                className="bg-[#09090b] text-gray-300 font-mono p-2.5 pl-7 rounded-lg border border-gray-800 outline-none w-full focus:border-indigo-500/50 text-sm"
+                              />
+                            </div>
                           </div>
                         </div>
                       </FormSection>
@@ -2114,131 +2127,82 @@ export function AdminPanel() {
                   {editTab === "permissions" && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                       <FormSection
-                        title="Restrictions Ludiques & Systèmes"
+                        title="Restrictions du Réseau"
                         icon={<Settings className="text-rose-400" />}
                       >
-                        <div className="mb-4 p-4 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-between">
-                          <div>
-                            <h4 className="font-bold text-white mb-1">
-                              Requêtes de Promotion
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                          {/* Comm & Support */}
+                          <div className="bg-gradient-to-br from-[#0c1015] to-[#090b0e] border border-gray-800/80 rounded-2xl p-6 hover:border-gray-700 transition-colors shadow-2xl relative overflow-hidden">
+                             <div className="absolute top-0 right-0 p-24 bg-blue-500/5 blur-[50px] rounded-full"></div>
+                            <h4 className="font-black text-white flex items-center gap-2 mb-6 text-sm uppercase tracking-widest relative z-10">
+                              <Mail size={16} className="text-blue-400" />
+                              Communications
                             </h4>
-                            <p className="text-xs text-gray-500">
-                              Autoriser l'utilisateur à créer des requêtes
-                              d'évolution de grade.
-                            </p>
+                            <div className="space-y-6 relative z-10">
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 hover:bg-black/60 transition-colors">
+                                <div>
+                                  <span className="text-sm font-bold text-gray-200 block">Accès au Chat (Global)</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Envoyer des msgs dans le chat.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.permissions?.canChat !== false} onChange={(e) => setEditForm({...editForm, permissions: {...editForm.permissions, canChat: e.target.checked}})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 hover:bg-black/60 transition-colors">
+                                <div>
+                                  <span className="text-sm font-bold text-gray-200 block">Envoyer Tickets Support</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Contacter l'admin.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.canUseSupport !== false} onChange={(e) => setEditForm({...editForm, canUseSupport: e.target.checked})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 hover:bg-black/60 transition-colors">
+                                <div>
+                                  <span className="text-sm font-bold text-gray-200 block">Demande de Rank-Up</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Évolution de grade.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.canAppealRank !== false} onChange={(e) => setEditForm({...editForm, canAppealRank: e.target.checked})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+                            </div>
                           </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="sr-only peer"
-                              checked={editForm.canAppealRank !== false}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  canAppealRank: e.target.checked,
-                                })
-                              }
-                            />
-                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                          </label>
-                        </div>
 
-                        <div className="mb-8 p-4 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-between">
-                          <div>
-                            <h4 className="font-bold text-white mb-1">
-                              Accès au Chat en Direct
+                          {/* Financement Limites */}
+                          <div className="bg-gradient-to-br from-[#0a110d] to-[#070b09] border border-gray-800/80 rounded-2xl p-6 hover:border-gray-700 transition-colors shadow-2xl relative overflow-hidden">
+                             <div className="absolute top-0 left-0 p-24 bg-emerald-500/5 blur-[50px] rounded-full"></div>
+                            <h4 className="font-black text-white flex items-center gap-2 mb-6 text-sm uppercase tracking-widest relative z-10">
+                              <DollarSign size={16} className="text-emerald-400" />
+                              Limites Caisse
                             </h4>
-                            <p className="text-xs text-gray-500">
-                              Autoriser l'utilisateur à lire et envoyer des
-                              messages dans le chat.
-                            </p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="sr-only peer"
-                              checked={editForm.permissions?.canChat !== false}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  permissions: {
-                                    ...editForm.permissions,
-                                    canChat: e.target.checked,
-                                  },
-                                })
-                              }
-                            />
-                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                          </label>
-                        </div>
-
-                        <p className="text-sm text-gray-500 mb-6">
-                          Bloquez l'accès aux modules spécifiés (Rouge =
-                          Verrouillé).
-                        </p>
-
-                        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
-                              Montant Dépôt Max ($)
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              placeholder="Ex: 500 (laisser vide pour illimité)"
-                              value={
-                                editForm.permissions?.maxDepositAmount || ""
-                              }
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  permissions: {
-                                    ...(editForm.permissions || {}),
-                                    maxDepositAmount: e.target.value
-                                      ? parseFloat(e.target.value)
-                                      : undefined,
-                                  },
-                                })
-                              }
-                              className="w-full bg-[#0c0c0e] border border-gray-800 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500 placeholder-gray-700"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
-                              Dépôts Max / Jour
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              placeholder="Ex: 3 (laisser vide pour illimité)"
-                              value={
-                                editForm.permissions?.maxDepositsPerDay || ""
-                              }
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  permissions: {
-                                    ...(editForm.permissions || {}),
-                                    maxDepositsPerDay: e.target.value
-                                      ? parseInt(e.target.value)
-                                      : undefined,
-                                  },
-                                })
-                              }
-                              className="w-full bg-[#0c0c0e] border border-gray-800 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500 placeholder-gray-700"
-                            />
+                            <div className="space-y-5 relative z-10">
+                              <div className="p-3 bg-black/40 rounded-xl border border-gray-800/60">
+                                <label className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1.5 block">Montant Dépôt Max ($)</label>
+                                <input type="number" min="0" placeholder="Vide = illimité" value={editForm.permissions?.maxDepositAmount || ""} onChange={(e) => setEditForm({...editForm, permissions: {...(editForm.permissions || {}), maxDepositAmount: e.target.value ? parseFloat(e.target.value) : undefined}})} className="w-full bg-black/50 border border-gray-800 rounded-lg p-3 text-emerald-400 text-lg font-black focus:outline-none focus:border-emerald-500 placeholder-gray-800 font-mono transition-colors" />
+                              </div>
+                              <div className="p-3 bg-black/40 rounded-xl border border-gray-800/60">
+                                <label className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1.5 block">Transferts par Jour (Max)</label>
+                                <input type="number" min="0" placeholder="Vide = illimité" value={editForm.permissions?.maxDepositsPerDay || ""} onChange={(e) => setEditForm({...editForm, permissions: {...(editForm.permissions || {}), maxDepositsPerDay: e.target.value ? parseInt(e.target.value) : undefined}})} className="w-full bg-black/50 border border-gray-800 rounded-lg p-3 text-emerald-400 text-lg font-black focus:outline-none focus:border-emerald-500 placeholder-gray-800 font-mono transition-colors" />
+                              </div>
+                            </div>
                           </div>
                         </div>
+
+                        <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent my-8"></div>
 
                         <div className="mb-8">
-                          <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">
-                            Accès Financier & Avantages
+                          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                             <Lock size={14} className="text-gray-400" /> Blocage des Modules Internes
                           </h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {[
                               {
                                 id: "canDeposit",
-                                label: "Dépôts",
+                                label: "Dépôts (Fiat/Crypto)",
                                 value:
                                   editForm.permissions?.canDeposit !== false,
                               },
@@ -2256,32 +2220,27 @@ export function AdminPanel() {
                               },
                               {
                                 id: "canUseVault",
-                                label: "Vault (Coffre)",
+                                label: "Sécurisation Vault",
                                 value:
                                   editForm.permissions?.canUseVault !== false,
                               },
                               {
                                 id: "canBuyVip",
-                                label: "Achat VIP",
+                                label: "Panel Achat VIP",
                                 value:
                                   editForm.permissions?.canBuyVip !== false,
                               },
                               {
                                 id: "canClaimRewards",
-                                label: "Récompenses",
+                                label: "Distribution Récompenses",
                                 value:
                                   editForm.permissions?.canClaimRewards !==
                                   false,
-                              },
-                              {
-                                id: "canChat",
-                                label: "Live Chat",
-                                value: editForm.permissions?.canChat !== false,
-                              },
+                              }
                             ].map((perm) => (
                               <label
                                 key={perm.id}
-                                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${!perm.value ? "bg-rose-500/5 border-rose-500/30 text-rose-300" : "bg-[#0c0c0e] border-gray-800 hover:border-gray-600 text-gray-300"}`}
+                                className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors shadow-inner ${!perm.value ? "bg-rose-950/20 border-rose-500/30 text-rose-300" : "bg-[#0b1015] border-gray-800/80 hover:border-gray-700 text-gray-300"}`}
                               >
                                 <input
                                   type="checkbox"
@@ -2298,7 +2257,7 @@ export function AdminPanel() {
                                   }}
                                 />
                                 <span
-                                  className="w-4 h-4 rounded-[4px] border border-gray-600 flex items-center justify-center shrink-0"
+                                  className="w-5 h-5 rounded-[4px] border border-gray-600 flex items-center justify-center shrink-0 transition-colors"
                                   style={{
                                     backgroundColor: perm.value
                                       ? "#10b981"
@@ -2308,11 +2267,11 @@ export function AdminPanel() {
                                 >
                                   {perm.value && (
                                     <svg
-                                      className="w-3 h-3 text-white"
+                                      className="w-3.5 h-3.5 text-white"
                                       viewBox="0 0 24 24"
                                       fill="none"
                                       stroke="currentColor"
-                                      strokeWidth="3"
+                                      strokeWidth="3.5"
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
                                     >
@@ -2320,7 +2279,7 @@ export function AdminPanel() {
                                     </svg>
                                   )}
                                 </span>
-                                <span className="text-sm font-medium">
+                                <span className="text-sm font-bold tracking-wide">
                                   {perm.label}
                                 </span>
                               </label>
@@ -2329,10 +2288,10 @@ export function AdminPanel() {
                         </div>
 
                         <div className="mb-8">
-                          <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">
-                            Moteur Puits - Classiques
+                          <h4 className="text-[10px] font-black text-emerald-500/50 uppercase tracking-widest border-b border-emerald-500/10 pb-2 mb-4">
+                            Filtrage Légal : Jeux Originaux
                           </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                             {[
                               "crash",
                               "dice",
@@ -2350,8 +2309,11 @@ export function AdminPanel() {
                               return (
                                 <label
                                   key={gameId}
-                                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${isBlocked ? "bg-rose-500/5 border-rose-500/30 text-rose-300" : "bg-[#0c0c0e] border-gray-800 hover:border-gray-600 text-gray-300"}`}
+                                  className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${isBlocked ? "bg-rose-950/20 border-rose-500/20 text-rose-400" : "bg-black/30 border-gray-800 hover:border-gray-700 text-gray-400 hover:text-gray-300"}`}
                                 >
+                                  <span className="text-xs font-bold uppercase tracking-wider truncate">
+                                    {gameId}
+                                  </span>
                                   <input
                                     type="checkbox"
                                     className="sr-only"
@@ -2373,32 +2335,6 @@ export function AdminPanel() {
                                       });
                                     }}
                                   />
-                                  <span
-                                    className="w-4 h-4 rounded-[4px] border border-gray-600 flex items-center justify-center shrink-0"
-                                    style={{
-                                      backgroundColor: !isBlocked
-                                        ? "#10b981"
-                                        : "transparent",
-                                      borderColor: !isBlocked ? "#10b981" : "",
-                                    }}
-                                  >
-                                    {!isBlocked && (
-                                      <svg
-                                        className="w-3 h-3 text-white"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      >
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                      </svg>
-                                    )}
-                                  </span>
-                                  <span className="text-sm font-medium capitalize truncate">
-                                    {gameId}
-                                  </span>
                                 </label>
                               );
                             })}
@@ -2406,10 +2342,10 @@ export function AdminPanel() {
                         </div>
 
                         <div>
-                          <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">
-                            Cartes & Divers
+                          <h4 className="text-[10px] font-black text-purple-500/50 uppercase tracking-widest border-b border-purple-500/10 pb-2 mb-4">
+                            Filtrage Légal : Cartes & Slots
                           </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                             {[
                               "baccarat",
                               "blackjack",
@@ -2422,8 +2358,11 @@ export function AdminPanel() {
                               return (
                                 <label
                                   key={gameId}
-                                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${isBlocked ? "bg-rose-500/5 border-rose-500/30 text-rose-300" : "bg-[#0c0c0e] border-gray-800 hover:border-gray-600 text-gray-300"}`}
+                                  className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${isBlocked ? "bg-rose-950/20 border-rose-500/20 text-rose-400" : "bg-black/30 border-gray-800 hover:border-gray-700 text-gray-400 hover:text-gray-300"}`}
                                 >
+                                  <span className="text-xs font-bold uppercase tracking-wider truncate">
+                                    {gameId.replace("-", " ")}
+                                  </span>
                                   <input
                                     type="checkbox"
                                     className="sr-only"
@@ -2445,32 +2384,6 @@ export function AdminPanel() {
                                       });
                                     }}
                                   />
-                                  <span
-                                    className="w-4 h-4 rounded-[4px] border border-gray-600 flex items-center justify-center shrink-0"
-                                    style={{
-                                      backgroundColor: !isBlocked
-                                        ? "#10b981"
-                                        : "transparent",
-                                      borderColor: !isBlocked ? "#10b981" : "",
-                                    }}
-                                  >
-                                    {!isBlocked && (
-                                      <svg
-                                        className="w-3 h-3 text-white"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      >
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                      </svg>
-                                    )}
-                                  </span>
-                                  <span className="text-sm font-medium capitalize truncate">
-                                    {gameId.replace("-", " ")}
-                                  </span>
                                 </label>
                               );
                             })}
@@ -2590,6 +2503,41 @@ export function AdminPanel() {
           </div>
         </div>
       ) : null}
+
+      {/* Delete User Confirmation Modal */}
+      {userToDeleteConfirm && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#111c25] border border-red-500/30 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(239,68,68,0.15)] flex flex-col items-center text-center p-8 relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-500/0 via-red-500 to-red-500/0"></div>
+            
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
+              <Trash2 className="text-red-500 w-10 h-10" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Suppression Définitive</h2>
+            <p className="text-gray-400 mb-6 leading-relaxed text-sm">
+              Vous êtes sur le point de purger l'utilisateur <strong className="text-white bg-white/10 px-2 py-0.5 rounded font-mono">{userToDeleteConfirm.username}</strong> du réseau. Cette action est irréversible et effacera toutes ses données cryptographiques et son historique.
+            </p>
+            
+            <div className="flex w-full gap-3">
+              <button
+                onClick={() => setUserToDeleteConfirm(null)}
+                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl transition-colors"
+                disabled={actionLoading === userToDeleteConfirm.id + "delete"}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={performDeleteUser}
+                disabled={actionLoading === userToDeleteConfirm.id + "delete"}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.5)] flex items-center justify-center gap-2 uppercase tracking-wider text-sm"
+              >
+                {actionLoading === userToDeleteConfirm.id + "delete" ? "Purge..." : "Confirmer Purge"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lock App Modal */}
       {showLockModal && (

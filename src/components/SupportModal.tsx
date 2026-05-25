@@ -130,6 +130,7 @@ export function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   };
 
   const isBannedFromAppeals = user.canAppealRank === false;
+  const isBannedFromSupport = user.canUseSupport === false;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1923]/90 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
@@ -151,7 +152,15 @@ export function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
           </div>
         </div>
 
-        {successMsg ? (
+        {isBannedFromSupport ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <ShieldAlert className="text-red-500 mb-4" size={48} />
+            <h3 className="text-white font-bold text-xl mb-2">Accès restreint</h3>
+            <p className="text-text-secondary max-w-sm">
+              Votre accès au support a été suspendu par l'administration. Vous ne pouvez plus envoyer de notifications ou de tickets.
+            </p>
+          </div>
+        ) : successMsg ? (
           <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl flex flex-col items-center justify-center text-center py-8">
             <CheckCircle size={48} className="mb-4 text-emerald-500" />
             <p className="font-bold">{successMsg}</p>
@@ -235,25 +244,45 @@ export function SupportModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                    <MessageSquare className="text-blue-400" size={24} />
                  </div>
                  <div className="flex-1">
-                   <h3 className="text-white font-bold mb-1">Envoyer un message au support</h3>
+                   <h3 className="text-white font-bold mb-1">Soumettre une requête</h3>
                    <p className="text-sm text-text-secondary mb-3 leading-relaxed">
-                     Une question, un bug, ou une requête spécifique ? Écrivez-nous directement.
+                     Sélectionnez un sujet et détaillez votre demande (Retrait, Bug, Dépôt, Autre).
                    </p>
+                   <select className="w-full bg-[#0f1923] border border-border-subtle rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500 mb-3" onChange={(e) => setSupportMessage(`[${e.target.value}] - `)}>
+                     <option value="Autre">Type de demande (Autre par défaut)</option>
+                     <option value="Demande de Retrait">Demande de Retrait</option>
+                     <option value="Problème de Dépôt">Problème de Dépôt</option>
+                     <option value="Signaler un Bug">Signaler un Bug</option>
+                     <option value="Question Générale">Question Générale</option>
+                   </select>
                    <textarea
                      value={supportMessage}
                      onChange={(e) => setSupportMessage(e.target.value)}
                      placeholder="Détaillez votre demande ici..."
-                     className="w-full bg-[#0f1923] border border-border-subtle rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500 min-h-[100px] mb-3 resize-none"
+                     className="w-full bg-[#0f1923] border border-border-subtle rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500 min-h-[100px] mb-3 resize-none custom-scrollbar"
                    ></textarea>
                    <button
                      onClick={handleSendMessage}
                      disabled={loading || !supportMessage.trim()}
                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed drop-shadow-md"
                    >
-                     {loading ? "Envoi..." : "Envoyer le message"}
+                     {loading ? "Envoi..." : "Envoyer la requête"}
                    </button>
                  </div>
                </div>
+            </div>
+
+            {/* Latest Features / Announcements */}
+            <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-4 rounded-xl col-span-1 md:col-span-2 mt-2">
+               <h3 className="text-white font-bold mb-2 flex items-center gap-2 text-sm">
+                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                 Dernières Fonctionnalités & Mises à jour
+               </h3>
+               <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside">
+                 <li><strong className="text-gray-300">Maxi Vault :</strong> Sécurisation des fonds suspects automatique par l'administration. Déblocable sur demande.</li>
+                 <li><strong className="text-gray-300">Puits Classiques :</strong> Nouvel affichage et restriction légale (Mines, Wheel, Plinko).</li>
+                 <li><strong className="text-gray-300">Dépôts/Retraits :</strong> Les plafonds de dépôts sont désormais basés sur la limite de votre IP et vérifications KYC.</li>
+               </ul>
             </div>
 
           </div>
