@@ -141,12 +141,9 @@ function InnerApp() {
   const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => {
+    // We no longer auto close sidebar on resize
     const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
+      // you can keep it or remove, user wants it to just stay as they left it
     };
     window.addEventListener("resize", handleResize);
 
@@ -163,9 +160,7 @@ function InnerApp() {
   const handleSetView = (newView: ViewType) => {
     if (newView === view) return;
     setIsChangingView(true);
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false); // Close sidebar on mobile when navigating
-    }
+    // User requested NO auto-close on mobile
     setTimeout(() => {
       setView(newView);
       setIsChangingView(false);
@@ -428,7 +423,8 @@ function InnerAppContent({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base overflow-x-hidden bg-pattern relative">
+    <div className="flex w-full h-[100dvh] overflow-hidden bg-bg-base text-text-primary selection:bg-accent selection:text-bg-base relative">
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none bg-pattern"></div>
       <Toaster
         position="top-right"
         reverseOrder={true}
@@ -498,30 +494,43 @@ function InnerAppContent({
           </div>
         </div>
       )}
-      <Header
-        setView={handleSetView as any}
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        toggleChat={() => setChatOpen(!chatOpen)}
-      />
-      <div className="flex flex-1 relative items-stretch">
-        {/* Mobile Sidebar Overlay */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          ></div>
-        )}
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
         <div
-          className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-40 ${sidebarOpen ? "w-[72px] min-w-[72px] border-r pointer-events-auto" : "w-0 min-w-0 border-r-0 opacity-0 pointer-events-none md:pointer-events-auto md:opacity-100 overflow-hidden"} flex-shrink-0 absolute md:relative top-0 bottom-0 left-0 bg-[#0f212e]`}
-        >
-          <Sidebar
-            view={view}
+          className="fixed inset-0 bg-black/60 z-[55] md:hidden backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* FULL HEIGHT LEFT SIDEBAR */}
+      <div
+        className={`bg-bg-panel border-border-subtle transition-all duration-300 ease-in-out z-[60] flex-shrink-0 absolute md:relative top-0 bottom-0 left-0 bg-[#0f212e] h-[100dvh] ${
+          sidebarOpen 
+            ? "w-[240px] translate-x-0 border-r shadow-2xl md:shadow-none" 
+            : "-translate-x-full md:translate-x-0 w-[240px] md:w-[72px] md:border-r"
+        }`}
+      >
+        <Sidebar
+          view={view}
+          setView={handleSetView as any}
+          isOpen={sidebarOpen}
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
+      </div>
+
+      {/* RIGHT MAIN CONTENT AREA WITH HEADER TOP */}
+      <div className="flex flex-col flex-1 min-w-0 bg-transparent overflow-hidden h-[100dvh]">
+        <div className="relative z-40 flex-shrink-0">
+          <Header
             setView={handleSetView as any}
-            isOpen={sidebarOpen}
+            toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            toggleChat={() => setChatOpen(!chatOpen)}
           />
         </div>
+        
         <main
-          className={`flex-1 w-full overflow-x-hidden min-h-[calc(100vh-80px)] relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}
+          className={`flex-1 w-full overflow-y-auto overflow-x-hidden relative flex flex-col transition-all duration-300 ${chatOpen ? "lg:mr-[350px]" : ""}`}
         >
           <div className="flex-1">
             {(view === "home" ||

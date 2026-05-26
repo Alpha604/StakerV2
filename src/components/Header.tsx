@@ -58,7 +58,7 @@ export function Header({
 
   return (
     <>
-      <header className="h-16 md:h-20 border-b border-border-subtle flex items-center justify-between px-4 md:px-8 bg-bg-panel sticky top-0 z-50">
+      <header className="h-16 md:h-20 border-b border-border-subtle flex items-center justify-between px-4 md:px-8 bg-bg-panel relative z-50">
         <div className="flex items-center gap-4 md:gap-6 shrink-0">
           <Menu
             className="text-text-secondary cursor-pointer hover:text-white transition-colors"
