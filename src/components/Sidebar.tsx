@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "../lib/utils";
 import { RankBadge } from "./RankBadge";
-import { SupportModal } from "./SupportModal";
 import {
   Home,
   Trophy,
@@ -39,7 +38,6 @@ export function Sidebar({
   toggleSidebar?: () => void;
 }) {
   const { user, showSessionStats, setShowSessionStats } = useUser();
-  const [showSupport, setShowSupport] = useState(false);
   const [showSecondarySidebar, setShowSecondarySidebar] = useState(false);
 
   const NavItem = ({ id, icon: Icon, label, colorClass = "", onClick, activeSub = false }: { id?: string, icon: any, label: string, colorClass?: string, onClick?: () => void, activeSub?: boolean }) => {
@@ -129,20 +127,13 @@ export function Sidebar({
 
         {/* ALWAYS SHOW PLUS BUTTON */}
         <button
-          onClick={() => {
-            if (!isOpen && toggleSidebar) {
-              toggleSidebar();
-              setShowSecondarySidebar(true);
-            } else {
-              setShowSecondarySidebar(!showSecondarySidebar);
-            }
-          }}
+          onClick={() => setShowSecondarySidebar(!showSecondarySidebar)}
           className={cn(
             "flex items-center transition-all w-full flex-shrink-0",
             isOpen ? "h-11 px-4 justify-start gap-4 rounded-lg" : "h-12 justify-center mb-2",
             showSecondarySidebar 
-              ? isOpen ? "bg-bg-inner text-white" : "bg-bg-inner text-white" 
-              : isOpen ? "text-text-secondary hover:bg-bg-inner hover:text-white" : "text-text-secondary hover:bg-bg-inner hover:text-white"
+              ? "bg-bg-inner text-white" 
+              : "text-text-secondary hover:bg-bg-inner hover:text-white"
           )}
           title={!isOpen ? "Plus" : undefined}
         >
@@ -151,39 +142,6 @@ export function Sidebar({
           </div>
           {isOpen && <span className="font-medium text-sm whitespace-nowrap truncate tracking-wide">Plus</span>}
         </button>
-
-        {/* If open AND Plus is clicked, show items inline (Accordion style) */}
-        {isOpen && showSecondarySidebar && (
-          <div className="flex flex-col gap-1 ml-2 pl-2 border-l border-border-medium mb-2 mt-1 animate-in fade-in slide-in-from-top-2">
-            <NavItem id="profile" icon={User} label="Mon Profil" />
-            <NavItem id="verify" icon={Search} label="S. de Pari" />
-            <NavItem id="stats" icon={Activity} label="S. Détaillées" />
-            <NavItem id="infos" icon={Info} colorClass="text-amber-500" label="Informations" />
-            
-            {user?.role === "admin" && (
-              <NavItem id="admin" icon={ShieldAlert} colorClass="text-red-500" activeSub={view === "admin"} label="Administration" />
-            )}
-
-            <button
-              onClick={() => setShowSupport(true)}
-              className={cn("flex items-center transition-all w-full h-11 px-4 mt-1 justify-start gap-3 rounded-lg text-text-secondary hover:bg-bg-inner hover:text-white")}
-            >
-              <Headset size={18} />
-              <span className="font-medium text-sm whitespace-nowrap truncate tracking-wide">Support</span>
-            </button>
-
-            {user && (user.maxiVault || 0) > 0 && (
-               <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase mb-1">
-                     <Lock size={14} /> Maxi Vault
-                  </div>
-                  <div className="text-white font-mono font-medium text-[11px]">
-                     ${user.maxiVault?.toFixed(2)}
-                  </div>
-               </div>
-            )}
-          </div>
-        )}
 
         <div className="flex-1 min-h-[10px]"></div>
 
@@ -198,14 +156,13 @@ export function Sidebar({
         
       </aside>
 
-      {/* Secondary Sidebar (Slide out panel when closed) */}
-      {!isOpen && (
-        <aside 
-          className={cn(
-            "absolute left-[72px] top-0 h-full flex flex-col py-4 gap-2 transition-all duration-300 ease-in-out bg-[#0f212e] border-r border-[#1a2c38] shadow-[10px_0_15px_-3px_rgba(0,0,0,0.5)] z-[100] whitespace-nowrap overflow-hidden",
-            showSecondarySidebar ? "w-60 opacity-100" : "w-0 opacity-0 px-0 py-0 border-r-0"
-          )}
-        >
+      {/* Secondary Sidebar (Slide out panel) */}
+      <aside 
+        className={cn(
+          "absolute left-full top-0 h-full flex flex-col py-4 gap-2 transition-all duration-300 ease-in-out bg-[#0f212e] border-r border-[#1a2c38] shadow-[10px_0_15px_-3px_rgba(0,0,0,0.5)] z-[100] whitespace-nowrap overflow-hidden",
+          showSecondarySidebar ? "w-60 opacity-100" : "w-0 opacity-0 px-0 py-0 border-r-0"
+        )}
+      >
           <div className="px-5 pb-3 mb-2 border-b border-[#1a2c38] uppercase text-xs font-bold text-text-secondary tracking-wider flex items-center justify-between">
             Plus d'options
           </div>
@@ -260,19 +217,7 @@ export function Sidebar({
                 </div>
              </div>
           )}
-
-          <div className="mt-auto px-2 pb-2">
-            <button
-              onClick={() => { setShowSupport(true); setShowSecondarySidebar(false); }}
-              className="w-full h-10 bg-bg-inner rounded-lg flex items-center justify-center gap-2 text-text-secondary hover:text-white transition-colors border border-border-subtle hover:border-border-medium"
-            >
-              <Headset size={18} /> <span className="font-medium text-sm">Support</span>
-            </button>
-          </div>
         </aside>
-      )}
-
-      <SupportModal isOpen={showSupport} onClose={() => setShowSupport(false)} />
     </div>
   );
 }

@@ -160,7 +160,9 @@ function InnerApp() {
   const handleSetView = (newView: ViewType) => {
     if (newView === view) return;
     setIsChangingView(true);
-    // User requested NO auto-close on mobile
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false); // Close sidebar on mobile when navigating
+    }
     setTimeout(() => {
       setView(newView);
       setIsChangingView(false);

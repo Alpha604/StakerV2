@@ -8,12 +8,14 @@ import {
   Menu,
   ChevronDown,
   Wallet,
-  MessageSquare
+  MessageSquare,
+  Headset
 } from "lucide-react";
 import { Leaderboard } from "./Leaderboard";
 import { CryptoModal } from "./CryptoModal";
 import { WalletModal } from "./WalletModal";
 import { LoginModal } from "./LoginModal";
+import { SupportModal } from "./SupportModal";
 
 export function Header({
   setView,
@@ -29,6 +31,7 @@ export function Header({
   const [showWallet, setShowWallet] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showCryptoModal, setShowCryptoModal] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
 
   const prevBalanceRef = useRef(balance);
   const controls = useAnimation();
@@ -124,6 +127,14 @@ export function Header({
                 <Trophy size={18} />
               </button>
               
+              <button
+                onClick={() => setShowSupport(true)}
+                className="hover:text-white transition-colors hidden sm:block"
+                title="Support"
+              >
+                <Headset size={18} />
+              </button>
+              
               {user && user.permissions?.canChat !== false && (
                 <button
                   onClick={toggleChat}
@@ -158,6 +169,7 @@ export function Header({
         <Leaderboard onClose={() => setShowLeaderboard(false)} />
       )}
       <CryptoModal isOpen={showCryptoModal} onClose={() => setShowCryptoModal(false)} />
+      <SupportModal isOpen={showSupport} onClose={() => setShowSupport(false)} />
     </>
   );
 }
