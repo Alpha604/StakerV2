@@ -1730,9 +1730,28 @@ export function AdminPanel() {
               </>
               )}
 
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mt-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Shield className="text-red-500" /> Modération : Mots Interdits
+              </h3>
+              <div>
+                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block flex justify-between">
+                  <span>Liste de mots ou pseudos bannis</span>
+                  <span className="text-gray-500 font-normal normal-case">Séparés par des virgules</span>
+                </label>
+                <textarea 
+                  value={heroSettings.bannedWordsText || ""}
+                  onChange={(e) => setHeroSettings(s => ({...s, bannedWordsText: e.target.value}))}
+                  rows={4}
+                  placeholder="ex: admin, moderateur, insult1, insult2..."
+                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-red-500 outline-none resize-none"
+                />
+              </div>
+            </div>
+
               <button 
                 onClick={() => updateAppSettings(heroSettings)}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-colors mt-6"
               >
                 Sauvegarder les Paramètres
               </button>

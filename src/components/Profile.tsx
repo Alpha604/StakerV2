@@ -1,9 +1,10 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { useUser, UserRank } from "../context/UserContext";
-import { User, Shield, Activity, DollarSign, Wallet, ShieldCheck, Gamepad2, Award, Camera, Save, X, Edit2 } from "lucide-react";
+import { User, Shield, Activity, DollarSign, Wallet, ShieldCheck, Gamepad2, Award, Camera, Save, X, Edit2, Lock } from "lucide-react";
 import { cn } from "../lib/utils";
 import { RankBadge } from "./RankBadge";
+import { toast } from "react-hot-toast";
 
 const getRankProgress = (wagered: number): { currentRank: UserRank; nextRank: UserRank | null; progress: number; needed: number } => {
   const thresholds = [
@@ -45,7 +46,7 @@ const getRankProgress = (wagered: number): { currentRank: UserRank; nextRank: Us
 };
 
 export function Profile() {
-  const { user, balance, vault, totalWagered, totalWon, updateUserData } = useUser() as any;
+  const { user, balance, vault, totalWagered, totalWon, updateUserData, appSettings } = useUser() as any;
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -59,6 +60,16 @@ export function Profile() {
 
   const handleSaveUsername = async () => {
     if (!newUsername.trim() || newUsername.trim().length > 20) return;
+    
+    if (appSettings?.bannedWordsText) {
+      const bannedWords = appSettings.bannedWordsText.split(',').map((w: string) => w.trim().toLowerCase()).filter(Boolean);
+      const isBanned = bannedWords.some((word: string) => newUsername.toLowerCase().includes(word));
+      if (isBanned) {
+        toast.error("Ce pseudo contient un mot non autorisé.");
+        return;
+      }
+    }
+    
     await updateUserData({ username: newUsername.trim() });
     setIsEditingUsername(false);
   };
@@ -97,15 +108,22 @@ export function Profile() {
                   user.username.substring(0, 2)
                 )}
               </div>
-              {!user.preventPhotoChange && (
-                <button 
-                  onClick={() => { setIsEditingPhoto(true); setNewPhotoUrl(user.photoURL || ""); }}
-                  className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95"
-                  title="Modifier la photo"
-                >
-                  <Camera size={14} />
-                </button>
-              )}
+              <button 
+                onClick={() => {
+                  if (user.preventPhotoChange) return;
+                  setIsEditingPhoto(true); 
+                  setNewPhotoUrl(user.photoURL || ""); 
+                }}
+                className={cn(
+                  "absolute bottom-0 right-0 p-2 rounded-full shadow-lg transition-transform",
+                  user.preventPhotoChange 
+                    ? "bg-red-500/80 text-white cursor-not-allowed" 
+                    : "bg-blue-500 hover:bg-blue-600 text-white hover:scale-110 active:scale-95"
+                )}
+                title={user.preventPhotoChange ? "Modifications bloquées par l'administration" : "Modifier la photo"}
+              >
+                {user.preventPhotoChange ? <Lock size={14} /> : <Camera size={14} />}
+              </button>
             </div>
 
             {isEditingPhoto && (
@@ -163,15 +181,22 @@ export function Profile() {
               <h2 className="text-2xl font-bold mb-1 relative z-10 flex flex-col items-center gap-2 group/name">
                 <div className="flex items-center gap-2">
                   <span>{user.username}</span>
-                  {!user.preventUsernameChange && (
-                    <button 
-                      onClick={() => { setIsEditingUsername(true); setNewUsername(user.username || ""); }}
-                      className="text-gray-500 hover:text-white opacity-0 group-hover/name:opacity-100 transition-all focus:opacity-100"
-                      title="Modifier le pseudo"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => {
+                      if (user.preventUsernameChange) return;
+                      setIsEditingUsername(true); 
+                      setNewUsername(user.username || ""); 
+                    }}
+                    className={cn(
+                      "transition-all",
+                      user.preventUsernameChange 
+                        ? "text-red-500/80 cursor-not-allowed opacity-100" 
+                        : "text-gray-500 hover:text-white opacity-0 group-hover/name:opacity-100 focus:opacity-100"
+                    )}
+                    title={user.preventUsernameChange ? "Modifications bloquées par l'administration" : "Modifier le pseudo"}
+                  >
+                    {user.preventUsernameChange ? <Lock size={16} /> : <Edit2 size={16} />}
+                  </button>
                 </div>
                 <RankBadge rank={user.rank} className="mt-1 h-12 md:h-16 drop-shadow-lg" />
               </h2>
