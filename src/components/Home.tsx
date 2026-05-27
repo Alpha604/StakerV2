@@ -159,6 +159,32 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
 
   const { sessionBets, globalGameStatus, appSettings } = useUser() as any;
 
+  const heroBannerData = React.useMemo(() => {
+    if (appSettings?.homeHeroAutoMode) {
+      // Pick a random game, or prioritize newest games
+      const newGames = ALL_GAMES.filter((g) => calculateIsNew(g.releaseDate));
+      const gameToUse = newGames.length > 0 ? newGames[0] : ALL_GAMES[0];
+      return {
+        title: "Nouveau Jeu",
+        subtitle: ('provider' in gameToUse) ? gameToUse.provider : "Stake Originals",
+        gameName: gameToUse.name,
+        description: `Découvrez ${gameToUse.name}, le jeu le plus chaud du moment. Tentez votre chance et gagnez gros !`,
+        bannerUrl: gameToUse.img,
+        link: gameToUse.link,
+        rtp: "98.50%"
+      };
+    }
+    return {
+      title: appSettings?.homeHeroTitle || "Exclusive Release",
+      subtitle: appSettings?.homeHeroSubtitle || "Evolution Gaming",
+      gameName: appSettings?.homeHeroGameName || "Ice Fishing",
+      description: appSettings?.homeHeroDescription || "La toute nouvelle roue d'Evolution en exclusivité. Misez sur vos prises, défiez le froid polaire et pêchez des multiplicateurs jusqu'à x20 par partie !",
+      bannerUrl: appSettings?.homeHeroBannerUrl || "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg",
+      link: appSettings?.homeHeroLink || "ice-fishing",
+      rtp: appSettings?.homeHeroRTP || "98.50%"
+    };
+  }, [appSettings]);
+
   // Search logic for dropdown
   const desktopSearchMatches = React.useMemo(() => {
     if (!searchQuery) return [];
@@ -418,7 +444,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
              <img 
-               src={appSettings?.homeHeroBannerUrl || "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg"} 
+               src={heroBannerData.bannerUrl} 
                alt="Hero Banner" 
                className="w-full h-full object-cover transform scale-105 group-hover:scale-110 transition-transform duration-1000 ease-out origin-center" 
              />
@@ -431,17 +457,17 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
           <div className="relative z-10 max-w-2xl translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-sm uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-                {appSettings?.homeHeroTitle || "Exclusive Release"}
+                {heroBannerData.title}
               </span>
               <span className="text-gray-300 text-xs font-bold uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 border border-white/10 rounded-sm">
-                {appSettings?.homeHeroSubtitle || "Evolution Gaming"}
+                {heroBannerData.subtitle}
               </span>
             </div>
             
             <h2 className="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] tracking-tighter uppercase leading-none">
-              {appSettings?.homeHeroGameName ? (
+              {heroBannerData.gameName ? (
                 <>
-                  {appSettings.homeHeroGameName.split(' ')[0]} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{appSettings.homeHeroGameName.split(' ').slice(1).join(' ')}</span>
+                  {heroBannerData.gameName.split(' ')[0]} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{heroBannerData.gameName.split(' ').slice(1).join(' ')}</span>
                 </>
               ) : (
                 <>Ice <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Fishing</span></>
@@ -449,19 +475,18 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             </h2>
             
             <p className="text-gray-300 font-medium mb-8 leading-relaxed text-lg max-w-xl text-shadow-sm">
-              {appSettings?.homeHeroDescription || "La toute nouvelle roue d'Evolution en exclusivité. Misez sur vos prises, défiez le froid polaire et pêchez des multiplicateurs jusqu'à x20 par partie !"}
+              {heroBannerData.description}
             </p>
             
             <div className="flex flex-wrap items-center gap-6">
-              {isGameBanned(appSettings?.homeHeroGameName || "Ice Fishing", "evolution") ? (
+              {isGameBanned(heroBannerData.gameName, "evolution") ? (
                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed backdrop-blur-md">
-                    <Lock size={18} /> Bloqué : {globalGameStatus?.[appSettings?.homeHeroGameName || "Ice Fishing"]?.reason || "Maintenance"}
+                    <Lock size={18} /> Bloqué : {globalGameStatus?.[heroBannerData.gameName]?.reason || "Maintenance"}
                  </div>
               ) : (
                  <button
                     onClick={() => {
-                        const link = appSettings?.homeHeroLink || "ice-fishing";
-                        typeof setView === 'function' && setView(link as any);
+                        typeof setView === 'function' && setView(heroBannerData.link as any);
                     }}
                     className="bg-white text-black font-black py-4 px-10 rounded-full transition-all flex items-center gap-3 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95"
                  >
@@ -472,7 +497,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
               <div className="hidden md:flex items-center gap-6 bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/5">
                  <div className="flex flex-col">
                     <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest leading-none mb-1">RTP</span>
-                    <span className="text-white font-mono font-bold leading-none">{appSettings?.homeHeroRTP || "98.50%"}</span>
+                    <span className="text-white font-mono font-bold leading-none">{heroBannerData.rtp}</span>
                  </div>
                  <div className="w-px h-6 bg-white/10"></div>
                  <div className="flex flex-col">

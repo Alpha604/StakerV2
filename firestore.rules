@@ -34,6 +34,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /system/{documentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /admin_requests/{requestId} {
       allow get: if isSignedIn() && (isAdmin() || request.auth.uid == existing().userId);
       allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);

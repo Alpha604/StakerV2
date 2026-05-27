@@ -69,6 +69,7 @@ export function AdminPanel() {
 
   const [heroSettings, setHeroSettings] = useState<any>({
     homeHeroEnabled: true,
+    homeHeroAutoMode: false,
     homeHeroTitle: "Exclusive Release",
     homeHeroSubtitle: "Evolution Gaming",
     homeHeroBannerUrl: "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg",
@@ -77,6 +78,15 @@ export function AdminPanel() {
     homeHeroLink: "ice-fishing",
     homeHeroRTP: "98.50%"
   });
+
+  const [heroSearchFocused, setHeroSearchFocused] = useState(false);
+  const heroSearchMatches = React.useMemo(() => {
+    if (!heroSettings.homeHeroGameName) return [];
+    return ALL_GAMES.filter((g) =>
+      g.name.toLowerCase().includes(heroSettings.homeHeroGameName.toLowerCase()) ||
+      g.provider?.toLowerCase().includes(heroSettings.homeHeroGameName.toLowerCase())
+    ).slice(0, 5);
+  }, [heroSettings.homeHeroGameName]);
 
   useEffect(() => {
     if (appSettings) {
@@ -1590,57 +1600,101 @@ export function AdminPanel() {
             <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
               <h3 className="text-xl font-bold text-white mb-6 flex items-center justify-between">
                 <span>Bannière d'Accueil de Nouveautés</span>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-gray-400">Activé</span>
-                  <input 
-                    type="checkbox" 
-                    checked={heroSettings.homeHeroEnabled}
-                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroEnabled: e.target.checked }))}
-                    className="w-5 h-5 rounded accent-blue-500" 
-                  />
-                </label>
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer bg-black/40 px-3 py-1.5 rounded-lg border border-white/5">
+                    <span className="text-sm font-bold text-gray-300">Auto Mode</span>
+                    <input 
+                      type="checkbox" 
+                      checked={heroSettings.homeHeroAutoMode}
+                      onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroAutoMode: e.target.checked }))}
+                      className="w-4 h-4 rounded accent-emerald-500" 
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-sm text-gray-400">Activé</span>
+                    <input 
+                      type="checkbox" 
+                      checked={heroSettings.homeHeroEnabled}
+                      onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroEnabled: e.target.checked }))}
+                      className="w-5 h-5 rounded accent-blue-500" 
+                    />
+                  </label>
+                </div>
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Titre Supérieur (Badge)</label>
-                  <input 
-                    type="text" 
-                    value={heroSettings.homeHeroTitle}
-                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroTitle: e.target.value }))}
-                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Sous-titre (Badge)</label>
-                  <input 
-                    type="text" 
-                    value={heroSettings.homeHeroSubtitle}
-                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroSubtitle: e.target.value }))}
-                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
-                  />
-                </div>
-              </div>
 
-              <div className="mb-4">
-                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Gros Titre du Jeu</label>
-                <input 
-                  type="text" 
-                  value={heroSettings.homeHeroGameName}
-                  onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroGameName: e.target.value }))}
-                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
-                />
-              </div>
+              {!heroSettings.homeHeroAutoMode && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Titre Supérieur (Badge)</label>
+                      <input 
+                        type="text" 
+                        value={heroSettings.homeHeroTitle}
+                        onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroTitle: e.target.value }))}
+                        className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Sous-titre (Badge)</label>
+                      <input 
+                        type="text" 
+                        value={heroSettings.homeHeroSubtitle}
+                        onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroSubtitle: e.target.value }))}
+                        className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
 
-              <div className="mb-4">
-                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">URL de l'image de fond (16:9 recommandé)</label>
-                <input 
-                  type="text" 
-                  value={heroSettings.homeHeroBannerUrl}
-                  onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroBannerUrl: e.target.value }))}
-                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
-                />
-              </div>
+                  <div className="mb-4 relative">
+                    <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Gros Titre du Jeu (Recherche Auto)</label>
+                    <input 
+                      type="text" 
+                      value={heroSettings.homeHeroGameName}
+                      onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroGameName: e.target.value }))}
+                      onFocus={() => setHeroSearchFocused(true)}
+                      onBlur={() => setTimeout(() => setHeroSearchFocused(false), 200)}
+                      placeholder="Tapez le nom d'un jeu pour l'auto-complétion..."
+                      className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                    />
+                    {heroSearchFocused && heroSearchMatches.length > 0 && typeof heroSettings.homeHeroGameName === 'string' && heroSettings.homeHeroGameName.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-[#0c0c0e] border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+                        {heroSearchMatches.map((game, i) => (
+                           <div 
+                              key={game.link + i}
+                              className="p-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 border-b border-white/5 last:border-0"
+                              onClick={() => {
+                                setHeroSettings((s: any) => ({
+                                  ...s,
+                                  homeHeroGameName: game.name,
+                                  homeHeroTitle: "Nouveau Jeu",
+                                  homeHeroSubtitle: ('provider' in game) ? game.provider : "Stake Originals",
+                                  homeHeroBannerUrl: game.img,
+                                  homeHeroDescription: `Découvrez ${game.name}, mis en avant aujourd'hui. Tentez votre chance !`,
+                                  homeHeroLink: game.link,
+                                  homeHeroRTP: "98.50%"
+                                }));
+                              }}
+                           >
+                              <img src={game.img} alt={game.name} className="w-10 h-10 object-cover rounded-md" />
+                              <div>
+                                 <p className="text-white font-bold text-sm">{game.name}</p>
+                                 <p className="text-gray-500 text-xs">{('provider' in game) ? game.provider : "Stake Originals"}</p>
+                              </div>
+                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">URL de l'image de fond (16:9 recommandé)</label>
+                    <input 
+                      type="text" 
+                      value={heroSettings.homeHeroBannerUrl}
+                      onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroBannerUrl: e.target.value }))}
+                      className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                    />
+                  </div>
 
               <div className="mb-4">
                 <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Description du Jeu</label>
@@ -1672,6 +1726,8 @@ export function AdminPanel() {
                   />
                 </div>
               </div>
+              </>
+              )}
 
               <button 
                 onClick={() => updateAppSettings(heroSettings)}
