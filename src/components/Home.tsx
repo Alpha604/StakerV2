@@ -157,7 +157,18 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     } catch { return []; }
   });
 
-  const { sessionBets, globalGameStatus } = useUser() as any;
+  const { sessionBets, globalGameStatus, appSettings } = useUser() as any;
+
+  // Search logic for dropdown
+  const desktopSearchMatches = React.useMemo(() => {
+    if (!searchQuery) return [];
+    return ALL_GAMES.filter((g) =>
+      g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      g.provider?.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 8); // top 8 results
+  }, [searchQuery]);
+
+  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
 
   const getGameBetsCount = (gameName: string) => {
     return sessionBets.filter((b: any) => (typeof b.game === 'string' ? b.game : '').toLowerCase() === gameName.toLowerCase()).length;
@@ -325,18 +336,57 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
   return (
     <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
       {/* Search Input */}
-      <div className="relative mb-6">
-        <Search
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-          size={20}
-        />
-        <input
-          type="text"
-          placeholder="Cherchez votre jeu"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-bg-panel border border-border-subtle rounded-xl py-3 pl-12 pr-4 text-white font-medium focus:outline-none focus:border-border-medium hover:border-border-medium transition-colors cursor-text hover:bg-bg-inner shadow-sm"
-        />
+      <div className="relative mb-6 z-40">
+        <div className="relative">
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
+            size={20}
+          />
+          <input
+            type="text"
+            placeholder="Cherchez votre jeu"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+            className="w-full bg-[#0f212e] border border-border-subtle rounded-xl py-3.5 pl-12 pr-4 text-white font-medium focus:outline-none focus:border-accent hover:border-border-medium transition-all cursor-text hover:bg-[#1a2c38] shadow-sm"
+          />
+        </div>
+
+        {/* Autocomplete Dropdown (Desktop Only) */}
+        {isSearchFocused && searchQuery && desktopSearchMatches.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f212e] border border-border-subtle rounded-xl shadow-2xl hidden md:flex flex-col overflow-hidden max-h-[400px] overflow-y-auto w-full animate-in fade-in slide-in-from-top-2">
+            <div className="p-2 border-b border-border-subtle text-xs font-bold uppercase tracking-wider text-text-secondary bg-[#0a161f]">
+              Résultats pour "{searchQuery}"
+            </div>
+            {desktopSearchMatches.map((game, i) => (
+              <div 
+                key={game.link + i}
+                onClick={() => {
+                  if (!isGameBanned(game.name, game.category)) {
+                    typeof setView === 'function' && setView(game.link);
+                  }
+                }}
+                className={cn(
+                  "flex items-center gap-4 p-3 hover:bg-[#1a2c38] cursor-pointer transition-colors border-b border-white/5 last:border-0",
+                  isGameBanned(game.name, game.category) && "opacity-50 grayscale cursor-not-allowed"
+                )}
+              >
+                <img src={game.img} alt={game.name} className="w-12 h-12 rounded-lg object-cover shadow-md" />
+                <div className="flex flex-col">
+                  <span className="text-white font-bold text-sm tracking-wide">{game.name}</span>
+                  <span className="text-text-secondary text-xs">{('provider' in game) ? game.provider : 'Stake Originals'}</span>
+                </div>
+                {isGameBanned(game.name, game.category) && (
+                  <div className="ml-auto flex items-center gap-2">
+                     <Lock className="text-text-secondary" size={14} />
+                     <span className="text-text-secondary text-xs">Indisponible</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Nav Tabs */}
@@ -362,47 +412,81 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
       </div>
 
       {/* Top Banner (Latest Game) */}
-      {view === "home" && (
-        <div className="bg-gradient-to-r from-[#1a3a4e] to-[#0f212e] rounded-2xl w-full p-6 md:p-10 mb-8 border border-white/5 relative overflow-hidden group shadow-[0_0_50px_rgba(52,211,153,0.15)] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-0"></div>
-          <div className="relative z-10 max-w-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-[#10b981] text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-md">
-                Nouveau Jeu Exclusif
-              </span>
-              <span className="text-text-secondary text-sm font-bold">Evolution Gaming</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md tracking-widest text-[#d4af37] uppercase">Ice Fishing</h2>
-            <p className="text-gray-300 font-medium mb-6 leading-relaxed">
-              La toute nouvelle roue d'Evolution ! Misez sur vos poissons préférés (Lil' Blues, Big Orange, Huge Reds) et pêchez jusqu'à x20 par partie !
-            </p>
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-               <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">RTP</span>
-                  <span className="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded">98.50%</span>
-               </div>
-               <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary font-bold uppercase mb-1">Éditeur</span>
-                  <span className="text-blue-400 font-mono font-bold bg-blue-400/10 border border-blue-400/20 px-2 py-1 rounded">Evolution</span>
-               </div>
-            </div>
-            {isGameBanned("Ice Fishing", "evolution") ? (
-               <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed w-fit">
-                  <Lock size={18} /> Bloqué : {globalGameStatus?.["Ice Fishing"]?.reason || "Maintenance"}
-               </div>
-            ) : (
-               <button
-                  onClick={() => setView("ice-fishing")}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-bg-darker font-black py-4 px-8 rounded-lg transition-colors w-max shadow-[0_0_20px_rgba(52,211,153,0.3)] transform hover:scale-105"
-               >
-                  Jouer Maintenant
-               </button>
-            )}
+      {view === "home" && appSettings?.homeHeroEnabled !== false && (
+        <div className="relative rounded-3xl w-full min-h-[380px] md:min-h-[420px] mb-8 overflow-hidden group shadow-2xl flex flex-col justify-end p-8 md:p-12 border border-white/10 transition-all hover:border-white/20">
+          
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+             <img 
+               src={appSettings?.homeHeroBannerUrl || "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg"} 
+               alt="Hero Banner" 
+               className="w-full h-full object-cover transform scale-105 group-hover:scale-110 transition-transform duration-1000 ease-out origin-center" 
+             />
+             {/* Dynamic Gradients overlay */}
+             <div className="absolute inset-0 bg-gradient-to-t from-[#0f212e] via-[#0f212e]/80 to-transparent"></div>
+             <div className="absolute inset-0 bg-gradient-to-r from-[#0f212e] via-[#0f212e]/50 to-transparent"></div>
           </div>
-          <div className="relative z-10 w-full max-w-[200px] md:max-w-[280px]">
-             <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-[0_0_30px_rgba(52,211,153,0.3)] transform rotate-3 hover:rotate-0 transition-transform duration-500 border-4 border-[#1a4a6e]">
-                <img src="https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg" alt="Ice Fishing" className="w-full h-full object-cover" />
-             </div>
+          
+          {/* Content */}
+          <div className="relative z-10 max-w-2xl translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-sm uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                {appSettings?.homeHeroTitle || "Exclusive Release"}
+              </span>
+              <span className="text-gray-300 text-xs font-bold uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 border border-white/10 rounded-sm">
+                {appSettings?.homeHeroSubtitle || "Evolution Gaming"}
+              </span>
+            </div>
+            
+            <h2 className="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] tracking-tighter uppercase leading-none">
+              {appSettings?.homeHeroGameName ? (
+                <>
+                  {appSettings.homeHeroGameName.split(' ')[0]} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{appSettings.homeHeroGameName.split(' ').slice(1).join(' ')}</span>
+                </>
+              ) : (
+                <>Ice <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Fishing</span></>
+              )}
+            </h2>
+            
+            <p className="text-gray-300 font-medium mb-8 leading-relaxed text-lg max-w-xl text-shadow-sm">
+              {appSettings?.homeHeroDescription || "La toute nouvelle roue d'Evolution en exclusivité. Misez sur vos prises, défiez le froid polaire et pêchez des multiplicateurs jusqu'à x20 par partie !"}
+            </p>
+            
+            <div className="flex flex-wrap items-center gap-6">
+              {isGameBanned(appSettings?.homeHeroGameName || "Ice Fishing", "evolution") ? (
+                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 font-black px-8 py-3.5 rounded-lg flex items-center gap-2 cursor-not-allowed backdrop-blur-md">
+                    <Lock size={18} /> Bloqué : {globalGameStatus?.[appSettings?.homeHeroGameName || "Ice Fishing"]?.reason || "Maintenance"}
+                 </div>
+              ) : (
+                 <button
+                    onClick={() => {
+                        const link = appSettings?.homeHeroLink || "ice-fishing";
+                        typeof setView === 'function' && setView(link as any);
+                    }}
+                    className="bg-white text-black font-black py-4 px-10 rounded-full transition-all flex items-center gap-3 shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95"
+                 >
+                    Jouer Maintenant <ArrowRightSquare size={20} className="text-emerald-600" />
+                 </button>
+              )}
+              
+              <div className="hidden md:flex items-center gap-6 bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/5">
+                 <div className="flex flex-col">
+                    <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest leading-none mb-1">RTP</span>
+                    <span className="text-white font-mono font-bold leading-none">{appSettings?.homeHeroRTP || "98.50%"}</span>
+                 </div>
+                 <div className="w-px h-6 bg-white/10"></div>
+                 <div className="flex flex-col">
+                    <span className="text-[10px] text-text-secondary font-bold uppercase tracking-widest leading-none mb-1">Volatilité</span>
+                    <div className="flex items-center gap-1">
+                      <Zap size={10} className="text-amber-400 fill-amber-400" />
+                      <Zap size={10} className="text-amber-400 fill-amber-400" />
+                      <Zap size={10} className="text-amber-400 fill-amber-400" />
+                      <Zap size={10} className="text-gray-600 fill-gray-600" />
+                      <Zap size={10} className="text-gray-600 fill-gray-600" />
+                    </div>
+                 </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

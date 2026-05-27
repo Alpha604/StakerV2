@@ -65,7 +65,25 @@ import {
 import { ALL_GAMES } from "./Home";
 
 export function AdminPanel() {
-  const { user, globalAppStatus } = useUser();
+  const { user, globalAppStatus, appSettings, updateAppSettings } = useUser() as any;
+
+  const [heroSettings, setHeroSettings] = useState<any>({
+    homeHeroEnabled: true,
+    homeHeroTitle: "Exclusive Release",
+    homeHeroSubtitle: "Evolution Gaming",
+    homeHeroBannerUrl: "https://lawbhoomi.com/wp-content/uploads/2025/12/Ice-Fishing-Casino-Game-Review.jpg",
+    homeHeroGameName: "Ice Fishing",
+    homeHeroDescription: "La toute nouvelle roue d'Evolution en exclusivité. Misez sur vos prises, défiez le froid polaire et pêchez des multiplicateurs jusqu'à x20 par partie !",
+    homeHeroLink: "ice-fishing",
+    homeHeroRTP: "98.50%"
+  });
+
+  useEffect(() => {
+    if (appSettings) {
+      setHeroSettings((prev: any) => ({ ...prev, ...appSettings }));
+    }
+  }, [appSettings]);
+
   const [users, setUsers] = useState<CustomUser[]>([]);
   const [recentBets, setRecentBets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +127,7 @@ export function AdminPanel() {
     "general" | "finances" | "permissions" | "history"
   >("general");
   const [mainTab, setMainTab] = useState<
-    "users" | "games" | "inbox" | "security"
+    "users" | "games" | "inbox" | "security" | "settings"
   >("users");
   const [userCategory, setUserCategory] = useState<
     "Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis"
@@ -651,6 +669,12 @@ export function AdminPanel() {
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "security" ? "bg-white/10 text-emerald-400 border border-white/20" : "bg-black/40 text-emerald-500/50 border border-transparent hover:bg-emerald-500/10 hover:text-emerald-400"}`}
         >
           <Shield size={18} /> Sécurité / IP
+        </button>
+        <button
+          onClick={() => setMainTab("settings")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mainTab === "settings" ? "bg-white/10 text-white border border-white/20" : "bg-black/40 text-gray-400 border border-transparent hover:bg-white/5"}`}
+        >
+          <Settings size={18} /> Paramètres Application
         </button>
       </div>
 
@@ -1554,6 +1578,107 @@ export function AdminPanel() {
                   ))
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      ) : mainTab === "settings" ? (
+        <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-gray-800 shadow-2xl p-8 min-h-[600px] flex flex-col animate-in fade-in zoom-in-95 duration-300">
+          <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
+            <Settings className="text-blue-500" /> Paramètres de l'Application
+          </h2>
+          <div className="max-w-3xl space-y-8">
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center justify-between">
+                <span>Bannière d'Accueil de Nouveautés</span>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-sm text-gray-400">Activé</span>
+                  <input 
+                    type="checkbox" 
+                    checked={heroSettings.homeHeroEnabled}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroEnabled: e.target.checked }))}
+                    className="w-5 h-5 rounded accent-blue-500" 
+                  />
+                </label>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Titre Supérieur (Badge)</label>
+                  <input 
+                    type="text" 
+                    value={heroSettings.homeHeroTitle}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroTitle: e.target.value }))}
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Sous-titre (Badge)</label>
+                  <input 
+                    type="text" 
+                    value={heroSettings.homeHeroSubtitle}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroSubtitle: e.target.value }))}
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Gros Titre du Jeu</label>
+                <input 
+                  type="text" 
+                  value={heroSettings.homeHeroGameName}
+                  onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroGameName: e.target.value }))}
+                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">URL de l'image de fond (16:9 recommandé)</label>
+                <input 
+                  type="text" 
+                  value={heroSettings.homeHeroBannerUrl}
+                  onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroBannerUrl: e.target.value }))}
+                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Description du Jeu</label>
+                <textarea 
+                  value={heroSettings.homeHeroDescription}
+                  onChange={(e) => setHeroSettings(s => ({...s, homeHeroDescription: e.target.value}))}
+                  rows={3}
+                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Lien de vue (ex: ice-fishing)</label>
+                  <input 
+                    type="text" 
+                    value={heroSettings.homeHeroLink}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroLink: e.target.value }))}
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">RTP Affiché</label>
+                  <input 
+                    type="text" 
+                    value={heroSettings.homeHeroRTP}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, homeHeroRTP: e.target.value }))}
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={() => updateAppSettings(heroSettings)}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Sauvegarder les Paramètres
+              </button>
             </div>
           </div>
         </div>

@@ -392,6 +392,8 @@ interface UserContextType {
   loading: boolean;
   balance: number;
   vault: number;
+  appSettings: any;
+  updateAppSettings: (settings: any) => Promise<void>;
   loginWithGoogle: () => Promise<boolean>;
   logoutUser: () => Promise<void>;
   addBalance: (amount: number) => Promise<void>;
@@ -440,6 +442,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<CustomUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [appSettings, setAppSettings] = useState<any>({});
   const [sessionBets, setSessionBets] = useState<SessionBet[]>([]);
   const [showSessionStats, setShowSessionStats] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -659,6 +662,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     
     return () => unsubscribe();
   }, [user?.role]);
+
+  useEffect(() => {
+    const unsubSettings = onSnapshot(doc(db, "system", "appSettings"), (docSnap) => {
+      if (docSnap.exists()) {
+        setAppSettings(docSnap.data());
+      } else {
+        setAppSettings({ homeHeroBannerUrl: "" });
+      }
+    });
+    return () => unsubSettings();
+  }, []);
+
+  const updateAppSettings = async (newSettings: any) => {
+    try {
+      await setDoc(doc(db, "system", "appSettings"), newSettings, { merge: true });
+      toast.success("Settings updated");
+    } catch (e: any) {
+      toast.error("Error updating settings: " + e.message);
+    }
+  };
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | null = null;
@@ -1104,6 +1127,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         loading,
         balance,
         vault,
+        appSettings,
+        updateAppSettings,
         loginWithGoogle,
         logoutUser,
         addBalance,
