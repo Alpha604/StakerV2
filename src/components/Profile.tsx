@@ -1,7 +1,7 @@
 import { formatCurrency } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { useUser, UserRank } from "../context/UserContext";
-import { User, Shield, Activity, DollarSign, Wallet, ShieldCheck, Gamepad2, Award } from "lucide-react";
+import { User, Shield, Activity, DollarSign, Wallet, ShieldCheck, Gamepad2, Award, Camera, Save, X, Edit2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { RankBadge } from "./RankBadge";
 
@@ -45,7 +45,23 @@ const getRankProgress = (wagered: number): { currentRank: UserRank; nextRank: Us
 };
 
 export function Profile() {
-  const { user, balance, vault, totalWagered, totalWon } = useUser() as any; // typing workaround if needed
+  const { user, balance, vault, totalWagered, totalWon, updateUserData } = useUser() as any;
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+
+  const handleSavePhoto = async () => {
+    if (!newPhotoUrl.trim()) return;
+    await updateUserData({ photoURL: newPhotoUrl.trim() });
+    setIsEditingPhoto(false);
+  };
+
+  const handleSaveUsername = async () => {
+    if (!newUsername.trim() || newUsername.trim().length > 20) return;
+    await updateUserData({ username: newUsername.trim() });
+    setIsEditingUsername(false);
+  };
 
   if (!user) {
     return (
@@ -73,14 +89,93 @@ export function Profile() {
         {/* Left Column - User Info */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-[#0f212e] rounded-xl border border-[#2f4553] p-6 text-center relative overflow-hidden group">
-            <div className="w-24 h-24 bg-blue-500/20 rounded-full mx-auto flex items-center justify-center text-4xl font-bold text-blue-500 mb-4 uppercase border-4 border-[#0f212e] shadow-[0_0_0_2px_rgba(59,130,246,0.3)] z-10 relative">
-              {user.username.substring(0, 2)}
+            <div className="relative w-24 h-24 mx-auto mb-4 z-10">
+              <div className="w-full h-full bg-blue-500/20 rounded-full flex items-center justify-center text-4xl font-bold text-blue-500 uppercase border-4 border-[#0f212e] shadow-[0_0_0_2px_rgba(59,130,246,0.3)] overflow-hidden">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.username} className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  user.username.substring(0, 2)
+                )}
+              </div>
+              {!user.preventPhotoChange && (
+                <button 
+                  onClick={() => { setIsEditingPhoto(true); setNewPhotoUrl(user.photoURL || ""); }}
+                  className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95"
+                  title="Modifier la photo"
+                >
+                  <Camera size={14} />
+                </button>
+              )}
             </div>
+
+            {isEditingPhoto && (
+              <div className="mb-4 z-20 relative bg-black/40 p-3 rounded-lg border border-white/10 animate-in zoom-in-95">
+                <input 
+                  type="text" 
+                  placeholder="URL de l'image..."
+                  value={newPhotoUrl}
+                  onChange={(e) => setNewPhotoUrl(e.target.value)}
+                  className="w-full bg-[#0a161f] border border-[#2f4553] rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 mb-2"
+                />
+                <div className="flex gap-2 justify-center">
+                  <button 
+                    onClick={handleSavePhoto}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded py-1.5 text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <Save size={14} /> Enregistrer
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingPhoto(false)}
+                    className="bg-gray-600 hover:bg-gray-500 text-white rounded px-3 py-1.5 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
             
-            <h2 className="text-2xl font-bold mb-1 relative z-10 flex flex-col items-center gap-2">
-              {user.username}
-              <RankBadge rank={user.rank} className="mt-1 h-12 md:h-16 drop-shadow-lg" />
-            </h2>
+            {isEditingUsername ? (
+              <div className="mb-4 z-20 relative bg-black/40 p-3 rounded-lg border border-white/10 animate-in zoom-in-95">
+                <input 
+                  type="text" 
+                  placeholder="Nouveau pseudo (max 20)..."
+                  value={newUsername}
+                  maxLength={20}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="w-full bg-[#0a161f] border border-[#2f4553] rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 mb-2 font-bold text-center"
+                />
+                <div className="flex gap-2 justify-center">
+                  <button 
+                    onClick={handleSaveUsername}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded py-1.5 text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <Save size={14} /> Enregistrer
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingUsername(false)}
+                    className="bg-gray-600 hover:bg-gray-500 text-white rounded px-3 py-1.5 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <h2 className="text-2xl font-bold mb-1 relative z-10 flex flex-col items-center gap-2 group/name">
+                <div className="flex items-center gap-2">
+                  <span>{user.username}</span>
+                  {!user.preventUsernameChange && (
+                    <button 
+                      onClick={() => { setIsEditingUsername(true); setNewUsername(user.username || ""); }}
+                      className="text-gray-500 hover:text-white opacity-0 group-hover/name:opacity-100 transition-all focus:opacity-100"
+                      title="Modifier le pseudo"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  )}
+                </div>
+                <RankBadge rank={user.rank} className="mt-1 h-12 md:h-16 drop-shadow-lg" />
+              </h2>
+            )}
             <div className="flex items-center justify-center gap-2 mb-6 relative z-10">
                <span className={cn(
                  "px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",

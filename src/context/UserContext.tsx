@@ -361,6 +361,8 @@ export interface CustomUser {
   lastRankAppealTime?: number;
   canAppealRank?: boolean;
   canUseSupport?: boolean;
+  preventPhotoChange?: boolean;
+  preventUsernameChange?: boolean;
   activeCryptoSymbol?: string;
   dailyDeposits?: { date: string; count: number; totalAmount: number };
   permissions?: {
@@ -394,6 +396,7 @@ interface UserContextType {
   vault: number;
   appSettings: any;
   updateAppSettings: (settings: any) => Promise<void>;
+  updateUserData: (data: Partial<CustomUser>) => Promise<void>;
   loginWithGoogle: () => Promise<boolean>;
   logoutUser: () => Promise<void>;
   addBalance: (amount: number) => Promise<void>;
@@ -680,6 +683,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       toast.success("Settings updated");
     } catch (e: any) {
       toast.error("Error updating settings: " + e.message);
+    }
+  };
+
+  const updateUserData = async (data: Partial<CustomUser>) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, "users", user.id), data);
+      toast.success("Profil mis à jour");
+    } catch (e: any) {
+      toast.error("Erreur lors de la mise à jour: " + e.message);
     }
   };
 
@@ -1129,6 +1142,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         vault,
         appSettings,
         updateAppSettings,
+        updateUserData,
         loginWithGoogle,
         logoutUser,
         addBalance,

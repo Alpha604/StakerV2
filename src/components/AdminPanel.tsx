@@ -37,7 +37,8 @@ import {
   Inbox,
   Clock,
   RotateCcw,
-  LockOpen
+  LockOpen,
+  User
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
@@ -2028,6 +2029,90 @@ export function AdminPanel() {
                               ]}
                             />
                           </div>
+                        </div>
+                      </FormSection>
+
+                      <FormSection
+                        title="Personnalisation Profil"
+                        icon={<User className="text-pink-400" />}
+                      >
+                        <div className="grid grid-cols-1 gap-6">
+                            {/* Pseudo Section */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 tracking-wider uppercase mb-1 block">
+                                  Pseudo (Nom d'utilisateur)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editForm.username || ""}
+                                  onChange={(e) =>
+                                    setEditForm({ ...editForm, username: e.target.value })
+                                  }
+                                  placeholder="Pseudo..."
+                                  maxLength={20}
+                                  className="w-full bg-[#0c0c0e] border border-gray-800 rounded-xl p-3 text-white focus:outline-none focus:border-pink-500/50"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                              <div>
+                                <span className="font-bold text-gray-300 block text-sm">Verrouiller le pseudo</span>
+                                <span className="text-xs text-gray-500">Empêcher l'utilisateur de modifier son pseudo lui-même.</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editForm.preventUsernameChange || false}
+                                  onChange={(e) =>
+                                    setEditForm({ ...editForm, preventUsernameChange: e.target.checked })
+                                  }
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-800 rounded-full peer peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="border-t border-gray-800 my-2"></div>
+
+                            {/* Photo Section */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 tracking-wider uppercase mb-1 block">
+                                  URL de la Photo de Profil
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editForm.photoURL || ""}
+                                  onChange={(e) =>
+                                    setEditForm({ ...editForm, photoURL: e.target.value })
+                                  }
+                                  placeholder="https://..."
+                                  className="w-full bg-[#0c0c0e] border border-gray-800 rounded-xl p-3 text-white focus:outline-none focus:border-pink-500/50"
+                                />
+                                {editForm.photoURL && (
+                                   <div className="mt-2 min-h-[40px]">
+                                     <img src={editForm.photoURL} alt="Preview" className="w-12 h-12 rounded-full object-cover border border-gray-600" />
+                                   </div>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                              <div>
+                                <span className="font-bold text-gray-300 block text-sm">Verrouiller la photo</span>
+                                <span className="text-xs text-gray-500">Empêcher l'utilisateur de modifier sa photo de profil lui-même.</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editForm.preventPhotoChange || false}
+                                  onChange={(e) =>
+                                    setEditForm({ ...editForm, preventPhotoChange: e.target.checked })
+                                  }
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-800 rounded-full peer peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
                         </div>
                       </FormSection>
 
