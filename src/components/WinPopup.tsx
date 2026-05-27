@@ -84,55 +84,51 @@ export function WinPopup({ multiplier, payout, onClose }: WinPopupProps) {
         >
           <motion.div
             onClick={(e) => e.stopPropagation()}
-            initial={{ scale: 0.5, y: 50, rotateX: 45 }}
-            animate={{
-              scale: 1,
-              y: 0,
-              rotateX: 0,
-            }}
+            initial={{ scale: 0.8, y: 40, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
             transition={{
               type: "spring",
-              stiffness: 300,
-              damping: 15,
+              stiffness: 400,
+              damping: 25,
               mass: 1,
             }}
-            exit={{ scale: 0.5, opacity: 0, y: -50 }}
-            className="bg-[#213743] hover:bg-[#2c4755] border-4 border-[#00e676] rounded-2xl p-6 flex flex-col items-center justify-center min-w-[200px] shadow-[0_0_40px_rgba(0,230,118,0.3)] relative overflow-hidden"
+            exit={{ scale: 0.9, opacity: 0, y: -20 }}
+            className="bg-[#0f212e] border-2 border-[#00e701]/30 rounded-3xl p-8 flex flex-col items-center justify-center min-w-[320px] shadow-[0_30px_60px_rgba(0,231,1,0.2)] relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-t before:from-[#00e701]/10 before:to-transparent z-10"
           >
             {/* Background glow animated */}
             <motion.div
-              animate={{ opacity: [0.3, 0.6, 0.3] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="absolute inset-0 shadow-[0_0_50px_rgba(0,230,118,0.5)] z-[-1]"
+              animate={{ opacity: [0.1, 0.3, 0.1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="absolute inset-0 shadow-[inset_0_0_50px_rgba(0,231,1,0.2)] z-[-1] pointer-events-none"
             />
 
-            <h3 className="text-[#8b9ba5] uppercase tracking-[0.2em] font-bold text-sm mb-4">Gagné !</h3>
+            <h3 className="text-[#8b9ba5] uppercase tracking-[0.25em] font-black text-xs mb-3 z-10 relative">Vous avez gagné</h3>
             
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring" }}
-              className="text-[#00e676] text-6xl font-black mb-4 drop-shadow-[0_0_15px_rgba(0,230,118,0.8)] flex items-center justify-center gap-1"
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 20 }}
+              className="text-[#00e701] text-6xl font-black mb-6 drop-shadow-[0_0_20px_rgba(0,231,1,0.4)] flex items-center justify-center gap-1 z-10 relative tracking-tighter"
             >
               {multiplier.toLocaleString("fr-FR", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
-              <span className="text-4xl">×</span>
-            </motion.span>
+              <span className="text-3xl ml-1">×</span>
+            </motion.div>
 
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-center justify-center gap-2 bg-[#0f212e]/50 px-6 py-3 rounded-full border border-white/5"
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-center gap-3 bg-[#1a2c38] px-8 py-4 rounded-xl border border-white/5 z-10 relative w-full shadow-inner shadow-black/50"
             >
-              <span className="text-white text-3xl font-bold tracking-tight flex items-center justify-center gap-2">
+              <span className="text-white text-3xl font-black tracking-tight flex items-center justify-center gap-2">
                 {payout.toLocaleString("fr-FR", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 4,
                 })}
-                {renderCryptoIcon(activeCrypto, "w-8 h-8")}
+                {renderCryptoIcon(activeCrypto, "w-7 h-7 text-[#00e701]")}
               </span>
             </motion.div>
           </motion.div>

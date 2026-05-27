@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap, Star, Ticket } from "lucide-react";
+import { Search, Info, Flame, Grid, ArrowRightSquare, Heart, Tv, Lock, Zap, Star, Ticket, Play } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useUser } from "../context/UserContext";
 
@@ -269,87 +269,100 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
               if (!isBanned) setView(game.link);
             }}
           >
-            <div className="relative rounded-lg overflow-hidden aspect-[3/4] mb-2 bg-bg-panel group-hover:-translate-y-1 transition-transform shadow-lg">
+            <div className="relative rounded-2xl overflow-hidden aspect-[3/4] mb-3 bg-[#0f172a] group-hover:-translate-y-2 transition-all duration-300 shadow-md group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5 group-hover:ring-white/20">
               <img
                 src={game.img}
                 alt={game.name}
-                className={cn("w-full h-full object-cover", isBanned && "grayscale blur-[2px]")}
+                className={cn("w-full h-full object-cover transition-transform duration-700 group-hover:scale-110", isBanned && "grayscale blur-[2px]")}
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f18] via-transparent to-transparent opacity-80 z-10 pointer-events-none"></div>
               {isBanned && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-                  <div className="bg-[#0f172a]/80 p-3 rounded-full backdrop-blur-sm">
-                    <Lock className="text-[#8b9ba5]" size={32} />
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20 backdrop-blur-sm">
+                  <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                    <Lock className="text-red-400" size={32} />
                   </div>
                 </div>
               )}
               {calculateIsNew(game.releaseDate) && !isBanned && (
-                <div className="absolute top-2 right-2 bg-[#1475e1] text-white text-[10px] font-black px-1.5 rounded uppercase tracking-tighter shadow-md z-10 w-fit">
-                  Nouveau
+                <div className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-md z-20 uppercase tracking-widest">
+                  New
                 </div>
               )}
               {game.badge && !isBanned && (
-                <div className="absolute top-2 right-2 bg-[#ffb300] text-[#0f172a] text-[10px] font-black px-1.5 rounded uppercase tracking-tighter z-10">
+                <div className="absolute top-2 right-2 bg-[#ffb300] text-[#0f172a] text-[10px] font-black px-2 py-0.5 rounded shadow-md z-20 uppercase tracking-widest">
                   {game.badge}
                 </div>
               )}
               {/* Like Button */}
               <div 
-                className="absolute top-2 left-2 z-20 cursor-pointer p-1"
+                className="absolute top-2 left-2 z-30 cursor-pointer p-1 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/60 transition-colors"
                 onClick={(e) => toggleLike(e, game.name)}
               >
                 <Heart 
                   size={16} 
-                  className={cn("transition-colors", likedGames.includes(game.name) ? "fill-[#ed4163] text-[#ed4163]" : "text-white/50 hover:text-white")} 
+                  className={cn("transition-colors", likedGames.includes(game.name) ? "fill-rose-500 text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]" : "text-white/60 hover:text-white")} 
                 />
               </div>
 
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors pointer-events-none"></div>
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 pointer-events-none backdrop-blur-[2px]">
+                <div className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                  <Play fill="currentColor" stroke="none" size={24} className="ml-1" />
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col gap-2 relative">
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#00e676]"></div>
-                <span className="text-[11px] font-bold text-text-secondary group-hover:text-white transition-colors truncate">
+            
+            <div className="flex flex-col relative px-0.5 mt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-bold text-gray-200 group-hover:text-white transition-colors truncate">
                   {game.name}
                 </span>
-              </div>
-              <div className="group/info relative block w-full cursor-pointer text-center">
-                <span className="block bg-gradient-to-tr from-[#1475e1]/80 via-[#1b80f0] to-[#1475e1] text-gray-100 rounded-md px-2 py-1.5 text-xs font-bold z-20 drop-shadow-md hover:from-[#1b80f0] hover:to-[#1475e1]">
-                  Infos
-                </span>
-                <div className="absolute pointer-events-none block w-[180%] -top-24 left-1/2 -translate-x-1/2 z-[100]">
-                  <div className="flex flex-col items-center opacity-0 transition-all ease-in duration-300 translate-y-1/2 group-hover/info:opacity-100 group-hover/info:-translate-y-1/4">
-                    <div className="flex flex-col justify-start text-left w-full bg-[#0f212e] border border-[#2f4553] rounded-md p-3 drop-shadow-xl shadow-xl">
+                
+                <div className="group/info relative flex items-center justify-center">
+                  <Info size={16} className="text-[#8b9ba5] hover:text-white transition-colors cursor-help z-30" />
+                  
+                  <div className="absolute pointer-events-none opacity-0 scale-95 translate-y-2 origin-bottom transition-all duration-200 ease-out group-hover/info:opacity-100 group-hover/info:scale-100 group-hover/info:translate-y-0 w-[240px] bottom-full mb-2 right-[-10px] md:translate-x-0 md:right-auto md:-left-2 z-[100] drop-shadow-2xl">
+                    <div className="flex flex-col w-full bg-[#0f212e] border border-[#2f4553] rounded-lg p-3 shadow-2xl">
+                      <div className="mb-2 border-b border-[#2f4553] pb-2 flex items-center justify-between">
+                         <span className="text-white font-bold text-sm truncate">{game.name}</span>
+                         {calculateIsNew(game.releaseDate) && <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase">New</span>}
+                      </div>
                       {isBanned ? (
                         <>
-                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 mb-2 text-red-400">
-                             <span className="font-bold">Statut</span>
-                             <span>{banInfo.reason}</span>
+                          <div className="flex justify-between items-center text-[12px] font-bold text-red-500 bg-red-500/10 px-2 py-1.5 rounded mb-2">
+                             <span>Interdit</span>
+                             <span className="truncate max-w-[100px] text-right ml-2">{banInfo.reason}</span>
                           </div>
-                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 text-text-secondary">
+                          <div className="flex justify-between items-center text-[11px] font-medium text-[#8b9ba5] px-1">
                              <span>Date</span>
-                             <span>{new Date(banInfo.date).toLocaleDateString("fr-FR")}</span>
+                             <span className="text-gray-300">{new Date(banInfo.date).toLocaleDateString("fr-FR")}</span>
                           </div>
                         </>
                       ) : (
-                        <>
-                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-200 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0">
-                            <span className="text-gray-400 mt-1">RTP</span>
-                            <span className="text-gray-100 mt-1">{('rtp' in game ? game.rtp : (game.category === 'slots' ? '96.50%' : '99.00%')) as string}</span>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex justify-between items-center text-[12px] font-bold bg-[#1a2c38] px-2 py-1 rounded">
+                            <span className="text-[#8b9ba5]">RTP</span>
+                            <span className="text-emerald-400 font-mono">{('rtp' in game ? game.rtp : (game.category === 'slots' ? '96.50%' : '99.00%')) as string}</span>
                           </div>
-                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-300 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
-                            <span className="text-gray-400">Éditeur</span>
-                            <span className="text-gray-100 truncate max-w-[80px] text-right">{('provider' in game) ? game.provider : 'Stake Originals'}</span>
+                          <div className="flex justify-between items-center text-[11px] font-medium px-1 mt-1">
+                            <span className="text-[#8b9ba5]">Fournisseur</span>
+                            <span className="text-white truncate max-w-[100px] text-right">{('provider' in game) ? game.provider : 'Stake'}</span>
                           </div>
-                          <div className="inline-flex justify-between items-center text-[11px] font-normal leading-3 opacity-0 translate-y-1 transition-all ease-in delay-400 duration-300 group-hover/info:opacity-100 group-hover/info:translate-y-0 mt-2">
-                            <span className="text-gray-400">Date</span>
-                            <span className="text-gray-100">{('releaseDate' in game && game.releaseDate) ? new Date(game.releaseDate).getFullYear() : '2023'}</span>
+                          <div className="flex justify-between items-center text-[11px] font-medium px-1">
+                            <span className="text-[#8b9ba5]">Sortie</span>
+                            <span className="text-white">{('releaseDate' in game && game.releaseDate) ? new Date(game.releaseDate).getFullYear() : '2023'}</span>
                           </div>
-                        </>
+                        </div>
                       )}
                     </div>
-                    <div className="h-0 w-fit border-x-[8px] border-t-[8px] border-transparent border-t-[#2f4553] -mt-[0.5px]"></div>
                   </div>
                 </div>
+              </div>
+              
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className={cn("w-1.5 h-1.5 rounded-full", isBanned ? "bg-red-500" : "bg-emerald-500 group-hover:shadow-[0_0_5px_currentColor]")}></div>
+                <span className="text-[11px] text-[#8b9ba5] font-medium tracking-wide truncate">
+                  {('provider' in game) ? game.provider : 'Stake Originals'}
+                </span>
               </div>
             </div>
           </div>
