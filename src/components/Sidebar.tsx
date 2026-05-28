@@ -108,6 +108,7 @@ export function Sidebar({
         )}
 
         <NavItem id="home" icon={Home} label="Casino" />
+        <NavItem id="sports" icon={Activity} colorClass={view === "sports" || isOpen ? "text-blue-500" : ""} label="Paris Sportifs" />
         <NavItem id="favorites" icon={Heart} label="Favoris" />
         
         <div className={cn("h-px bg-border-medium flex-shrink-0", isOpen ? "mx-3 my-2" : "w-6 mx-auto my-2")}></div>

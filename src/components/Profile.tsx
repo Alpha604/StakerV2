@@ -5,6 +5,8 @@ import { User, Shield, Activity, DollarSign, Wallet, ShieldCheck, Gamepad2, Awar
 import { cn } from "../lib/utils";
 import { RankBadge } from "./RankBadge";
 import { toast } from "react-hot-toast";
+import { db } from "../lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const getRankProgress = (wagered: number): { currentRank: UserRank; nextRank: UserRank | null; progress: number; needed: number } => {
   const thresholds = [
@@ -59,18 +61,43 @@ export function Profile() {
   };
 
   const handleSaveUsername = async () => {
-    if (!newUsername.trim() || newUsername.trim().length > 20) return;
+    const trimmedNew = newUsername.trim();
+    if (!trimmedNew || trimmedNew.length > 20) return;
     
-    if (appSettings?.bannedWordsText) {
+    // Check banned words (admins bypass this)
+    if (appSettings?.bannedWordsText && user?.role !== 'admin') {
       const bannedWords = appSettings.bannedWordsText.split(',').map((w: string) => w.trim().toLowerCase()).filter(Boolean);
-      const isBanned = bannedWords.some((word: string) => newUsername.toLowerCase().includes(word));
+      const isBanned = bannedWords.some((word: string) => trimmedNew.toLowerCase().includes(word));
       if (isBanned) {
         toast.error("Ce pseudo contient un mot non autorisé.");
         return;
       }
     }
+
+    // Check if duplicate username
+    if (trimmedNew.toLowerCase() !== (user.username || "").toLowerCase()) {
+      try {
+        const usersRef = collection(db, "users");
+        // We'll do a simple exact match query. For total safety regarding case variations, we'd need a lowercase field in db, but this catches exact duplicates.
+        const q = query(usersRef, where("username", "==", trimmedNew));
+        const querySnapshot = await getDocs(q);
+        
+        let isTaken = false;
+        querySnapshot.forEach((doc) => {
+          if (doc.id !== user.id) isTaken = true;
+        });
+
+        if (isTaken) {
+          toast.error("Ce pseudo est déjà pris par un autre joueur.");
+          return;
+        }
+      } catch (e: any) {
+        toast.error("Erreur lors de la vérification du pseudo.");
+        return;
+      }
+    }
     
-    await updateUserData({ username: newUsername.trim() });
+    await updateUserData({ username: trimmedNew });
     setIsEditingUsername(false);
   };
 

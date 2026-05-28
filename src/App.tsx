@@ -55,6 +55,7 @@ import { Rewards } from "./components/Rewards";
 import { ScreenSizeGuard, IPGuard } from "./components/SecurityGuards";
 import { UpdateModal } from "./components/UpdateModal";
 import { Infos } from "./components/Infos";
+import { SportsBetting } from "./components/SportsBetting";
 
 export type ViewType =
   | "home"
@@ -101,7 +102,8 @@ export type ViewType =
   | "scratch-astro"
   | "scratch-patrimoine"
   | "infos"
-  | "stake-gaming";
+  | "stake-gaming"
+  | "sports";
 
 class ErrorBoundary extends React.Component<any, any> {
   state = { hasError: false, error: null };
@@ -723,6 +725,7 @@ function InnerAppContent({
               </ApprovalGuard>
             )}
             {view === "infos" && <Infos />}
+            {view === "sports" && <SportsBetting />}
           </div>
 
           {/* Footer */}

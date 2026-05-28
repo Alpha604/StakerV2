@@ -357,6 +357,10 @@ export function AdminPanel() {
       permissions: u.permissions || {},
       canAppealRank: u.canAppealRank !== false,
       canUseSupport: u.canUseSupport !== false,
+      username: u.username,
+      photoURL: u.photoURL || "",
+      preventPhotoChange: u.preventPhotoChange || false,
+      preventUsernameChange: u.preventUsernameChange || false,
     });
     setSuspensionMinutes("");
     setSuspensionDate("");
@@ -2087,7 +2091,7 @@ export function AdminPanel() {
                                   }
                                   className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-800 rounded-full peer peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                                <div className="w-11 h-6 bg-gray-800 rounded-full peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                               </label>
                             </div>
 
@@ -2129,7 +2133,7 @@ export function AdminPanel() {
                                   }
                                   className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-800 rounded-full peer peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                                <div className="w-11 h-6 bg-gray-800 rounded-full peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                               </label>
                             </div>
                         </div>
