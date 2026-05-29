@@ -258,16 +258,18 @@ export function AdminPanel() {
     setActionLoading(null);
   };
 
-  const updateGameBanned = async (
+  const updateGameConfig = async (
     gameName: string,
-    isBanned: boolean,
-    reason: string,
+    updates: any
   ) => {
     try {
-      await updateDoc(doc(db, "config", "games"), {
+      const configRef = doc(db, "config", "games");
+      const currentConfig = gamesConfig?.[gameName] || {};
+      
+      await updateDoc(configRef, {
         [`${gameName}`]: {
-          banned: isBanned,
-          reason,
+          ...currentConfig,
+          ...updates,
           date: new Date().toISOString(),
         },
       });
@@ -352,6 +354,7 @@ export function AdminPanel() {
       maxiVault: u.maxiVault || 0,
       totalWagered: u.totalWagered || 0,
       totalWon: u.totalWon || 0,
+      totalBets: u.totalBets || 0,
       role: u.role || "user",
       status: u.status || "pending",
       rank: u.rank || "None",
@@ -1064,12 +1067,15 @@ export function AdminPanel() {
                                 <img
                                   src={u.photoURL}
                                   alt={u.username}
+                                  onError={(e) => { e.currentTarget.src = 'https://cdn-icons-png.freepik.com/512/14026/14026777.png'; }}
                                   className="w-12 h-12 rounded-xl object-cover border border-gray-700 shadow-lg"
                                 />
                               ) : (
-                                <div className="w-12 h-12 bg-gray-800 border border-gray-700 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg uppercase">
-                                  {u.username.substring(0, 2)}
-                                </div>
+                                <img
+                                  src="https://cdn-icons-png.freepik.com/512/14026/14026777.png"
+                                  alt={u.username}
+                                  className="w-12 h-12 rounded-xl object-cover border border-gray-700 shadow-lg"
+                                />
                               )}
                               <div
                                 className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0a0a0a] shadow-sm ${isOnline ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" : "bg-gray-600"}`}
@@ -1325,9 +1331,9 @@ export function AdminPanel() {
                         }
                         onChange={(e) => {
                           if (e.target.value === "online") {
-                            updateGameBanned(game, false, "");
+                            updateGameConfig(game, { banned: false, reason: "" });
                           } else {
-                            updateGameBanned(game, true, e.target.value);
+                            updateGameConfig(game, { banned: true, reason: e.target.value });
                           }
                         }}
                         className="bg-[#0c0c0e] text-white p-3 rounded-lg border border-gray-800 focus:border-emerald-500/50 outline-none w-full"
@@ -1339,6 +1345,21 @@ export function AdminPanel() {
                         <option value="Mise à jour">Mise à jour (MAJ)</option>
                         <option value="Ban Définitif">Ban Définitif</option>
                       </select>
+                      <label className="text-xs font-bold text-gray-500 uppercase mt-2">
+                        Mode Nouveauté
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.isNew || false}
+                          onChange={(e) => {
+                            updateGameConfig(game, { isNew: e.target.checked });
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-800 rounded-full peer-checked:bg-purple-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                        <span className="ml-3 text-sm font-medium text-gray-300">Marquer comme Nouveauté</span>
+                      </label>
                     </div>
                   </div>
                 );
@@ -1813,12 +1834,15 @@ export function AdminPanel() {
                     <img
                       src={editingUser.photoURL}
                       alt={editingUser.username}
+                      onError={(e) => { e.currentTarget.src = 'https://cdn-icons-png.freepik.com/512/14026/14026777.png'; }}
                       className="w-16 h-16 rounded-xl border border-gray-700 shadow-xl"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-gray-800 text-white rounded-xl flex items-center justify-center uppercase font-black text-2xl shadow-xl border border-gray-700">
-                      {editingUser.username.substring(0, 2)}
-                    </div>
+                    <img
+                      src="https://cdn-icons-png.freepik.com/512/14026/14026777.png"
+                      alt={editingUser.username}
+                      className="w-16 h-16 rounded-xl border border-gray-700 shadow-xl"
+                    />
                   )}
                   {editingUser.lastOnline &&
                     Date.now() - editingUser.lastOnline < 5 * 60 * 1000 && (
@@ -2425,6 +2449,23 @@ export function AdminPanel() {
                                 value={editForm.totalWon ?? ""}
                                 onChange={(e) =>
                                   setEditForm({ ...editForm, totalWon: Number(e.target.value) })
+                                }
+                                className="bg-[#09090b] text-gray-300 font-mono p-2.5 pl-7 rounded-lg border border-gray-800 outline-none w-full focus:border-indigo-500/50 text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                              Total de Paris Fictif
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 font-mono text-sm">#</span>
+                              <input
+                                type="number"
+                                step="1"
+                                value={editForm.totalBets ?? ""}
+                                onChange={(e) =>
+                                  setEditForm({ ...editForm, totalBets: Number(e.target.value) })
                                 }
                                 className="bg-[#09090b] text-gray-300 font-mono p-2.5 pl-7 rounded-lg border border-gray-800 outline-none w-full focus:border-indigo-500/50 text-sm"
                               />

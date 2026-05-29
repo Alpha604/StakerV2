@@ -118,9 +118,9 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
                         "border-[#2f4553] bg-blue-500/10 text-blue-500"
                       )}>
                         {u.photoURL ? (
-                          <img src={u.photoURL} alt={u.username} className="w-full h-full object-cover" />
+                          <img src={u.photoURL} alt={u.username} onError={(e) => { e.currentTarget.src = 'https://cdn-icons-png.freepik.com/512/14026/14026777.png'; }} className="w-full h-full object-cover" />
                         ) : (
-                          u.username?.substring(0, 2).toUpperCase() || "U"
+                          <img src="https://cdn-icons-png.freepik.com/512/14026/14026777.png" alt={u.username} className="w-full h-full object-cover" />
                         )}
                       </div>
 

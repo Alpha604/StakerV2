@@ -130,9 +130,9 @@ export function Profile() {
             <div className="relative w-24 h-24 mx-auto mb-4 z-10">
               <div className="w-full h-full bg-blue-500/20 rounded-full flex items-center justify-center text-4xl font-bold text-blue-500 uppercase border-4 border-[#0f212e] shadow-[0_0_0_2px_rgba(59,130,246,0.3)] overflow-hidden">
                 {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.username} className="w-full h-full rounded-full object-cover" />
+                  <img src={user.photoURL} alt={user.username} onError={(e) => { e.currentTarget.src = 'https://cdn-icons-png.freepik.com/512/14026/14026777.png'; }} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  user.username.substring(0, 2)
+                  <img src="https://cdn-icons-png.freepik.com/512/14026/14026777.png" alt={user.username} className="w-full h-full rounded-full object-cover" />
                 )}
               </div>
               <button 

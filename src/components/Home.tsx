@@ -283,7 +283,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
                   </div>
                 </div>
               )}
-              {calculateIsNew(game.releaseDate) && !isBanned && (
+              {(calculateIsNew(game.releaseDate) || globalGameStatus?.[game.name]?.isNew) && !isBanned && (
                 <div className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-md z-20 uppercase tracking-widest">
                   New
                 </div>
@@ -324,7 +324,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
                     <div className="flex flex-col w-full bg-[#0f212e] border border-[#2f4553] rounded-lg p-3 shadow-2xl">
                       <div className="mb-2 border-b border-[#2f4553] pb-2 flex items-center justify-between">
                          <span className="text-white font-bold text-sm truncate">{game.name}</span>
-                         {calculateIsNew(game.releaseDate) && <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase">New</span>}
+                         {(calculateIsNew(game.releaseDate) || globalGameStatus?.[game.name]?.isNew) && <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase">New</span>}
                       </div>
                       {isBanned ? (
                         <>
@@ -373,13 +373,12 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
+    <div className="w-full max-w-[1200px] mx-auto p-3 md:p-8 flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
       {/* Search Input */}
-      <div className="relative mb-6 z-40">
+      <div className="relative mb-4 md:mb-6 z-40">
         <div className="relative">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-            size={20}
+            className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-text-secondary w-4 h-4 md:w-5 md:h-5"
           />
           <input
             type="text"
@@ -388,14 +387,14 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-            className="w-full bg-[#0f212e] border border-border-subtle rounded-xl py-3.5 pl-12 pr-4 text-white font-medium focus:outline-none focus:border-accent hover:border-border-medium transition-all cursor-text hover:bg-[#1a2c38] shadow-sm"
+            className="w-full bg-[#0f212e] border border-border-subtle rounded-xl py-2.5 md:py-3.5 pl-10 md:pl-12 pr-4 text-white text-sm md:text-base font-medium focus:outline-none focus:border-accent hover:border-border-medium transition-all cursor-text hover:bg-[#1a2c38] shadow-sm"
           />
         </div>
 
-        {/* Autocomplete Dropdown (Desktop Only) */}
+        {/* Autocomplete Dropdown (Desktop & Mobile Support) */}
         {isSearchFocused && searchQuery && desktopSearchMatches.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f212e] border border-border-subtle rounded-xl shadow-2xl hidden md:flex flex-col overflow-hidden max-h-[400px] overflow-y-auto w-full animate-in fade-in slide-in-from-top-2">
-            <div className="p-2 border-b border-border-subtle text-xs font-bold uppercase tracking-wider text-text-secondary bg-[#0a161f]">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f212e] border border-border-subtle rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[300px] md:max-h-[400px] overflow-y-auto w-full animate-in fade-in slide-in-from-top-2">
+            <div className="p-2 border-b border-border-subtle text-[10px] md:text-xs font-bold uppercase tracking-wider text-text-secondary bg-[#0a161f]">
               Résultats pour "{searchQuery}"
             </div>
             {desktopSearchMatches.map((game, i) => (
@@ -407,19 +406,19 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
                   }
                 }}
                 className={cn(
-                  "flex items-center gap-4 p-3 hover:bg-[#1a2c38] cursor-pointer transition-colors border-b border-white/5 last:border-0",
+                  "flex items-center gap-3 md:gap-4 p-2.5 md:p-3 hover:bg-[#1a2c38] cursor-pointer transition-colors border-b border-white/5 last:border-0",
                   isGameBanned(game.name, game.category) && "opacity-50 grayscale cursor-not-allowed"
                 )}
               >
-                <img src={game.img} alt={game.name} className="w-12 h-12 rounded-lg object-cover shadow-md" />
+                <img src={game.img} alt={game.name} className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shadow-md" />
                 <div className="flex flex-col">
-                  <span className="text-white font-bold text-sm tracking-wide">{game.name}</span>
-                  <span className="text-text-secondary text-xs">{('provider' in game) ? game.provider : 'Stake Originals'}</span>
+                  <span className="text-white font-bold text-xs md:text-sm tracking-wide">{game.name}</span>
+                  <span className="text-text-secondary text-[10px] md:text-xs">{('provider' in game) ? game.provider : 'Stake Originals'}</span>
                 </div>
                 {isGameBanned(game.name, game.category) && (
-                  <div className="ml-auto flex items-center gap-2">
-                     <Lock className="text-text-secondary" size={14} />
-                     <span className="text-text-secondary text-xs">Indisponible</span>
+                  <div className="ml-auto flex items-center gap-1.5 md:gap-2">
+                     <Lock className="text-text-secondary w-3 h-3 md:w-4 md:h-4" />
+                     <span className="text-text-secondary text-[10px] md:text-xs">Indisponible</span>
                   </div>
                 )}
               </div>
@@ -429,7 +428,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
       </div>
 
       {/* Nav Tabs */}
-      <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-border-subtle mb-6">
+      <div className="flex overflow-x-auto no-scrollbar items-center gap-2 pb-3 md:pb-4 border-b border-border-subtle mb-4 md:mb-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = view === tab.id;
@@ -438,13 +437,13 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
               key={tab.id}
               onClick={() => setView(tab.id)}
               className={cn(
-                "px-4 py-2.5 rounded-full flex items-center gap-2 text-sm font-bold transition-all shadow-sm",
+                "px-3 md:px-4 py-2 md:py-2.5 rounded-full flex items-center shrink-0 gap-1.5 md:gap-2 text-xs md:text-sm font-bold transition-all shadow-sm",
                 active
                   ? "bg-white text-black drop-shadow-md"
                   : "bg-bg-panel text-text-secondary hover:bg-bg-inner hover:text-white border border-border-subtle cursor-pointer",
               )}
             >
-              <Icon size={16} className={active ? "text-accent text-[currentColor]" : ""} /> <span>{tab.name}</span>
+              <Icon size={14} className={cn(active ? "text-accent text-[currentColor]" : "", "md:w-4 md:h-4")} /> <span>{tab.name}</span>
             </button>
           );
         })}
@@ -537,7 +536,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
               <Star className="text-yellow-400" size={24} /> <span>Nouveautés</span>
             </h2>
           </div>
-          {renderGameGrid(filteredGames.filter(g => g.name === "Ice Fishing" || g.name === "Super Tower DRAGON"))}
+          {renderGameGrid(filteredGames.filter(g => globalGameStatus?.[g.name]?.isNew || g.name === "Ice Fishing" || g.name === "Super Tower DRAGON"))}
 
           <div className="flex items-center justify-between mb-4 mt-8">
             <h2 className="text-white font-bold text-xl flex items-center gap-2">

@@ -338,6 +338,7 @@ export interface CustomUser {
   balanceLimit?: number;
   totalWagered?: number;
   totalWon?: number;
+  totalBets?: number;
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
@@ -1129,6 +1130,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     // Update local user directly so UI doesn't lag
     user.totalWagered = newTotalWagered;
     user.totalWon = (user.totalWon || 0) + actualPayout;
+    user.totalBets = (user.totalBets || 0) + 1;
     user.rank = calculatedRank as any;
     if (challengeUpdates) {
       user.weeklyChallenges = localChallenges;
@@ -1148,6 +1150,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       const updates: any = {
         totalWagered: increment(safeBetAmount),
         totalWon: increment(actualPayout),
+        totalBets: increment(1),
       };
       if (calculatedRank !== user.rank) {
         updates.rank = calculatedRank;
