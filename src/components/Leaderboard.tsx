@@ -3,12 +3,14 @@ import { Trophy, X, Medal, Crown, Star } from "lucide-react";
 import { cn, formatCurrency } from "../lib/utils";
 import { db } from "../lib/firebase";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
-import { CustomUser } from "../context/UserContext";
+import { CustomUser, useUser } from "../context/UserContext";
 import { RankBadge } from "./RankBadge";
+import { Ghost } from "lucide-react";
 
 export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; isPage?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<CustomUser[]>([]);
+  const { user } = useUser() as { user: CustomUser | null };
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -16,7 +18,13 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
         const usersRef = collection(db, "users");
         const q = query(usersRef, orderBy("balance", "desc"), limit(50));
         const querySnapshot = await getDocs(q);
-        const fetchedUsers = querySnapshot.docs.map(doc => doc.data() as CustomUser);
+        let fetchedUsers = querySnapshot.docs.map(doc => doc.data() as CustomUser);
+        
+        // Filter out hidden users for non-admins
+        if (user?.role !== "admin") {
+           fetchedUsers = fetchedUsers.filter(u => !u.isHiddenFromPublic);
+        }
+        
         setUsers(fetchedUsers);
       } catch (err) {
         console.warn(err);
@@ -25,7 +33,7 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
       }
     };
     fetchLeaderboard();
-  }, []);
+  }, [user?.role]);
 
   return (
     <div className={cn(
@@ -124,6 +132,9 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
                           )}>
                             {u.username || "Anonyme"}
                           </span>
+                          {u.isHiddenFromPublic && (
+                             <Ghost size={14} className="text-purple-500 ml-1" title="Mode Fantôme (Invisible)" />
+                          )}
                           <div className="hidden sm:block">
                              <RankBadge rank={u.rank} className="h-6 object-contain" />
                           </div>

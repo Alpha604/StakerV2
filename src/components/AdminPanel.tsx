@@ -38,7 +38,8 @@ import {
   Clock,
   RotateCcw,
   LockOpen,
-  User
+  User,
+  Ghost
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
@@ -361,6 +362,7 @@ export function AdminPanel() {
       photoURL: u.photoURL || "",
       preventPhotoChange: u.preventPhotoChange || false,
       preventUsernameChange: u.preventUsernameChange || false,
+      isHiddenFromPublic: u.isHiddenFromPublic || false,
     });
     setSuspensionMinutes("");
     setSuspensionDate("");
@@ -1009,9 +1011,6 @@ export function AdminPanel() {
                   </th>
                   <th className="py-4 px-6 font-medium">État Sécuritaire</th>
                   <th className="py-4 px-6 font-medium">Capitaux</th>
-                  <th className="py-4 px-6 font-medium text-center">
-                    Interventions Directes
-                  </th>
                   <th className="py-4 px-6 font-medium text-right">
                     Manipulation
                   </th>
@@ -1020,7 +1019,7 @@ export function AdminPanel() {
               <tbody className="divide-y divide-gray-800/50">
                 {loading && users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-20 text-center">
+                    <td colSpan={5} className="p-20 text-center">
                       <div className="flex flex-col items-center gap-4 text-gray-500">
                         <div className="w-12 h-12 border-4 border-gray-800 border-t-indigo-500 rounded-full animate-spin"></div>
                         <span className="font-mono text-xs tracking-widest uppercase">
@@ -1031,7 +1030,7 @@ export function AdminPanel() {
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-20 text-center text-gray-500">
+                    <td colSpan={5} className="p-20 text-center text-gray-500">
                       <Search size={48} className="mx-auto mb-4 opacity-20" />
                       <p className="font-medium text-lg">
                         Aucun enregistrement
@@ -1080,6 +1079,9 @@ export function AdminPanel() {
                             <div className="min-w-0">
                               <div className="font-bold text-gray-200 truncate flex items-center gap-2 text-base">
                                 {u.username}
+                                {u.isHiddenFromPublic && (
+                                  <Ghost size={14} className="text-purple-500" title="Invisible" />
+                                )}
                                 {isSelf && (
                                   <span className="bg-indigo-500/20 text-indigo-400 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-widest border border-indigo-500/30">
                                     Moi
@@ -1185,72 +1187,6 @@ export function AdminPanel() {
                           </div>
                         </td>
 
-                        {/* P5: Quick Actions (Guarded) */}
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex justify-center gap-2">
-                            {isSelf || isProtectedAdmin ? (
-                              <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">
-                                <Lock size={12} className="inline mr-1" />{" "}
-                                Protégé
-                              </span>
-                            ) : (
-                              <>
-                                {u.status !== "approved" && (
-                                  <button
-                                    onClick={() =>
-                                      updateUser(u.id, {
-                                        status: "approved",
-                                        suspensionEndsAt: undefined,
-                                      })
-                                    }
-                                    disabled={actionLoading === u.id + "status"}
-                                    className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/40 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
-                                    title="Débloquer / Approuver"
-                                  >
-                                    {actionLoading === u.id + "status" ? (
-                                      <span className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <Unlock size={14} />
-                                    )}
-                                  </button>
-                                )}
-                                {u.status !== "suspended" && (
-                                  <button
-                                    onClick={() =>
-                                      updateUser(u.id, { status: "suspended" })
-                                    }
-                                    disabled={actionLoading === u.id + "status"}
-                                    className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/40 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
-                                    title="Suspendre Temporairement"
-                                  >
-                                    {actionLoading === u.id + "status" ? (
-                                      <span className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <ShieldAlert size={14} />
-                                    )}
-                                  </button>
-                                )}
-                                {u.status !== "banned" && (
-                                  <button
-                                    onClick={() =>
-                                      updateUser(u.id, { status: "banned" })
-                                    }
-                                    disabled={actionLoading === u.id + "status"}
-                                    className="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
-                                    title="Bannir Définitivement"
-                                  >
-                                    {actionLoading === u.id + "status" ? (
-                                      <span className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <Gavel size={14} />
-                                    )}
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-
                         {/* P6: Panel / Delete */}
                         <td className="py-4 px-6 text-right">
                           <div className="flex justify-end gap-2">
@@ -1265,17 +1201,6 @@ export function AdminPanel() {
                               />{" "}
                               Paramétrer
                             </button>
-
-                            {!isProtectedAdmin && !isSelf && (
-                              <button
-                                onClick={() => deleteUser(u)}
-                                disabled={actionLoading?.startsWith(u.id)}
-                                className="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-gray-700 hover:border-red-500/30 rounded-lg transition-all disabled:opacity-50"
-                                title="Effacer Entité"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -1517,6 +1442,26 @@ export function AdminPanel() {
                 >
                   <Lock size={18} /> Modération
                 </button>
+              </div>
+
+              <div className="mt-8 border-t border-gray-800 pt-6">
+                <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                  <div>
+                    <span className="font-bold text-gray-200 block">Désactiver l'inscription</span>
+                    <span className="text-xs text-gray-500">Bloquer la création de nouveaux comptes sur la plateforme.</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={globalAppStatus?.preventRegistration === true}
+                      onChange={async (e) => {
+                        await setDoc(doc(db, "config", "app"), { preventRegistration: e.target.checked }, { merge: true });
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -2134,6 +2079,31 @@ export function AdminPanel() {
                                   className="sr-only peer"
                                 />
                                 <div className="w-11 h-6 bg-gray-800 rounded-full peer-checked:bg-pink-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                        </div>
+                      </FormSection>
+
+                      <FormSection
+                        title="Confidentialité & Visibilité"
+                        icon={<Ghost className="text-purple-400" />}
+                      >
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                              <div>
+                                <span className="font-bold text-gray-300 block text-sm">Mode Fantôme (Invisible)</span>
+                                <span className="text-xs text-gray-500">Masquer l'utilisateur des classements publics et espaces communs. Réservé aux administrateurs.</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editForm.isHiddenFromPublic || false}
+                                  onChange={(e) =>
+                                    setEditForm({ ...editForm, isHiddenFromPublic: e.target.checked })
+                                  }
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-800 rounded-full peer-checked:bg-purple-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                               </label>
                             </div>
                         </div>

@@ -377,6 +377,7 @@ export interface CustomUser {
     maxDepositAmount?: number;
     maxDepositsPerDay?: number;
   };
+  isHiddenFromPublic?: boolean;
 }
 
 export interface SessionBet {
@@ -827,6 +828,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
                 role = "admin";
                 status = "approved";
                 balance = 1000000;
+              }
+
+              // Check if registration is allowed before creating the account
+              const appConfigSnap = await getDoc(doc(db, "config", "app"));
+              const authRestricted = appConfigSnap.exists() && appConfigSnap.data().preventRegistration === true;
+
+              if (authRestricted && role !== "admin") {
+                await signOut(auth);
+                setUser(null);
+                setLoading(false);
+                toast.error("La création de nouveaux comptes est actuellement désactivée.");
+                return;
               }
 
               const newUser: CustomUser = {

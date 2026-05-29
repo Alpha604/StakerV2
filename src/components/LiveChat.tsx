@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send, User, Search, Gift, Trash2 } from "lucide-react";
+import { MessageSquare, X, Send, User, Search, Gift, Trash2, Ghost } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { formatCurrency } from "../lib/utils";
 import toast from "react-hot-toast";
@@ -32,10 +32,15 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     
     const q = query(collection(db, "chat_messages"), orderBy("timestamp", "desc"), limit(50));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
+      let msgs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })).reverse();
+      
+      if (user?.role !== "admin") {
+        msgs = msgs.filter((m: any) => !m.isHidden || m.authorId === user?.id);
+      }
+      
       setMessages(msgs);
     });
     return () => unsubscribe();
@@ -80,6 +85,7 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
       text: inputMsg,
       timestamp: serverTimestamp(),
       timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isHidden: user.isHiddenFromPublic || false,
     };
     
     setInputMsg("");
@@ -187,6 +193,7 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               <span className={`font-bold ${msg.authorId === user?.id ? 'text-white' : 'text-text-secondary hover:text-white'}`}>
                 {msg.author}
               </span>
+              {msg.isHidden && <Ghost size={12} className="text-purple-500" title="Message fantôme" />}
               {user?.role === "admin" && (
                 <div className="ml-auto flex items-center gap-1">
                   <button onClick={() => handleBanUserFromChat(msg.id, msg.authorId, msg.author)} className="text-purple-500/50 hover:text-purple-500 transition-colors p-1" title={`BANNIR ${msg.author}`}>
