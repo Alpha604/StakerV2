@@ -21,7 +21,7 @@ const BOT_MESSAGES = [
 const BOT_NAMES = ["DarkSlayer", "CryptoKing", "LuckyL", "Mika", "Sasha99", "AlphaWolf", "StakeFan", "GamblerPro"];
 
 export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user } = useUser() as any;
+  const { user, globalAppStatus } = useUser() as any;
   const [messages, setMessages] = useState<any[]>([]);
   const [inputMsg, setInputMsg] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,6 +55,10 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     if (!inputMsg.trim()) return;
     if (!user) {
       toast.error("Connectez-vous pour parler sur le chat !");
+      return;
+    }
+    if (globalAppStatus?.preventChat && user.role !== "admin") {
+      toast.error("Le chat public est actuellement désactivé par l'administration.");
       return;
     }
     if (user.permissions?.canChat === false) {

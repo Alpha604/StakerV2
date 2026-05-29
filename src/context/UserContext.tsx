@@ -400,8 +400,8 @@ interface UserContextType {
   updateUserData: (data: Partial<CustomUser>) => Promise<void>;
   loginWithGoogle: () => Promise<boolean>;
   logoutUser: () => Promise<void>;
-  addBalance: (amount: number) => Promise<void>;
-  subtractBalance: (amount: number) => Promise<boolean>;
+  addBalance: (amount: number, isDeposit?: boolean) => Promise<void>;
+  subtractBalance: (amount: number, isWithdrawal?: boolean) => Promise<boolean>;
   setBalanceExact: (amount: number) => Promise<void>;
   transferToVault: (amount: number) => Promise<boolean>;
   transferFromVault: (amount: number) => Promise<boolean>;
@@ -433,6 +433,12 @@ interface UserContextType {
     blockedDevices?: string[];
     endTime?: number;
     autoUnlock?: boolean;
+    preventRegistration?: boolean;
+    preventDeposits?: boolean;
+    preventWithdrawals?: boolean;
+    preventVault?: boolean;
+    freezeBalances?: boolean;
+    preventChat?: boolean;
   };
   showMaxiVaultModal: boolean;
   setShowMaxiVaultModal: (val: boolean) => void;
@@ -927,8 +933,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoggingOut(false);
   };
 
-  const addBalance = async (amount: number) => {
+  const addBalance = async (amount: number, isDeposit = false) => {
     if (!user) return;
+    if (globalAppStatus?.freezeBalances && user.role !== "admin") {
+      toast.error("Les soldes sont actuellement gelés par l'administration.");
+      return;
+    }
+    if (isDeposit && globalAppStatus?.preventDeposits && user.role !== "admin") {
+      toast.error("Les dépôts sont actuellement désactivés.");
+      return;
+    }
     try {
       const userRef = doc(db, "users", user.id);
       await updateDoc(userRef, {
@@ -939,8 +953,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const subtractBalance = async (amount: number) => {
+  const subtractBalance = async (amount: number, isWithdrawal = false) => {
     if (!user || user.balance < amount) return false;
+    if (globalAppStatus?.freezeBalances && user.role !== "admin") {
+      toast.error("Les soldes sont actuellement gelés par l'administration.");
+      return false;
+    }
+    if (isWithdrawal && globalAppStatus?.preventWithdrawals && user.role !== "admin") {
+      toast.error("Les retraits sont actuellement désactivés.");
+      return false;
+    }
     try {
       const userRef = doc(db, "users", user.id);
       await updateDoc(userRef, {
@@ -968,6 +990,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const transferToVault = async (amount: number) => {
     if (!user || user.balance < amount || amount <= 0) return false;
     if (user.permissions?.canUseVault === false) return false;
+    if (globalAppStatus?.preventVault && user.role !== "admin") {
+      toast.error("Les coffres (Vault) sont actuellement désactivés.");
+      return false;
+    }
+    if (globalAppStatus?.freezeBalances && user.role !== "admin") {
+      toast.error("Les soldes sont actuellement gelés par l'administration.");
+      return false;
+    }
     try {
       const userRef = doc(db, "users", user.id);
       await updateDoc(userRef, {
@@ -984,6 +1014,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const transferFromVault = async (amount: number) => {
     if (!user || (user.vault || 0) < amount || amount <= 0) return false;
     if (user.permissions?.canUseVault === false) return false;
+    if (globalAppStatus?.preventVault && user.role !== "admin") {
+      toast.error("Les coffres (Vault) sont actuellement désactivés.");
+      return false;
+    }
+    if (globalAppStatus?.freezeBalances && user.role !== "admin") {
+      toast.error("Les soldes sont actuellement gelés par l'administration.");
+      return false;
+    }
     try {
       const userRef = doc(db, "users", user.id);
       await updateDoc(userRef, {

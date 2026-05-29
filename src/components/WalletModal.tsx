@@ -103,7 +103,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
 
     if (tab === "buy") {
       setTimeout(async () => {
-        await addBalance(val);
+        await addBalance(val, true);
         
         try {
           const today = new Date().toISOString().split('T')[0];
@@ -128,7 +128,7 @@ export function WalletModal({ onClose }: { onClose: () => void }) {
 
     if (tab === "cashout") {
       setTimeout(async () => {
-        const ok = await subtractBalance(val);
+        const ok = await subtractBalance(val, true);
         setLoading(false);
         if (!ok) {
           setError("Fonds insuffisants");

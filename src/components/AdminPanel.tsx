@@ -1445,22 +1445,114 @@ export function AdminPanel() {
               </div>
 
               <div className="mt-8 border-t border-gray-800 pt-6">
-                <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
-                  <div>
-                    <span className="font-bold text-gray-200 block">Désactiver l'inscription</span>
-                    <span className="text-xs text-gray-500">Bloquer la création de nouveaux comptes sur la plateforme.</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                    <div>
+                      <span className="font-bold text-gray-200 block">Désactiver l'inscription</span>
+                      <span className="text-xs text-gray-500">Bloquer la création de nouveaux comptes sur la plateforme.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={globalAppStatus?.preventRegistration === true}
+                        onChange={async (e) => {
+                          await setDoc(doc(db, "config", "app"), { preventRegistration: e.target.checked }, { merge: true });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={globalAppStatus?.preventRegistration === true}
-                      onChange={async (e) => {
-                        await setDoc(doc(db, "config", "app"), { preventRegistration: e.target.checked }, { merge: true });
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                  </label>
+                  
+                  <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                    <div>
+                      <span className="font-bold text-gray-200 block">Désactiver les Dépôts</span>
+                      <span className="text-xs text-gray-500">Empêcher tous les utilisateurs d'effectuer de nouveaux dépôts.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={globalAppStatus?.preventDeposits === true}
+                        onChange={async (e) => {
+                          await setDoc(doc(db, "config", "app"), { preventDeposits: e.target.checked }, { merge: true });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                    <div>
+                      <span className="font-bold text-gray-200 block">Désactiver les Retraits</span>
+                      <span className="text-xs text-gray-500">Bloquer toutes les demandes de retrait sur la plateforme.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={globalAppStatus?.preventWithdrawals === true}
+                        onChange={async (e) => {
+                          await setDoc(doc(db, "config", "app"), { preventWithdrawals: e.target.checked }, { merge: true });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
+                    <div>
+                      <span className="font-bold text-gray-200 block">Désactiver le Coffre (Vault)</span>
+                      <span className="text-xs text-gray-500">Geler l'utilisation des coffres forts pour tous.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={globalAppStatus?.preventVault === true}
+                        onChange={async (e) => {
+                          await setDoc(doc(db, "config", "app"), { preventVault: e.target.checked }, { merge: true });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl md:col-span-2">
+                    <div>
+                      <span className="font-bold text-gray-200 block">Désactiver le Chat Public</span>
+                      <span className="text-xs text-gray-500">Empêcher l'envoi de messages dans le chat pour tous les utilisateurs (sauf administrateurs).</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={globalAppStatus?.preventChat === true}
+                        onChange={async (e) => {
+                          await setDoc(doc(db, "config", "app"), { preventChat: e.target.checked }, { merge: true });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl md:col-span-2">
+                    <div>
+                      <span className="font-bold text-gray-200 block">Bloquer les Soldes (Gel)</span>
+                      <span className="text-xs text-gray-500">Geler tous les soldes utilisateurs (aucun gain, aucune perte). Pour interventions critiques.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={globalAppStatus?.freezeBalances === true}
+                        onChange={async (e) => {
+                          await setDoc(doc(db, "config", "app"), { freezeBalances: e.target.checked }, { merge: true });
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-emerald-500 rounded-full peer-checked:bg-rose-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
