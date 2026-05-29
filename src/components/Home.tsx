@@ -375,8 +375,8 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
   return (
     <div className="w-full max-w-[1200px] mx-auto p-3 md:p-8 flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
       {/* Search Input */}
-      <div className="relative mb-4 md:mb-6 z-40">
-        <div className="relative">
+      <div className="relative mb-4 md:mb-6">
+        <div className="relative z-10">
           <Search
             className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-text-secondary w-4 h-4 md:w-5 md:h-5"
           />
@@ -387,13 +387,13 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-            className="w-full bg-[#0f212e] border border-border-subtle rounded-xl py-2.5 md:py-3.5 pl-10 md:pl-12 pr-4 text-white text-sm md:text-base font-medium focus:outline-none focus:border-accent hover:border-border-medium transition-all cursor-text hover:bg-[#1a2c38] shadow-sm"
+            className="w-full bg-[#0f212e] border border-border-subtle rounded-xl py-2.5 md:py-3.5 pl-10 md:pl-12 pr-4 text-white text-sm md:text-base font-medium focus:outline-none focus:border-accent hover:border-border-medium transition-all cursor-text hover:bg-[#1a2c38] shadow-sm relative z-10"
           />
         </div>
 
         {/* Autocomplete Dropdown (Desktop & Mobile Support) */}
         {isSearchFocused && searchQuery && desktopSearchMatches.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f212e] border border-border-subtle rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[300px] md:max-h-[400px] overflow-y-auto w-full animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f212e] border border-border-subtle rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[300px] md:max-h-[400px] overflow-y-auto w-full animate-in fade-in slide-in-from-top-2 z-[60]">
             <div className="p-2 border-b border-border-subtle text-[10px] md:text-xs font-bold uppercase tracking-wider text-text-secondary bg-[#0a161f]">
               Résultats pour "{searchQuery}"
             </div>

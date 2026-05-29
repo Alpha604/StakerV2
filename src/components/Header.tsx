@@ -145,7 +145,7 @@ export function Header({
                 </button>
               )}
               
-              <button className="connexion-btn ml-2 hidden sm:block" onClick={() => setShowLogoutConfirm(true)} title="Déconnexion">
+              <button className="connexion-btn ml-1 sm:ml-2 !text-[10px] sm:!text-sm !px-2 sm:!px-6 !py-1.5 sm:!py-2.5" onClick={() => setShowLogoutConfirm(true)} title="Déconnexion">
                 Déconnexion
               </button>
             </div>
