@@ -143,7 +143,7 @@ export function AdminPanel() {
     "users" | "games" | "inbox" | "security" | "settings"
   >("users");
   const [userCategory, setUserCategory] = useState<
-    "Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis"
+    "Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis" | "Paris Sportifs"
   >("Tous");
 
   const [adminRequests, setAdminRequests] = useState<any[]>([]);
@@ -477,6 +477,7 @@ export function AdminPanel() {
       return u.status === "approved" || !u.status;
     if (userCategory === "Suspendus") return u.status === "suspended";
     if (userCategory === "Bannis") return u.status === "banned";
+    if (userCategory === "Paris Sportifs") return u.sportsBettingAccess === true;
 
     return true; // "Tous"
   });
@@ -976,12 +977,12 @@ export function AdminPanel() {
             </div>
             <div className="flex flex-col md:flex-row gap-4 justify-between">
               <div className="flex bg-[#0f1923] p-1 rounded-xl border border-gray-800 w-full md:w-auto overflow-x-auto">
-                {["Tous", "En attente", "Approuvés", "Suspendus", "Bannis"].map(
+                {["Tous", "En attente", "Approuvés", "Suspendus", "Bannis", "Paris Sportifs"].map(
                   (cat) => (
                     <button
                       key={cat}
                       onClick={() => setUserCategory(cat as any)}
-                      className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${userCategory === cat ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
+                      className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${userCategory === cat ? (cat === "Paris Sportifs" ? "bg-purple-600 text-white" : "bg-white/10 text-white") : "text-gray-500 hover:text-gray-300"}`}
                     >
                       {cat}
                     </button>
@@ -1088,6 +1089,9 @@ export function AdminPanel() {
                                 {u.username}
                                 {u.isHiddenFromPublic && (
                                   <Ghost size={14} className="text-purple-500" title="Invisible" />
+                                )}
+                                {u.sportsBettingAccess && (
+                                  <Trophy size={14} className="text-purple-400" title="Accès Paris Sportifs" />
                                 )}
                                 {isSelf && (
                                   <span className="bg-indigo-500/20 text-indigo-400 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-widest border border-indigo-500/30">
@@ -2599,6 +2603,27 @@ export function AdminPanel() {
                                 <label className="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" className="sr-only peer" checked={editForm.canAppealRank !== false} onChange={(e) => setEditForm({...editForm, canAppealRank: e.target.checked})} />
                                   <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Accès Spéciaux */}
+                          <div className="bg-gradient-to-br from-[#0b0c15] to-[#08090e] border border-gray-800/80 rounded-2xl p-6 hover:border-gray-700 transition-colors shadow-2xl relative overflow-hidden md:col-span-2">
+                             <div className="absolute top-0 right-1/2 p-24 bg-purple-500/5 blur-[50px] rounded-full"></div>
+                            <h4 className="font-black text-white flex items-center gap-2 mb-6 text-sm uppercase tracking-widest relative z-10">
+                              <Trophy size={16} className="text-purple-400" />
+                              Accès Spéciaux & Beta
+                            </h4>
+                            <div className="space-y-6 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 hover:bg-black/60 transition-colors mt-0 sm:mt-6">
+                                <div>
+                                  <span className="text-sm font-bold text-gray-200 block">Paris Sportifs (Beta)</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Débloque l'accès au module de paris sportifs.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.sportsBettingAccess === true} onChange={(e) => setEditForm({...editForm, sportsBettingAccess: e.target.checked})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 border border-gray-700 shadow-inner"></div>
                                 </label>
                               </div>
                             </div>
