@@ -339,6 +339,7 @@ export interface CustomUser {
   totalWagered?: number;
   totalWon?: number;
   totalBets?: number;
+  sportsBettingAccess?: boolean;
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
@@ -398,7 +399,7 @@ interface UserContextType {
   vault: number;
   appSettings: any;
   updateAppSettings: (settings: any) => Promise<void>;
-  updateUserData: (data: Partial<CustomUser>) => Promise<void>;
+  updateUserData: (data: Partial<CustomUser>, silent?: boolean) => Promise<void>;
   loginWithGoogle: () => Promise<boolean>;
   logoutUser: () => Promise<void>;
   addBalance: (amount: number, isDeposit?: boolean) => Promise<void>;
@@ -694,13 +695,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateUserData = async (data: Partial<CustomUser>) => {
+  const updateUserData = async (data: Partial<CustomUser>, silent: boolean = false) => {
     if (!user) return;
     try {
       await updateDoc(doc(db, "users", user.id), data);
-      toast.success("Profil mis à jour");
+      if (!silent) toast.success("Profil mis à jour");
     } catch (e: any) {
-      toast.error("Erreur lors de la mise à jour: " + e.message);
+      if (!silent) toast.error("Erreur lors de la mise à jour: " + e.message);
     }
   };
 

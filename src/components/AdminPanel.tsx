@@ -39,7 +39,8 @@ import {
   RotateCcw,
   LockOpen,
   User,
-  Ghost
+  Ghost,
+  Trophy
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
@@ -1808,6 +1809,44 @@ export function AdminPanel() {
                   placeholder="ex: admin, moderateur, insult1, insult2..."
                   className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-red-500 outline-none resize-none"
                 />
+              </div>
+            </div>
+
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mt-6 mb-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Trophy className="text-blue-500" /> Accès : Paris Sportifs
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Code d'accès exclusif</label>
+                  <input 
+                    type="text" 
+                    value={heroSettings.sportsCode || ""}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, sportsCode: e.target.value }))}
+                    placeholder="ex: SPORT123"
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Limite d'utilisations (0 = illimité)</label>
+                  <input 
+                    type="number" 
+                    value={heroSettings.sportsCodeMaxUses || 0}
+                    onChange={(e) => setHeroSettings(s => ({ ...s, sportsCodeMaxUses: parseInt(e.target.value) || 0 }))}
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500 mb-2">
+                    Utilisations actuelles du code : <span className="text-white font-bold">{heroSettings.sportsCodeUses || 0}</span>
+                  </p>
+                  <button 
+                    onClick={() => setHeroSettings(s => ({ ...s, sportsCodeUses: 0 }))}
+                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold rounded-lg border border-gray-700 transition"
+                  >
+                    Réinitialiser le compteur d'utilisations
+                  </button>
+                </div>
               </div>
             </div>
 
