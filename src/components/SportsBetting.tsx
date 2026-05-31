@@ -131,7 +131,8 @@ export function SportsBetting() {
   const [accessCode, setAccessCode] = useState("");
   const [accessError, setAccessError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
-  const hasAccess = user?.role === 'admin' || user?.sportsBettingAccess === true;
+  const isGloballyActive = appSettings?.sportsBettingGlobalActive !== false;
+  const hasAccess = user?.role === 'admin' || (isGloballyActive && user?.sportsBettingAccess === true);
 
   const handleUnlock = async () => {
     setAccessError("");
@@ -355,6 +356,19 @@ export function SportsBetting() {
           <AlertCircle size={48} className="text-gray-500 mb-6 mx-auto" />
           <h1 className="text-2xl font-black text-white mb-2 tracking-widest uppercase">Connexion Requise</h1>
           <p className="text-gray-400 mb-8 text-sm">Veuillez vous connecter pour accéder au module de Paris Sportifs.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isGloballyActive && user?.role !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 md:p-20 min-h-[600px] w-full text-center bg-[#0a1014] text-white">
+        <div className="max-w-md w-full bg-[#0f1923] border border-[#1a2c38] rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <AlertCircle size={48} className="text-red-500 mb-6 mx-auto" />
+          <h1 className="text-2xl font-black text-white mb-2 tracking-widest uppercase">Maintenance en cours</h1>
+          <p className="text-gray-400 text-sm">Le module de Paris Sportifs est temporairement désactivé par l'administration.</p>
         </div>
       </div>
     );
