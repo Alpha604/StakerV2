@@ -443,11 +443,17 @@ interface UserContextType {
     freezeBalances?: boolean;
     preventChat?: boolean;
     scheduledMaintenance?: {
-      enabled: boolean;
-      days: number[];
-      startTime: string;
-      endTime: string;
-      mode: "maintenance" | "arret" | "moderation";
+      schedules: {
+        id: string;
+        name: string;
+        enabled: boolean;
+        type: "recurring" | "once";
+        days: number[]; // 0-6
+        specificDate: string; // YYYY-MM-DD
+        startTime: string; // HH:mm
+        endTime: string; // HH:mm
+        mode: "maintenance" | "arret" | "moderation";
+      }[];
     };
   };
   showMaxiVaultModal: boolean;

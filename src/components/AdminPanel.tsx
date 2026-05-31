@@ -41,7 +41,9 @@ import {
   User,
   Ghost,
   Trophy,
-  Calendar
+  Calendar,
+  Plus,
+  Trash
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
@@ -1479,118 +1481,205 @@ export function AdminPanel() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Calendar className="text-blue-500 w-5 h-5" /> Maintenance Programmée
+                      <Calendar className="text-blue-500 w-5 h-5" /> Maintenance Programmée (Avancée)
                     </h3>
-                    <p className="text-gray-400 text-sm mt-1">Automatisez des fenêtres de maintenance récurrentes pour l'application.</p>
+                    <p className="text-gray-400 text-sm mt-1">Automatisez des fenêtres de maintenance, ponctuelles ou récurrentes.</p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={globalAppStatus?.scheduledMaintenance?.enabled === true}
-                      onChange={async (e) => {
-                        await setDoc(doc(db, "config", "app"), {
-                          scheduledMaintenance: {
-                            ...(globalAppStatus?.scheduledMaintenance || { days: [], startTime: "", endTime: "", mode: "maintenance" }),
-                            enabled: e.target.checked
-                          }
-                        }, { merge: true });
-                      }}
-                    />
-                    <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:bg-blue-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                  </label>
+                  <button
+                    onClick={async () => {
+                      const schedules = globalAppStatus?.scheduledMaintenance?.schedules || [];
+                      const newSchedule: any = {
+                        id: Math.random().toString(36).substring(7),
+                        name: "Nouvelle règle",
+                        enabled: true,
+                        type: "recurring",
+                        days: [],
+                        specificDate: "",
+                        startTime: "",
+                        endTime: "",
+                        mode: "maintenance"
+                      };
+                      await setDoc(doc(db, "config", "app"), {
+                        scheduledMaintenance: {
+                          schedules: [...schedules, newSchedule]
+                        }
+                      }, { merge: true });
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-lg text-sm font-bold border border-blue-500/20 transition-all"
+                  >
+                    <Plus size={16} /> Ajouter une règle
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Jours récurrents</label>
-                    <div className="flex flex-wrap gap-2">
-                      {[{ label: "L", value: 1 }, { label: "M", value: 2 }, { label: "M", value: 3 }, { label: "J", value: 4 }, { label: "V", value: 5 }, { label: "S", value: 6 }, { label: "D", value: 0 }].map((day, idx) => {
-                        const isSelected = globalAppStatus?.scheduledMaintenance?.days?.includes(day.value);
-                        return (
-                          <button
-                            key={idx}
-                            onClick={async () => {
-                              const currentDays = globalAppStatus?.scheduledMaintenance?.days || [];
-                              const newDays = isSelected ? currentDays.filter(d => d !== day.value) : [...currentDays, day.value];
-                              await setDoc(doc(db, "config", "app"), {
-                                scheduledMaintenance: {
-                                  ...(globalAppStatus?.scheduledMaintenance || { enabled: false, startTime: "", endTime: "", mode: "maintenance" }),
-                                  days: newDays
-                                }
-                              }, { merge: true });
+                <div className="flex flex-col gap-4">
+                  {!globalAppStatus?.scheduledMaintenance?.schedules?.length && (
+                    <div className="p-8 text-center border-2 border-dashed border-gray-800 rounded-xl bg-[#0c0c0e]">
+                      <Calendar className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-400 font-bold">Aucune maintenance programmée.</p>
+                    </div>
+                  )}
+                  {globalAppStatus?.scheduledMaintenance?.schedules?.map((sch: any, index: number) => (
+                    <div key={sch.id} className="border border-gray-800 rounded-xl bg-[#0c0c0e] p-4 relative">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex flex-col flex-1 gap-2">
+                          <input
+                            type="text"
+                            value={sch.name}
+                            onChange={async (e) => {
+                              const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                              newSchedules[index].name = e.target.value;
+                              await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
                             }}
-                            className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${isSelected ? "bg-blue-500 text-white shadow-md shadow-blue-500/20" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"}`}
+                            className="bg-transparent text-white font-bold placeholder:text-gray-600 outline-none w-full border-b border-transparent focus:border-blue-500 max-w-xs"
+                            placeholder="Nom de la règle..."
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                newSchedules[index].type = "recurring";
+                                await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                              }}
+                              className={`px-3 py-1 rounded-md text-xs font-bold transition-colors border ${sch.type === "recurring" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-gray-800 text-gray-500 border-transparent hover:text-gray-300"}`}
+                            >
+                              Récurrente
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                newSchedules[index].type = "once";
+                                await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                              }}
+                              className={`px-3 py-1 rounded-md text-xs font-bold transition-colors border ${sch.type === "once" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" : "bg-gray-800 text-gray-500 border-transparent hover:text-gray-300"}`}
+                            >
+                              Ponctuelle (Date)
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={sch.enabled}
+                              onChange={async (e) => {
+                                const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                newSchedules[index].enabled = e.target.checked;
+                                await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                              }}
+                            />
+                            <div className="w-9 h-5 bg-gray-800 rounded-full peer peer-focus:ring-2 peer-focus:ring-emerald-500 peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                          </label>
+                          <button
+                            onClick={async () => {
+                              const newSchedules = globalAppStatus.scheduledMaintenance.schedules.filter((s:any) => s.id !== sch.id);
+                              await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                            }}
+                            className="p-1.5 text-gray-500 hover:text-rose-500 transition-colors"
                           >
-                            {day.label}
+                            <Trash size={16} />
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Heure de début</label>
-                      <div className="relative">
-                        <input
-                          type="time"
-                          value={globalAppStatus?.scheduledMaintenance?.startTime || ""}
-                          onChange={async (e) => {
-                            await setDoc(doc(db, "config", "app"), {
-                              scheduledMaintenance: {
-                                ...(globalAppStatus?.scheduledMaintenance || { enabled: false, days: [], endTime: "", mode: "maintenance" }),
-                                startTime: e.target.value
-                              }
-                            }, { merge: true });
-                          }}
-                          className="w-full bg-[#0c0c0e] border border-gray-800 text-white flex-1 p-3 rounded-xl focus:border-blue-500 outline-none"
-                        />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-800/50 pt-4">
+                        {/* Day/Date specific */}
+                        <div>
+                          {sch.type === "recurring" ? (
+                            <>
+                              <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Jours récurrents</label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {[{ label: "L", value: 1 }, { label: "M", value: 2 }, { label: "M", value: 3 }, { label: "J", value: 4 }, { label: "V", value: 5 }, { label: "S", value: 6 }, { label: "D", value: 0 }].map((day, idx) => {
+                                  const isSelected = sch.days?.includes(day.value);
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={async () => {
+                                        const currentDays = sch.days || [];
+                                        const newDays = isSelected ? currentDays.filter((d:any) => d !== day.value) : [...currentDays, day.value];
+                                        const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                        newSchedules[index].days = newDays;
+                                        await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                                      }}
+                                      className={`w-8 h-8 rounded text-xs font-bold transition-all ${isSelected ? "bg-purple-500 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"}`}
+                                    >
+                                      {day.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date exacte</label>
+                              <input
+                                type="date"
+                                value={sch.specificDate || ""}
+                                onChange={async (e) => {
+                                  const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                  newSchedules[index].specificDate = e.target.value;
+                                  await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                                }}
+                                className="w-full bg-black/40 border border-gray-800 text-white p-2 rounded-lg text-sm focus:border-cyan-500 outline-none"
+                              />
+                            </>
+                          )}
+                        </div>
+
+                        {/* Times */}
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Heure de début</label>
+                            <input
+                              type="time"
+                              value={sch.startTime || ""}
+                              onChange={async (e) => {
+                                const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                newSchedules[index].startTime = e.target.value;
+                                await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                              }}
+                              className="w-full bg-black/40 border border-gray-800 text-white p-2 rounded-lg text-sm focus:border-blue-500 outline-none"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Heure de fin</label>
+                            <input
+                              type="time"
+                              value={sch.endTime || ""}
+                              onChange={async (e) => {
+                                const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                                newSchedules[index].endTime = e.target.value;
+                                await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                              }}
+                              className="w-full bg-black/40 border border-gray-800 text-white p-2 rounded-lg text-sm focus:border-blue-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mode selection */}
+                      <div className="mt-4 pt-4 border-t border-gray-800/50 flex flex-wrap gap-2 items-center">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold mr-2">Mode Appliqué:</span>
+                        {[
+                          { id: "maintenance", label: "Maintenance", color: "hover:text-amber-500", activeBg: "bg-amber-500/10 text-amber-500 border border-amber-500/20" },
+                          { id: "arret", label: "Arrêt", color: "hover:text-rose-500", activeBg: "bg-rose-500/10 text-rose-500 border border-rose-500/20" },
+                          { id: "moderation", label: "Modération", color: "hover:text-blue-500", activeBg: "bg-blue-500/10 text-blue-500 border border-blue-500/20" }
+                        ].map(mode => (
+                          <button
+                            key={mode.id}
+                            onClick={async () => {
+                              const newSchedules = [...globalAppStatus.scheduledMaintenance.schedules];
+                              newSchedules[index].mode = mode.id;
+                              await setDoc(doc(db, "config", "app"), { scheduledMaintenance: { schedules: newSchedules } }, { merge: true });
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent ${sch.mode === mode.id || (!sch.mode && mode.id === "maintenance") ? mode.activeBg : `text-gray-500 bg-black/40 border-gray-800 ${mode.color}`}`}
+                          >
+                            {mode.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Heure de fin</label>
-                      <div className="relative">
-                        <input
-                          type="time"
-                          value={globalAppStatus?.scheduledMaintenance?.endTime || ""}
-                          onChange={async (e) => {
-                            await setDoc(doc(db, "config", "app"), {
-                              scheduledMaintenance: {
-                                ...(globalAppStatus?.scheduledMaintenance || { enabled: false, days: [], startTime: "", mode: "maintenance" }),
-                                endTime: e.target.value
-                              }
-                            }, { merge: true });
-                          }}
-                          className="w-full bg-[#0c0c0e] border border-gray-800 text-white flex-1 p-3 rounded-xl focus:border-blue-500 outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Mode d'affichage</label>
-                  <div className="flex bg-[#0c0c0e] p-1 rounded-xl w-fit border border-gray-800">
-                    {[
-                      { id: "maintenance", label: "Maintenance", color: "hover:text-amber-500", activeBg: "bg-amber-500/10 text-amber-500 border border-amber-500/20" },
-                      { id: "arret", label: "Arrêt", color: "hover:text-rose-500", activeBg: "bg-rose-500/10 text-rose-500 border border-rose-500/20" },
-                      { id: "moderation", label: "Modération", color: "hover:text-blue-500", activeBg: "bg-blue-500/10 text-blue-500 border border-blue-500/20" }
-                    ].map(mode => (
-                      <button
-                        key={mode.id}
-                        onClick={async () => {
-                          await setDoc(doc(db, "config", "app"), {
-                            scheduledMaintenance: {
-                              ...(globalAppStatus?.scheduledMaintenance || { enabled: false, days: [], startTime: "", endTime: "" }),
-                              mode: mode.id
-                            }
-                          }, { merge: true });
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border border-transparent ${globalAppStatus?.scheduledMaintenance?.mode === mode.id || (!globalAppStatus?.scheduledMaintenance?.mode && mode.id === "maintenance") ? mode.activeBg : `text-gray-500 bg-transparent ${mode.color}`}`}
-                      >
-                        {mode.label}
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
 

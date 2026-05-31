@@ -243,16 +243,30 @@ function InnerAppContent({
     if (user?.role === "admin") return { blocked: false };
 
     // 1. Check Scheduled Maintenance
-    if (globalAppStatus?.scheduledMaintenance?.enabled) {
-      const sch = globalAppStatus.scheduledMaintenance;
+    if (globalAppStatus?.scheduledMaintenance?.schedules) {
       const nowObj = new Date();
       const currentDay = nowObj.getDay();
       
       const padZero = (n: number) => n < 10 ? '0' + n : String(n);
       const currentTimeStr = `${padZero(nowObj.getHours())}:${padZero(nowObj.getMinutes())}`;
       
-      if (sch.days?.includes(currentDay)) {
-        if (sch.startTime && sch.endTime) {
+      // Get local YYYY-MM-DD
+      const localYear = nowObj.getFullYear();
+      const localMonth = padZero(nowObj.getMonth() + 1);
+      const localDate = padZero(nowObj.getDate());
+      const currentDateStr = `${localYear}-${localMonth}-${localDate}`;
+      
+      for (const sch of globalAppStatus.scheduledMaintenance.schedules) {
+        if (!sch.enabled) continue;
+        
+        let appliesToday = false;
+        if (sch.type === "recurring") {
+          appliesToday = sch.days?.includes(currentDay) || false;
+        } else if (sch.type === "once") {
+          appliesToday = sch.specificDate === currentDateStr;
+        }
+
+        if (appliesToday && sch.startTime && sch.endTime) {
           if (sch.startTime <= sch.endTime) {
             if (currentTimeStr >= sch.startTime && currentTimeStr < sch.endTime) {
               return { blocked: true, mode: sch.mode || 'maintenance' };
