@@ -1835,38 +1835,79 @@ export function AdminPanel() {
                 </button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {!securityConfig?.blockedIps ||
                 securityConfig.blockedIps.length === 0 ? (
-                  <div className="text-center p-8 border border-dashed border-gray-800 rounded-xl text-gray-600 font-medium">
+                  <div className="text-center p-8 border border-dashed border-gray-800 rounded-xl text-gray-500 font-medium">
+                    <Monitor className="w-10 h-10 mx-auto text-gray-700 mb-3" />
                     Aucune adresse IP n'est actuellement bloquée.
                   </div>
                 ) : (
-                  securityConfig.blockedIps.map((ip) => (
-                    <div
-                      key={ip}
-                      className="flex justify-between items-center bg-[#0c0c0e] border border-gray-800 p-3 rounded-lg px-4 hover:border-gray-600 transition-colors"
-                    >
-                      <span className="font-mono text-gray-300 font-bold">
-                        {ip}
-                      </span>
-                      <button
-                        onClick={async () => {
-                          const updated = securityConfig.blockedIps.filter(
-                            (i) => i !== ip,
-                          );
-                          await setDoc(
-                            doc(db, "config", "security"),
-                            { blockedIps: updated },
-                            { merge: true },
-                          );
-                        }}
-                        className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 p-2 rounded-lg transition-colors"
+                  securityConfig.blockedIps.map((ip) => {
+                    const linkedUsers = users.filter((u) => u.lastIp === ip);
+                    
+                    return (
+                      <div
+                        key={ip}
+                        className="flex flex-col md:flex-row md:items-center justify-between bg-[#0c0c0e] border border-gray-800 p-4 rounded-xl gap-4 hover:border-gray-600 transition-colors relative overflow-hidden group"
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))
+                        <div className="absolute top-0 left-0 w-1 h-full bg-rose-500/50 group-hover:bg-rose-500 transition-colors"></div>
+                        
+                        <div className="flex flex-col gap-1 pl-2">
+                          <span className="font-mono text-white text-lg font-bold tracking-wider">
+                            {ip}
+                          </span>
+                          {linkedUsers.length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              <span className="text-xs text-gray-500 uppercase font-bold tracking-wider mr-1">Comptes Associés:</span>
+                              {linkedUsers.map((lu) => (
+                                <div key={lu.id} className="flex flex-col gap-1 bg-black/50 border border-gray-800 p-2 rounded-lg">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-gray-300 text-sm">@{lu.username}</span>
+                                    <span className={`w-2 h-2 rounded-full ${lu.status === 'banned' ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
+                                    {lu.deviceInfo?.os === 'iOS' || lu.deviceInfo?.os === 'Android' ? (
+                                      <Smartphone size={12} className="text-gray-400" />
+                                    ) : lu.deviceInfo?.os ? (
+                                      <Monitor size={12} className="text-gray-400" />
+                                    ) : <Cpu size={12} className="text-gray-400" />}
+                                    <span>{lu.deviceInfo?.os || 'OS Inconnu'}</span>
+                                    <span className="text-gray-700">•</span>
+                                    <span>{lu.deviceInfo?.model || 'Modèle Inconnu'}</span>
+                                    <span className="text-gray-700">•</span>
+                                    <span>{lu.deviceInfo?.browser || 'Navigateur Inconnu'}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-500 italic mt-1 pb-1">
+                              Aucun compte utilisateur actuellement rattaché à cette IP.
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex justify-end pl-2">
+                          <button
+                            onClick={async () => {
+                              const updated = securityConfig.blockedIps.filter(
+                                (i) => i !== ip,
+                              );
+                              await setDoc(
+                                doc(db, "config", "security"),
+                                { blockedIps: updated },
+                                { merge: true },
+                              );
+                            }}
+                            className="bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white px-4 py-2 rounded-lg transition-all font-bold flex items-center gap-2 text-sm whitespace-nowrap"
+                          >
+                            <Trash2 size={16} /> <span className="hidden md:inline">Débloquer IP</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

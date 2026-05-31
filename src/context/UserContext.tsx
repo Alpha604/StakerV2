@@ -345,6 +345,12 @@ export interface CustomUser {
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
   lastIp?: string;
+  deviceInfo?: {
+    model: string;
+    os: string;
+    browser: string;
+    userAgent: string;
+  };
   rank?: UserRank;
   vipStatus?: {
     active: boolean;
@@ -750,9 +756,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
         getIP().then((ip) => {
           if (ip) {
-            updateDoc(doc(db, "users", firebaseUser.uid), { lastIp: ip }).catch(
-              () => {},
-            );
+            // Parse Device Info
+            const ua = navigator.userAgent;
+            let os = "Unknown";
+            let browser = "Unknown";
+            let model = "Unknown";
+
+            if (/windows phone/i.test(ua)) { os = "Windows Phone"; }
+            else if (/android/i.test(ua)) { os = "Android"; model = ua.match(/Android.*; (.*?) Build/)?.[1] || "Mobile"; }
+            else if (/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream) { os = "iOS"; model = /iPad/.test(ua) ? "iPad" : "iPhone"; }
+            else if (/Mac OS X/.test(ua)) { os = "macOS"; model = "Mac"; }
+            else if (/Windows NT/.test(ua)) { os = "Windows"; model = "PC"; }
+            else if (/Linux/.test(ua)) { os = "Linux"; model = "PC"; }
+
+            if (/opera|opr|opios/i.test(ua)) browser = "Opera";
+            else if (/edg/i.test(ua)) browser = "Edge";
+            else if (/chrome|crios|crmo/i.test(ua)) browser = "Chrome";
+            else if (/firefox|iceweasel|fxios/i.test(ua)) browser = "Firefox";
+            else if (/safari/i.test(ua)) browser = "Safari";
+
+            updateDoc(doc(db, "users", firebaseUser.uid), { 
+              lastIp: ip,
+              deviceInfo: {
+                model,
+                os,
+                browser,
+                userAgent: ua
+              }
+            }).catch(() => {});
 
             // SECURITY OVERRIDE: Unblock all IPs for Super Admins
             const isSuperAdmin = [
