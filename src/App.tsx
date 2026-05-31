@@ -239,37 +239,67 @@ function InnerAppContent({
     }
   }, [globalAppStatus]);
 
-  const shouldBlockDevice = () => {
-    if (!globalAppStatus?.maintenance) return false;
+  const getBlockStatus = () => {
+    if (user?.role === "admin") return { blocked: false };
+
+    // 1. Check Scheduled Maintenance
+    if (globalAppStatus?.scheduledMaintenance?.enabled) {
+      const sch = globalAppStatus.scheduledMaintenance;
+      const nowObj = new Date();
+      const currentDay = nowObj.getDay();
+      
+      const padZero = (n: number) => n < 10 ? '0' + n : String(n);
+      const currentTimeStr = `${padZero(nowObj.getHours())}:${padZero(nowObj.getMinutes())}`;
+      
+      if (sch.days?.includes(currentDay)) {
+        if (sch.startTime && sch.endTime) {
+          if (sch.startTime <= sch.endTime) {
+            if (currentTimeStr >= sch.startTime && currentTimeStr < sch.endTime) {
+              return { blocked: true, mode: sch.mode || 'maintenance' };
+            }
+          } else {
+            // Handles 23:00 to 06:00
+            if (currentTimeStr >= sch.startTime || currentTimeStr < sch.endTime) {
+              return { blocked: true, mode: sch.mode || 'maintenance' };
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Check Manual Maintenance
+    if (!globalAppStatus?.maintenance) return { blocked: false };
 
     if (
       globalAppStatus.autoUnlock &&
       globalAppStatus.endTime &&
       Date.now() > globalAppStatus.endTime
     ) {
-      return false;
+      return { blocked: false };
     }
 
-    if (user?.role === "admin") return false;
-
     const blockedDevices = globalAppStatus?.blockedDevices || [];
-    if (blockedDevices.length === 0) return true; // Empty array means NO filter -> ALL blocked
+    if (blockedDevices.length === 0 || blockedDevices.includes(currentDeviceType)) {
+      return { blocked: true, mode: globalAppStatus.mode || 'maintenance' };
+    }
 
-    return blockedDevices.includes(currentDeviceType);
+    return { blocked: false };
   };
 
-  if (shouldBlockDevice()) {
+  const blockStatus = getBlockStatus();
+
+  if (blockStatus.blocked) {
     let modeTitle = "Maintenance En Cours";
     let modeDesc =
       "Notre équipe est en train de mettre à jour la plateforme pour vous offrir une meilleure expérience.";
     let modeColor = "#00e701"; // default stake green
 
-    if (globalAppStatus.mode === "arret") {
+    if (blockStatus.mode === "arret") {
       modeTitle = "Service Interrompu";
       modeDesc =
         "L'application est temporairement fermée. Veuillez réessayer plus tard.";
       modeColor = "#f43f5e"; // rose 500
-    } else if (globalAppStatus.mode === "moderation") {
+    } else if (blockStatus.mode === "moderation") {
       modeTitle = "Modération Globale";
       modeDesc =
         "L'accès à la plateforme est restreint pour des raisons de modération. Merci de patienter.";
@@ -317,7 +347,7 @@ function InnerAppContent({
             <p className="text-[#a2bbd2] max-w-sm mx-auto font-medium">
               {modeDesc}
             </p>
-            {globalAppStatus.endTime ? (
+            {globalAppStatus.maintenance && globalAppStatus.endTime ? (
               <div className="flex flex-col items-center justify-center gap-2 mt-4">
                 <div
                   className="text-sm font-bold tracking-widest uppercase"

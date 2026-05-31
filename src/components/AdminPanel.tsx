@@ -40,7 +40,8 @@ import {
   LockOpen,
   User,
   Ghost,
-  Trophy
+  Trophy,
+  Calendar
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
 import { db } from "../lib/firebase";
@@ -359,6 +360,8 @@ export function AdminPanel() {
       role: u.role || "user",
       status: u.status || "pending",
       rank: u.rank || "None",
+      sportsBettingAccess: !!u.sportsBettingAccess,
+      sportsBettingBlocked: !!u.sportsBettingBlocked,
       permissions: u.permissions || {},
       canAppealRank: u.canAppealRank !== false,
       canUseSupport: u.canUseSupport !== false,
@@ -477,7 +480,7 @@ export function AdminPanel() {
       return u.status === "approved" || !u.status;
     if (userCategory === "Suspendus") return u.status === "suspended";
     if (userCategory === "Bannis") return u.status === "banned";
-    if (userCategory === "Paris Sportifs") return u.sportsBettingAccess === true;
+    if (userCategory === "Paris Sportifs") return u.sportsBettingAccess === true && !u.sportsBettingBlocked;
 
     return true; // "Tous"
   });
@@ -1090,7 +1093,9 @@ export function AdminPanel() {
                                 {u.isHiddenFromPublic && (
                                   <Ghost size={14} className="text-purple-500" title="Invisible" />
                                 )}
-                                {u.sportsBettingAccess && (
+                                {u.sportsBettingBlocked ? (
+                                  <Trophy size={14} className="text-red-500 opacity-50" title="Bloqué des Paris Sportifs" />
+                                ) : u.sportsBettingAccess && (
                                   <Trophy size={14} className="text-purple-400" title="Accès Paris Sportifs" />
                                 )}
                                 {isSelf && (
@@ -1470,6 +1475,125 @@ export function AdminPanel() {
                 </button>
               </div>
 
+              <div className="bg-black/40 border border-gray-800 rounded-xl p-6 mt-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Calendar className="text-blue-500 w-5 h-5" /> Maintenance Programmée
+                    </h3>
+                    <p className="text-gray-400 text-sm mt-1">Automatisez des fenêtres de maintenance récurrentes pour l'application.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={globalAppStatus?.scheduledMaintenance?.enabled === true}
+                      onChange={async (e) => {
+                        await setDoc(doc(db, "config", "app"), {
+                          scheduledMaintenance: {
+                            ...(globalAppStatus?.scheduledMaintenance || { days: [], startTime: "", endTime: "", mode: "maintenance" }),
+                            enabled: e.target.checked
+                          }
+                        }, { merge: true });
+                      }}
+                    />
+                    <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:bg-blue-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Jours récurrents</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[{ label: "L", value: 1 }, { label: "M", value: 2 }, { label: "M", value: 3 }, { label: "J", value: 4 }, { label: "V", value: 5 }, { label: "S", value: 6 }, { label: "D", value: 0 }].map((day, idx) => {
+                        const isSelected = globalAppStatus?.scheduledMaintenance?.days?.includes(day.value);
+                        return (
+                          <button
+                            key={idx}
+                            onClick={async () => {
+                              const currentDays = globalAppStatus?.scheduledMaintenance?.days || [];
+                              const newDays = isSelected ? currentDays.filter(d => d !== day.value) : [...currentDays, day.value];
+                              await setDoc(doc(db, "config", "app"), {
+                                scheduledMaintenance: {
+                                  ...(globalAppStatus?.scheduledMaintenance || { enabled: false, startTime: "", endTime: "", mode: "maintenance" }),
+                                  days: newDays
+                                }
+                              }, { merge: true });
+                            }}
+                            className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${isSelected ? "bg-blue-500 text-white shadow-md shadow-blue-500/20" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"}`}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Heure de début</label>
+                      <div className="relative">
+                        <input
+                          type="time"
+                          value={globalAppStatus?.scheduledMaintenance?.startTime || ""}
+                          onChange={async (e) => {
+                            await setDoc(doc(db, "config", "app"), {
+                              scheduledMaintenance: {
+                                ...(globalAppStatus?.scheduledMaintenance || { enabled: false, days: [], endTime: "", mode: "maintenance" }),
+                                startTime: e.target.value
+                              }
+                            }, { merge: true });
+                          }}
+                          className="w-full bg-[#0c0c0e] border border-gray-800 text-white flex-1 p-3 rounded-xl focus:border-blue-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Heure de fin</label>
+                      <div className="relative">
+                        <input
+                          type="time"
+                          value={globalAppStatus?.scheduledMaintenance?.endTime || ""}
+                          onChange={async (e) => {
+                            await setDoc(doc(db, "config", "app"), {
+                              scheduledMaintenance: {
+                                ...(globalAppStatus?.scheduledMaintenance || { enabled: false, days: [], startTime: "", mode: "maintenance" }),
+                                endTime: e.target.value
+                              }
+                            }, { merge: true });
+                          }}
+                          className="w-full bg-[#0c0c0e] border border-gray-800 text-white flex-1 p-3 rounded-xl focus:border-blue-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">Mode d'affichage</label>
+                  <div className="flex bg-[#0c0c0e] p-1 rounded-xl w-fit border border-gray-800">
+                    {[
+                      { id: "maintenance", label: "Maintenance", color: "hover:text-amber-500", activeBg: "bg-amber-500/10 text-amber-500 border border-amber-500/20" },
+                      { id: "arret", label: "Arrêt", color: "hover:text-rose-500", activeBg: "bg-rose-500/10 text-rose-500 border border-rose-500/20" },
+                      { id: "moderation", label: "Modération", color: "hover:text-blue-500", activeBg: "bg-blue-500/10 text-blue-500 border border-blue-500/20" }
+                    ].map(mode => (
+                      <button
+                        key={mode.id}
+                        onClick={async () => {
+                          await setDoc(doc(db, "config", "app"), {
+                            scheduledMaintenance: {
+                              ...(globalAppStatus?.scheduledMaintenance || { enabled: false, days: [], startTime: "", endTime: "" }),
+                              mode: mode.id
+                            }
+                          }, { merge: true });
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border border-transparent ${globalAppStatus?.scheduledMaintenance?.mode === mode.id || (!globalAppStatus?.scheduledMaintenance?.mode && mode.id === "maintenance") ? mode.activeBg : `text-gray-500 bg-transparent ${mode.color}`}`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-8 border-t border-gray-800 pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-gray-800 rounded-xl">
@@ -1828,7 +1952,11 @@ export function AdminPanel() {
                       type="checkbox" 
                       className="sr-only peer" 
                       checked={heroSettings.sportsBettingGlobalActive !== false} 
-                      onChange={(e) => setHeroSettings(s => ({ ...s, sportsBettingGlobalActive: e.target.checked }))} 
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setHeroSettings(s => ({ ...s, sportsBettingGlobalActive: val }));
+                        updateAppSettings({ sportsBettingGlobalActive: val });
+                      }} 
                     />
                     <div className="w-10 h-6 bg-red-500/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-gray-700 shadow-inner"></div>
                   </label>
@@ -2633,11 +2761,21 @@ export function AdminPanel() {
                               <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 hover:bg-black/60 transition-colors mt-0 sm:mt-6">
                                 <div>
                                   <span className="text-sm font-bold text-gray-200 block">Paris Sportifs (Beta)</span>
-                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Débloque l'accès au module de paris sportifs.</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Statut de l'accès au module.</span>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" className="sr-only peer" checked={editForm.sportsBettingAccess === true} onChange={(e) => setEditForm({...editForm, sportsBettingAccess: e.target.checked})} />
                                   <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-red-900/10 border border-red-900/30 hover:bg-red-900/20 transition-colors mt-0 sm:mt-6">
+                                <div>
+                                  <span className="text-sm font-bold text-red-200 block">Bloquer Paris Sportifs</span>
+                                  <span className="text-[10px] text-red-500/70 font-mono mt-0.5 block uppercase">Empêche définitivement l'accès.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.sportsBettingBlocked === true} onChange={(e) => setEditForm({...editForm, sportsBettingBlocked: e.target.checked})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 border border-gray-700 shadow-inner"></div>
                                 </label>
                               </div>
                             </div>

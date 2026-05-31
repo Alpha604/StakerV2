@@ -340,6 +340,7 @@ export interface CustomUser {
   totalWon?: number;
   totalBets?: number;
   sportsBettingAccess?: boolean;
+  sportsBettingBlocked?: boolean;
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
@@ -441,6 +442,13 @@ interface UserContextType {
     preventVault?: boolean;
     freezeBalances?: boolean;
     preventChat?: boolean;
+    scheduledMaintenance?: {
+      enabled: boolean;
+      days: number[];
+      startTime: string;
+      endTime: string;
+      mode: "maintenance" | "arret" | "moderation";
+    };
   };
   showMaxiVaultModal: boolean;
   setShowMaxiVaultModal: (val: boolean) => void;
@@ -501,14 +509,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [globalGameStatus, setGlobalGameStatus] = useState<
     Record<string, { banned: boolean; reason: string; date: string }>
   >({});
-  const [globalAppStatus, setGlobalAppStatus] = useState<{
-    maintenance: boolean;
-    mode?: "active" | "maintenance" | "arret" | "moderation";
-    message?: string;
-    blockedDevices?: string[];
-    endTime?: number;
-    autoUnlock?: boolean;
-  }>({ maintenance: false, mode: "active", blockedDevices: [] });
+  const [globalAppStatus, setGlobalAppStatus] = useState<UserContextType["globalAppStatus"]>({
+    maintenance: false,
+    mode: "active",
+    blockedDevices: [],
+  });
 
   useEffect(() => {
     // Listen to global config for games
