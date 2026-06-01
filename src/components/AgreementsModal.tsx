@@ -22,7 +22,7 @@ export const AgreementsModal = () => {
       agreements: {
         ageVerified: true,
         termsAccepted: true,
-        termsVersion: version,
+        termsVersion: Number(version),
         needsReverification: false,
         agreedAt: Date.now()
       }

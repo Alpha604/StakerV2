@@ -487,9 +487,11 @@ export function AdminPanel() {
 
     if (!matchesSearch) return false;
 
-    if (userCategory === "En attente") return u.status === "pending";
+    if (userCategory === "Non approuvé") return u.status === "pending" || !u.agreements?.ageVerified || !u.agreements?.termsAccepted || (u.agreements?.termsVersion || 0) < (appSettings?.agreementsConfig?.termsVersion || 1) || u.agreements?.needsReverification;
     if (userCategory === "Approuvés")
       return u.status === "approved" || !u.status;
+    if (userCategory === "KYC OK")
+      return u.agreements?.ageVerified && u.agreements?.termsAccepted && (u.agreements?.termsVersion || 0) >= (appSettings?.agreementsConfig?.termsVersion || 1) && !u.agreements?.needsReverification;
     if (userCategory === "Suspendus") return u.status === "suspended";
     if (userCategory === "Bannis") return u.status === "banned";
     if (userCategory === "Paris Sportifs") return u.sportsBettingAccess === true && !u.sportsBettingBlocked;
@@ -992,7 +994,7 @@ export function AdminPanel() {
             </div>
             <div className="flex flex-col md:flex-row gap-4 justify-between">
               <div className="flex bg-[#0f1923] p-1 rounded-xl border border-gray-800 w-full md:w-auto overflow-x-auto">
-                {["Tous", "En attente", "Approuvés", "Suspendus", "Bannis", "Paris Sportifs"].map(
+                {["Tous", "Non approuvé", "KYC OK", "Approuvés", "Suspendus", "Bannis", "Paris Sportifs"].map(
                   (cat) => (
                     <button
                       key={cat}
@@ -1191,12 +1193,12 @@ export function AdminPanel() {
                          }`}
                             >
                               {u.status === "approved"
-                                ? "Vérifié"
+                                ? "Approuvé"
                                 : u.status === "suspended"
                                   ? "Suspendu"
                                   : u.status === "banned"
                                     ? "Banni"
-                                    : "En attente"}
+                                    : "Non approuvé"}
                             </span>
                           </div>
                         </td>
@@ -2944,8 +2946,8 @@ export function AdminPanel() {
                                   Dernière version globale: v{agreementsSettings?.termsVersion || 1}
                                 </span>
                               </div>
-                              <div className={`px-3 py-1 rounded font-bold text-xs ${editForm.agreements?.termsAccepted && (editForm.agreements?.termsVersion || 0) >= (agreementsSettings?.termsVersion || 1) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                {editForm.agreements?.termsAccepted && (editForm.agreements?.termsVersion || 0) >= (agreementsSettings?.termsVersion || 1) ? 'À jour' : 'Obsolète / Non signé'}
+                              <div className={`px-3 py-1 rounded font-bold text-xs ${editForm.agreements?.termsAccepted && Number(editForm.agreements?.termsVersion || 0) >= Number(agreementsSettings?.termsVersion || 1) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                {editForm.agreements?.termsAccepted && Number(editForm.agreements?.termsVersion || 0) >= Number(agreementsSettings?.termsVersion || 1) ? 'À jour' : 'Obsolète / Non signé'}
                               </div>
                             </div>
                             
@@ -2961,7 +2963,13 @@ export function AdminPanel() {
                                   checked={editForm.agreements?.needsReverification === true} 
                                   onChange={(e) => setEditForm({
                                     ...editForm, 
-                                    agreements: { ...editForm.agreements, needsReverification: e.target.checked }
+                                    agreements: { 
+                                      ageVerified: editForm.agreements?.ageVerified ?? false,
+                                      termsAccepted: editForm.agreements?.termsAccepted ?? false,
+                                      termsVersion: editForm.agreements?.termsVersion ?? 0,
+                                      agreedAt: editForm.agreements?.agreedAt ?? 0,
+                                      needsReverification: e.target.checked 
+                                    }
                                   })} 
                                 />
                                 <div className="w-10 h-6 bg-rose-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500 border border-rose-800 shadow-inner"></div>

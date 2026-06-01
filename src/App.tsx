@@ -453,7 +453,7 @@ function InnerAppContent({
   const needsAgreements = user && user.role !== "admin" && (
     !user.agreements?.ageVerified || 
     !user.agreements?.termsAccepted || 
-    (user.agreements?.termsVersion || 0) < (appSettings?.agreementsConfig?.termsVersion || 1) || 
+    Number(user.agreements?.termsVersion || 0) < Number(appSettings?.agreementsConfig?.termsVersion || 1) || 
     user.agreements?.needsReverification
   );
 
