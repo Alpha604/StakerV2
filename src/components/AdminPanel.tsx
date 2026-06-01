@@ -85,6 +85,13 @@ export function AdminPanel() {
     homeHeroRTP: "98.50%"
   });
 
+  const [agreementsSettings, setAgreementsSettings] = useState<any>({
+    termsVersion: 1,
+    requireAgeVerification: true,
+    ageMinimum: 18,
+    termsText: "En utilisant cette application, vous acceptez nos conditions générales d'utilisation. Le jeu comporte des risques, ne misez que ce que vous pouvez vous permettre de perdre."
+  });
+
   const [heroSearchFocused, setHeroSearchFocused] = useState(false);
   const heroSearchMatches = React.useMemo(() => {
     if (!heroSettings.homeHeroGameName) return [];
@@ -97,6 +104,9 @@ export function AdminPanel() {
   useEffect(() => {
     if (appSettings) {
       setHeroSettings((prev: any) => ({ ...prev, ...appSettings }));
+      if (appSettings.agreementsConfig) {
+        setAgreementsSettings((prev: any) => ({ ...prev, ...appSettings.agreementsConfig }));
+      }
     }
   }, [appSettings]);
 
@@ -2126,8 +2136,49 @@ export function AdminPanel() {
               </div>
             </div>
 
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center justify-between">
+                <span>Conditions & Inscription (KYC)</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Âge Minimum Requis</label>
+                  <input 
+                    type="number" 
+                    value={agreementsSettings.ageMinimum || 18}
+                    onChange={(e) => setAgreementsSettings(s => ({ ...s, ageMinimum: parseInt(e.target.value) || 18 }))}
+                    className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Version du Règlement Actuelle (v{agreementsSettings.termsVersion})</label>
+                  <button 
+                    onClick={() => setAgreementsSettings(s => ({ ...s, termsVersion: (s.termsVersion || 1) + 1 }))}
+                    className="w-full bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/30 p-3 rounded-xl font-bold transition-all text-sm h-[50px]"
+                  >
+                    + Nouvelle Version (Forcer Re-signature Globale)
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Texte du Règlement (Markdown Autorisé)</label>
+                <textarea 
+                  value={agreementsSettings.termsText || ""}
+                  onChange={(e) => setAgreementsSettings(s => ({...s, termsText: e.target.value}))}
+                  rows={6}
+                  className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none resize-none font-mono text-sm"
+                />
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2">
+                Note : Incrémenter la version du règlement obligera tous les utilisateurs (sauf admins) à accepter les nouvelles conditions lors de leur prochaine connexion. L'âge sera alors également revérifié.
+              </p>
+            </div>
+
               <button 
-                onClick={() => updateAppSettings(heroSettings)}
+                onClick={() => updateAppSettings({ ...heroSettings, agreementsConfig: agreementsSettings })}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-colors mt-6"
               >
                 Sauvegarder les Paramètres
@@ -2834,6 +2885,62 @@ export function AdminPanel() {
 
                   {editTab === "permissions" && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                      
+                      <FormSection
+                        title="Règlement & Inscription (KYC)"
+                        icon={<CheckCircle className="text-blue-400" />}
+                      >
+                        <div className="bg-gradient-to-br from-[#0c1015] to-[#090b0e] border border-gray-800/80 rounded-2xl p-6 hover:border-gray-700 transition-colors shadow-2xl relative overflow-hidden mb-8">
+                          <h4 className="font-black text-white flex items-center gap-2 mb-6 text-sm uppercase tracking-widest relative z-10">
+                            <ShieldAlert size={16} className="text-orange-400" />
+                            Statut des accords
+                          </h4>
+                          
+                          <div className="space-y-4 relative z-10">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50">
+                              <div>
+                                <span className="text-sm font-bold text-gray-200 block">Identité / Âge vérifié</span>
+                                <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">L'utilisateur a certifié avoir l'âge requis.</span>
+                              </div>
+                              <div className={`px-3 py-1 rounded font-bold text-xs ${editForm.agreements?.ageVerified ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-500'}`}>
+                                {editForm.agreements?.ageVerified ? 'Vérifié' : 'Non vérifié'}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50">
+                              <div>
+                                <span className="text-sm font-bold text-gray-200 block">Règlement accepté (v{editForm.agreements?.termsVersion || 0})</span>
+                                <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">
+                                  Dernière version globale: v{agreementsSettings?.termsVersion || 1}
+                                </span>
+                              </div>
+                              <div className={`px-3 py-1 rounded font-bold text-xs ${editForm.agreements?.termsAccepted && (editForm.agreements?.termsVersion || 0) >= (agreementsSettings?.termsVersion || 1) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                {editForm.agreements?.termsAccepted && (editForm.agreements?.termsVersion || 0) >= (agreementsSettings?.termsVersion || 1) ? 'À jour' : 'Obsolète / Non signé'}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 transition-colors">
+                              <div>
+                                <span className="text-sm font-bold text-rose-200 block">Forcer la Re-Vérification</span>
+                                <span className="text-[10px] text-rose-400/70 mt-0.5 block">Re-demande la validation au prochain chargement.</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  className="sr-only peer" 
+                                  checked={editForm.agreements?.needsReverification === true} 
+                                  onChange={(e) => setEditForm({
+                                    ...editForm, 
+                                    agreements: { ...editForm.agreements, needsReverification: e.target.checked }
+                                  })} 
+                                />
+                                <div className="w-10 h-6 bg-rose-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500 border border-rose-800 shadow-inner"></div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </FormSection>
+
                       <FormSection
                         title="Restrictions du Réseau"
                         icon={<Settings className="text-rose-400" />}

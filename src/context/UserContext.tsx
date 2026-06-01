@@ -345,6 +345,13 @@ export interface CustomUser {
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
   lastIp?: string;
+  agreements?: {
+    ageVerified: boolean;
+    termsAccepted: boolean;
+    termsVersion: number;
+    needsReverification: boolean;
+    agreedAt: number;
+  };
   deviceInfo?: {
     model: string;
     os: string;
@@ -904,6 +911,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
                 totalWon: 0,
                 role: role as any,
                 status: status as any,
+                agreements: {
+                  ageVerified: false,
+                  termsAccepted: false,
+                  termsVersion: 0,
+                  needsReverification: false,
+                  agreedAt: 0,
+                },
                 rank: "None" as any,
                 createdAt: Date.now(),
                 lastOnline: Date.now(),

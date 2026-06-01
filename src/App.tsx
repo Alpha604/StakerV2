@@ -48,6 +48,7 @@ import { ScratchPatrimoine } from "./components/ScratchPatrimoine";
 import { LiveChat } from "./components/LiveChat";
 import { Toaster } from "react-hot-toast";
 import { SuperScratch } from "./components/SuperScratch";
+import { AgreementsModal } from "./components/AgreementsModal";
 
 import { BannedScreen } from "./components/BannedScreen";
 
@@ -429,6 +430,17 @@ function InnerAppContent({
 
   if (user?.status === "banned" || user?.status === "suspended") {
     return <BannedScreen user={user} />;
+  }
+
+  const needsAgreements = user && user.role !== "admin" && (
+    !user.agreements?.ageVerified || 
+    !user.agreements?.termsAccepted || 
+    (user.agreements?.termsVersion || 0) < (appSettings?.agreementsConfig?.termsVersion || 1) || 
+    user.agreements?.needsReverification
+  );
+
+  if (needsAgreements && user?.status !== "pending") {
+    return <AgreementsModal />;
   }
 
   if (user?.status === "pending") {
