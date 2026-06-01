@@ -3,6 +3,8 @@ import { useUser } from "../context/UserContext";
 import { CheckCircle, ShieldAlert, ArrowRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
+import { Toaster } from "react-hot-toast";
+
 export const AgreementsModal = () => {
   const { user, appSettings, updateUserData } = useUser() as any;
   const [ageConfirm, setAgeConfirm] = useState(false);
@@ -24,12 +26,14 @@ export const AgreementsModal = () => {
         needsReverification: false,
         agreedAt: Date.now()
       }
-    }, true);
+    }, false);
     setLoading(false);
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
       <div className="bg-[#0f212e] border border-gray-800 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500"></div>
         
@@ -93,5 +97,6 @@ export const AgreementsModal = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

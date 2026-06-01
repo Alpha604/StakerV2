@@ -2152,13 +2152,22 @@ export function AdminPanel() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Version du Règlement Actuelle (v{agreementsSettings.termsVersion})</label>
-                  <button 
-                    onClick={() => setAgreementsSettings(s => ({ ...s, termsVersion: (s.termsVersion || 1) + 1 }))}
-                    className="w-full bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/30 p-3 rounded-xl font-bold transition-all text-sm h-[50px]"
-                  >
-                    + Nouvelle Version (Forcer Re-signature Globale)
-                  </button>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Version du Règlement Actuelle (Pour forcer re-signature)</label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="number" 
+                      value={agreementsSettings.termsVersion || 1}
+                      onChange={(e) => setAgreementsSettings(s => ({ ...s, termsVersion: parseFloat(e.target.value) || 1 }))}
+                      className="w-full bg-[#0c0c0e] border border-gray-800 text-white p-3 rounded-xl focus:border-blue-500 outline-none"
+                    />
+                    <button 
+                      onClick={() => setAgreementsSettings(s => ({ ...s, termsVersion: (s.termsVersion || 1) + 1 }))}
+                      className="bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/30 px-4 rounded-xl font-bold transition-all text-sm h-[50px] shrink-0"
+                      title="Forcer Re-signature (Incrémenter)"
+                    >
+                      +1
+                    </button>
+                  </div>
                 </div>
               </div>
 

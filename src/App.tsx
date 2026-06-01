@@ -209,7 +209,8 @@ function InnerAppContent({
     globalAppStatus,
     showMaxiVaultModal,
     setShowMaxiVaultModal,
-    requestMaxiVaultUnlock
+    requestMaxiVaultUnlock,
+    appSettings
   } = useUser() as any;
   const [chatOpen, setChatOpen] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
