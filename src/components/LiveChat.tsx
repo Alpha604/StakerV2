@@ -197,7 +197,7 @@ export function LiveChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               <span className={`font-bold ${msg.authorId === user?.id ? 'text-white' : 'text-text-secondary hover:text-white'}`}>
                 {msg.author}
               </span>
-              {msg.isHidden && <Ghost size={12} className="text-purple-500" title="Message fantôme" />}
+              {msg.isHidden && <span title="Message fantôme"><Ghost size={12} className="text-purple-500" /></span>}
               {user?.role === "admin" && (
                 <div className="ml-auto flex items-center gap-1">
                   <button onClick={() => handleBanUserFromChat(msg.id, msg.authorId, msg.author)} className="text-purple-500/50 hover:text-purple-500 transition-colors p-1" title={`BANNIR ${msg.author}`}>

@@ -20,7 +20,7 @@ export function Crash() {
   const [winAmount, setWinAmount] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
 
   // Math logic for crash curve

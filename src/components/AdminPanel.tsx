@@ -163,7 +163,7 @@ export function AdminPanel() {
   const [inboxFilter, setInboxFilter] = useState<"all" | "pending" | "accepted" | "rejected">("pending");
 
   const [gamesConfig, setGamesConfig] = useState<
-    Record<string, { banned: boolean; reason: string; date: string }>
+    Record<string, { banned: boolean; reason: string; date?: string; isNew?: boolean }>
   >({});
   const [securityConfig, setSecurityConfig] = useState<{
     blockedIps: string[];
@@ -1103,12 +1103,17 @@ export function AdminPanel() {
                               <div className="font-bold text-gray-200 truncate flex items-center gap-2 text-base">
                                 {u.username}
                                 {u.isHiddenFromPublic && (
-                                  <Ghost size={14} className="text-purple-500" title="Invisible" />
+                                  <span title="Invisible"><Ghost size={14} className="text-purple-500" /></span>
                                 )}
                                 {u.sportsBettingBlocked ? (
-                                  <Trophy size={14} className="text-red-500 opacity-50" title="Bloqué des Paris Sportifs" />
+                                  <span title="Bloqué des Paris Sportifs"><Trophy size={14} className="text-red-500 opacity-50" /></span>
                                 ) : u.sportsBettingAccess && (
-                                  <Trophy size={14} className="text-purple-400" title="Accès Paris Sportifs" />
+                                  <span title="Accès Paris Sportifs"><Trophy size={14} className="text-purple-400" /></span>
+                                )}
+                                {u.agreements?.termsAccepted && (u.agreements?.termsVersion || 0) >= (agreementsSettings?.termsVersion || 1) ? (
+                                  <span title="KYC OK (Règlement Approuvé)"><Shield size={14} className="text-emerald-500" /></span>
+                                ) : (
+                                  <span title="KYC Manquant ou Obsolète"><ShieldAlert size={14} className="text-orange-500" /></span>
                                 )}
                                 {isSelf && (
                                   <span className="bg-indigo-500/20 text-indigo-400 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-widest border border-indigo-500/30">
@@ -2152,7 +2157,7 @@ export function AdminPanel() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Version du Règlement Actuelle (Pour forcer re-signature)</label>
+                  <label className="text-xs text-gray-400 uppercase font-bold mb-1 block">Version du Règlement (v{agreementsSettings.termsVersion})</label>
                   <div className="flex items-center gap-2">
                     <input 
                       type="number" 
@@ -2169,6 +2174,22 @@ export function AdminPanel() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-black/40 p-4 border border-gray-800 rounded-xl mb-4 hover:border-gray-700 transition-colors">
+                <div>
+                  <span className="font-bold text-gray-200 block">Approbation Automatique (Comptes Google)</span>
+                  <span className="text-xs text-gray-500 mt-1 block">Si activé, les utilisateurs se connectant avec Google seront automatiquement approuvés sans passer par la file d'attente.</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={agreementsSettings.autoApproveAccounts === true}
+                    onChange={(e) => setAgreementsSettings(s => ({...s, autoApproveAccounts: e.target.checked}))}
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
               </div>
 
               <div className="mb-4">

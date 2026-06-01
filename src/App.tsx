@@ -107,23 +107,40 @@ export type ViewType =
   | "sports";
 
 class ErrorBoundary extends React.Component<any, any> {
-  state = { hasError: false, error: null };
+  state = { hasError: false, error: null as Error | null, errorInfo: null as React.ErrorInfo | null };
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
+    this.setState({ errorInfo });
   }
   render() {
-    if (this.state && (this.state as any).hasError) {
+    if (this.state.hasError) {
       return (
-        <div className="text-red-500 font-bold p-8">
-          App crashed: {(this.state as any).error?.message}
-          <pre>{(this.state as any).error?.stack}</pre>
+        <div className="min-h-screen bg-[#0f212e] text-white flex flex-col items-center justify-center p-8 font-sans">
+          <div className="max-w-2xl w-full bg-[#1a2c38] border border-red-500/30 p-8 rounded-2xl shadow-xl shadow-red-500/10">
+            <h1 className="text-3xl font-black text-red-500 mb-4 flex items-center gap-3">
+              <span className="text-4xl text-red-500">⚠️</span> Crash de l'Application
+            </h1>
+            <p className="text-gray-300 font-medium mb-6">
+              Une erreur inattendue s'est produite. L'interface a cessé de fonctionner correctement.
+            </p>
+            <div className="bg-black/50 p-4 rounded-xl overflow-auto text-sm text-red-300 font-mono border border-red-900/50 mb-6 max-h-64 custom-scrollbar">
+              <span className="font-bold text-red-400 block mb-2">{this.state.error?.toString()}</span>
+              {this.state.errorInfo?.componentStack}
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-bold transition-colors w-full sm:w-auto"
+            >
+              Recharger la page
+            </button>
+          </div>
         </div>
       );
     }
-    return (this as any).props.children;
+    return this.props.children;
   }
 }
 

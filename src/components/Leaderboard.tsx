@@ -133,7 +133,7 @@ export function Leaderboard({ onClose, isPage = false }: { onClose: () => void; 
                             {u.username || "Anonyme"}
                           </span>
                           {u.isHiddenFromPublic && (
-                             <Ghost size={14} className="text-purple-500 ml-1" title="Mode Fantôme (Invisible)" />
+                             <span title="Mode Fantôme (Invisible)"><Ghost size={14} className="text-purple-500 ml-1" /></span>
                           )}
                           <div className="hidden sm:block">
                              <RankBadge rank={u.rank} className="h-6 object-contain" />

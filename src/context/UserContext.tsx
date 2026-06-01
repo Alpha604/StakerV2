@@ -872,6 +872,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
               let role = "user";
               let status = "pending"; // Requires manual admin approval
               let balance = 0; // Better if balance also starts at 0 until approved
+              
+              try {
+                const settingsDoc = await Promise.resolve(import("firebase/firestore")).then(m => m.getDoc(m.doc(db, "system", "appSettings")));
+                if (settingsDoc.exists() && settingsDoc.data().agreementsConfig?.autoApproveAccounts) {
+                   status = "approved";
+                }
+              } catch(e) {}
 
               const email = firebaseUser.email || "";
               // Set specific users as admin

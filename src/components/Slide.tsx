@@ -18,7 +18,7 @@ export function Slide() {
   } | null>(null);
 
   const controls = useAnimation();
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
 
   const startGame = async () => {
     if (!user || balance < betAmount) return;
