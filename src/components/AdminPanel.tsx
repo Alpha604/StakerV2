@@ -1326,11 +1326,10 @@ export function AdminPanel() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
               {ALL_GAMES.map((g) => g.name).map((game) => {
-                const config = gamesConfig?.[game] || {
-                  banned: false,
-                  reason: "",
-                };
-                const isBanned = config.banned;
+                const isDefaultBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => n.toLowerCase() === game.toLowerCase());
+                const config = gamesConfig?.[game];
+                const isBanned = config && config.banned !== undefined ? config.banned : isDefaultBanned;
+                const reason = config?.reason || (isDefaultBanned ? "En construction" : "");
 
                 return (
                   <div
@@ -1355,7 +1354,7 @@ export function AdminPanel() {
                       <select
                         value={
                           isBanned
-                            ? config.reason || "En construction"
+                            ? reason || "En construction"
                             : "online"
                         }
                         onChange={(e) => {
@@ -1380,7 +1379,7 @@ export function AdminPanel() {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={config.isNew || false}
+                          checked={config?.isNew || false}
                           onChange={(e) => {
                             updateGameConfig(game, { isNew: e.target.checked });
                           }}

@@ -5,8 +5,7 @@ import { useUser } from "../context/UserContext";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const calculateIsNew = (releaseDate?: string) => {
-  if (!releaseDate) return false;
-  return Date.now() - new Date(releaseDate).getTime() < SEVEN_DAYS_MS;
+  return false;
 };
 
 export const ALL_GAMES = [
@@ -200,10 +199,19 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
     return sessionBets.filter((b: any) => (typeof b.game === 'string' ? b.game : '').toLowerCase() === gameName.toLowerCase()).length;
   };
 
+  const DEFAULT_BANNED = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"];
+
   const isGameBanned = (gameName: string, categoryName: string) => {
     if (globalGameStatus?.["categories"]?.[categoryName]?.banned) return true;
-    if (["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => gameName.toLowerCase() === n.toLowerCase())) return true;
-    if (globalGameStatus?.[gameName]) return globalGameStatus[gameName].banned;
+    
+    // Check if there is an explicit config set by admin
+    if (globalGameStatus?.[gameName] && globalGameStatus[gameName].banned !== undefined) {
+      return globalGameStatus[gameName].banned;
+    }
+    
+    // Otherwise fallback to default banned list
+    if (DEFAULT_BANNED.some(n => gameName.toLowerCase() === n.toLowerCase())) return true;
+    
     return false;
   };
 
@@ -536,7 +544,7 @@ export function Home({ view, setView }: { view: string; setView: (view: string) 
               <Star className="text-yellow-400" size={24} /> <span>Nouveautés</span>
             </h2>
           </div>
-          {renderGameGrid(filteredGames.filter(g => globalGameStatus?.[g.name]?.isNew || g.name === "Ice Fishing" || g.name === "Super Tower DRAGON"))}
+          {renderGameGrid(filteredGames.filter(g => globalGameStatus?.[g.name]?.isNew))}
 
           <div className="flex items-center justify-between mb-4 mt-8">
             <h2 className="text-white font-bold text-xl flex items-center gap-2">
