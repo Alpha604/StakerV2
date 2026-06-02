@@ -162,6 +162,11 @@ export function AdminPanel() {
   const [adminRequests, setAdminRequests] = useState<any[]>([]);
   const [inboxFilter, setInboxFilter] = useState<"all" | "pending" | "accepted" | "rejected">("pending");
 
+  const [gameSearchQuery, setGameSearchQuery] = useState("");
+  const [gameCategoryFilter, setGameCategoryFilter] = useState("all");
+  const [gameStatusFilter, setGameStatusFilter] = useState("all");
+  const [gameSortBy, setGameSortBy] = useState("name-asc");
+
   const [gamesConfig, setGamesConfig] = useState<
     Record<string, { banned: boolean; reason: string; date?: string; isNew?: boolean }>
   >({});
@@ -288,7 +293,14 @@ export function AdminPanel() {
         },
       });
     } catch (e) {
-      console.error(e);
+      const currentConfig = gamesConfig?.[gameName] || {};
+      await setDoc(doc(db, "config", "games"), {
+        [`${gameName}`]: {
+          ...currentConfig,
+          ...updates,
+          date: new Date().toISOString(),
+        }
+      }, { merge: true }).catch(console.error);
     }
   };
 
@@ -1324,8 +1336,78 @@ export function AdminPanel() {
             <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
               <Gamepad className="text-emerald-500" /> Gestion Globale des Jeux
             </h2>
+
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              <div className="flex-1 relative">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Rechercher un jeu..."
+                  value={gameSearchQuery}
+                  onChange={(e) => setGameSearchQuery(e.target.value)}
+                  className="w-full bg-[#09090b] text-white pl-11 pr-4 py-3 rounded-xl border border-gray-800 focus:border-indigo-500/50 outline-none transition-colors"
+                />
+              </div>
+              
+              <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0">
+                <select
+                  value={gameCategoryFilter}
+                  onChange={(e) => setGameCategoryFilter(e.target.value)}
+                  className="bg-[#09090b] text-sm text-gray-300 font-bold px-4 py-3 rounded-xl border border-gray-800 focus:border-indigo-500/50 outline-none"
+                >
+                  <option value="all">Toutes les Catégories</option>
+                  <option value="originals">Stake Originals</option>
+                  <option value="slots">Machines à Sous</option>
+                  <option value="evolution">Evolution (Live)</option>
+                  <option value="stake-gaming">Stake Gaming</option>
+                  <option value="grattage">Grattage</option>
+                </select>
+
+                <select
+                  value={gameStatusFilter}
+                  onChange={(e) => setGameStatusFilter(e.target.value)}
+                  className="bg-[#09090b] text-sm text-gray-300 font-bold px-4 py-3 rounded-xl border border-gray-800 focus:border-indigo-500/50 outline-none"
+                >
+                  <option value="all">Tous les Statuts</option>
+                  <option value="active">En Ligne</option>
+                  <option value="banned">Bloqués</option>
+                  <option value="new">Nouveautés Uniquement</option>
+                </select>
+
+                <select
+                  value={gameSortBy}
+                  onChange={(e) => setGameSortBy(e.target.value)}
+                  className="bg-[#09090b] text-sm text-gray-300 font-bold px-4 py-3 rounded-xl border border-gray-800 focus:border-indigo-500/50 outline-none"
+                >
+                  <option value="name-asc">Nom (A-Z)</option>
+                  <option value="name-desc">Nom (Z-A)</option>
+                  <option value="category-asc">Catégorie</option>
+                </select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
-              {ALL_GAMES.map((g) => g.name).map((game) => {
+              {ALL_GAMES.filter(g => {
+                const isDefaultBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => n.toLowerCase() === g.name.toLowerCase());
+                const config = gamesConfig?.[g.name];
+                const isBanned = config && config.banned !== undefined ? config.banned : isDefaultBanned;
+                const isNew = config?.isNew || false;
+
+                const matchesSearch = g.name.toLowerCase().includes(gameSearchQuery.toLowerCase());
+                const matchesCategory = gameCategoryFilter === "all" || g.category === gameCategoryFilter;
+                let matchesStatus = true;
+                if (gameStatusFilter === "active") matchesStatus = !isBanned;
+                if (gameStatusFilter === "banned") matchesStatus = isBanned;
+                if (gameStatusFilter === "new") matchesStatus = isNew;
+
+                return matchesSearch && matchesCategory && matchesStatus;
+              }).sort((a, b) => {
+                if (gameSortBy === "name-asc") return a.name.localeCompare(b.name);
+                if (gameSortBy === "name-desc") return b.name.localeCompare(a.name);
+                if (gameSortBy === "category-asc") return a.category.localeCompare(b.category);
+                return 0;
+              }).map((g) => {
+                const game = g.name;
                 const isDefaultBanned = ["Chicken", "Moles", "Tome of Life", "Blue Samurai", "Slide", "Crash"].some(n => n.toLowerCase() === game.toLowerCase());
                 const config = gamesConfig?.[game];
                 const isBanned = config && config.banned !== undefined ? config.banned : isDefaultBanned;
@@ -1337,9 +1419,12 @@ export function AdminPanel() {
                     className="bg-black/40 border border-gray-800 rounded-xl p-5 flex flex-col gap-4"
                   >
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-lg text-white">
-                        {game}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-lg text-white">
+                          {game}
+                        </span>
+                        <span className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{g.category}</span>
+                      </div>
                       <span
                         className={`px-2 py-1 rounded text-[10px] font-black uppercase ${isBanned ? "bg-red-500/20 text-red-500 border border-red-500/20" : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/20"}`}
                       >

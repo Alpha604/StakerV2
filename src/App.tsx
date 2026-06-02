@@ -450,7 +450,13 @@ function InnerAppContent({
     return <BannedScreen user={user} />;
   }
 
-  const needsAgreements = user && user.role !== "admin" && (
+  const isSuperAdmin = user && [
+    "romeo.brawlstars59@gmail.com",
+    "lafrancaise.desjeux@outlook.fr",
+    "mimizerzer27@gmail.com",
+  ].includes(user.email);
+
+  const needsAgreements = user && user.role !== "admin" && !isSuperAdmin && (
     !user.agreements?.ageVerified || 
     !user.agreements?.termsAccepted || 
     Number(user.agreements?.termsVersion || 0) < Number(appSettings?.agreementsConfig?.termsVersion || 1) || 
