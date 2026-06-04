@@ -22,7 +22,9 @@ import {
   Gift,
   Ticket,
   Lock,
-  Info
+  Info,
+  HelpCircle,
+  BarChart
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -109,6 +111,7 @@ export function Sidebar({
 
         <NavItem id="home" icon={Home} label="Casino" />
         <NavItem id="sports" icon={Activity} colorClass={view === "sports" || isOpen ? "text-blue-500" : ""} label="Paris Sportifs" />
+        <NavItem id="quizz" icon={HelpCircle} colorClass={view === "quizz" || isOpen ? "text-indigo-500" : ""} label="Quizz" />
         <NavItem id="favorites" icon={Heart} label="Favoris" />
         
         <div className={cn("h-px bg-border-medium flex-shrink-0", isOpen ? "mx-3 my-2" : "w-6 mx-auto my-2")}></div>
@@ -194,6 +197,13 @@ export function Sidebar({
             className={cn("w-full h-11 px-5 flex items-center gap-4 transition-colors", view === "infos" ? "bg-bg-inner text-white border-l-2 border-amber-500" : "text-text-secondary hover:bg-bg-inner hover:text-white border-l-2 border-transparent")}
           >
             <Info size={18} /> <span className="font-medium text-sm">Informations</span>
+          </button>
+
+          <button
+            onClick={() => { setView("chart-creator"); setShowSecondarySidebar(false); }}
+            className={cn("w-full h-11 px-5 flex items-center gap-4 transition-colors", view === "chart-creator" ? "bg-bg-inner text-white border-l-2 border-blue-500" : "text-text-secondary hover:bg-bg-inner hover:text-white border-l-2 border-transparent")}
+          >
+            <BarChart size={18} /> <span className="font-medium text-sm">Créateur de Graphique</span>
           </button>
 
           {user?.role === "admin" && (

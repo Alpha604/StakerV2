@@ -18,10 +18,12 @@ import { LoginModal } from "./LoginModal";
 import { SupportModal } from "./SupportModal";
 
 export function Header({
+  view,
   setView,
   toggleSidebar,
   toggleChat,
 }: {
+  view?: any;
   setView: (view: any) => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
@@ -100,7 +102,7 @@ export function Header({
                   animate={controls}
                   className={`font-bold text-sm sm:text-lg tracking-tight truncate shrink transition-colors duration-300 ${balanceColor}`}
                 >
-                  {formatCurrency(balance)}
+                  {view === "quizz" ? "Indisponible" : formatCurrency(balance)}
                 </motion.span>
                 {renderCryptoIcon(activeCrypto, "w-4 h-4 sm:w-5 sm:h-5 ml-1 hidden min-[360px]:block")}
                 <ChevronDown

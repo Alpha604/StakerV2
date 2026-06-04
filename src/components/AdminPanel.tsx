@@ -46,6 +46,7 @@ import {
   Trash
 } from "lucide-react";
 import { RankBadge } from "./RankBadge";
+import { TruckLoader } from "./TruckLoader";
 import { db } from "../lib/firebase";
 import {
   collection,
@@ -156,7 +157,7 @@ export function AdminPanel() {
     "users" | "games" | "inbox" | "security" | "settings"
   >("users");
   const [userCategory, setUserCategory] = useState<
-    "Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis" | "Paris Sportifs"
+    "Tous" | "En attente" | "Approuvés" | "Suspendus" | "Bannis" | "Paris Sportifs" | "Non approuvé" | "KYC OK"
   >("Tous");
 
   const [adminRequests, setAdminRequests] = useState<any[]>([]);
@@ -386,6 +387,8 @@ export function AdminPanel() {
       rank: u.rank || "None",
       sportsBettingAccess: !!u.sportsBettingAccess,
       sportsBettingBlocked: !!u.sportsBettingBlocked,
+      quizzAccess: !!u.quizzAccess,
+      quizzBlocked: !!u.quizzBlocked,
       permissions: u.permissions || {},
       canAppealRank: u.canAppealRank !== false,
       canUseSupport: u.canUseSupport !== false,
@@ -1055,7 +1058,7 @@ export function AdminPanel() {
                   <tr>
                     <td colSpan={5} className="p-20 text-center">
                       <div className="flex flex-col items-center gap-4 text-gray-500">
-                        <div className="w-12 h-12 border-4 border-gray-800 border-t-indigo-500 rounded-full animate-spin"></div>
+                        <TruckLoader inline />
                         <span className="font-mono text-xs tracking-widest uppercase">
                           Acquisition des cibles...
                         </span>
@@ -3023,15 +3026,34 @@ export function AdminPanel() {
                               </div>
                             </div>
                             
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 gap-4 sm:gap-0">
                               <div>
                                 <span className="text-sm font-bold text-gray-200 block">Règlement accepté (v{editForm.agreements?.termsVersion || 0})</span>
                                 <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">
                                   Dernière version globale: v{agreementsSettings?.termsVersion || 1}
                                 </span>
                               </div>
-                              <div className={`px-3 py-1 rounded font-bold text-xs ${editForm.agreements?.termsAccepted && Number(editForm.agreements?.termsVersion || 0) >= Number(agreementsSettings?.termsVersion || 1) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                {editForm.agreements?.termsAccepted && Number(editForm.agreements?.termsVersion || 0) >= Number(agreementsSettings?.termsVersion || 1) ? 'À jour' : 'Obsolète / Non signé'}
+                              <div className="flex items-center gap-3">
+                                {(!editForm.agreements?.termsAccepted || Number(editForm.agreements?.termsVersion || 0) < Number(agreementsSettings?.termsVersion || 1) || !editForm.agreements?.ageVerified) && (
+                                  <button
+                                    onClick={() => setEditForm({
+                                      ...editForm,
+                                      agreements: {
+                                        ageVerified: true,
+                                        termsAccepted: true,
+                                        termsVersion: agreementsSettings?.termsVersion || 1,
+                                        agreedAt: Date.now(),
+                                        needsReverification: false
+                                      }
+                                    })}
+                                    className="px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 border border-indigo-500/50 transition-colors"
+                                  >
+                                    Certifier Manuellement
+                                  </button>
+                                )}
+                                <div className={`px-3 py-1 rounded font-bold text-xs ${editForm.agreements?.termsAccepted && Number(editForm.agreements?.termsVersion || 0) >= Number(agreementsSettings?.termsVersion || 1) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                  {editForm.agreements?.termsAccepted && Number(editForm.agreements?.termsVersion || 0) >= Number(agreementsSettings?.termsVersion || 1) ? 'À jour' : 'Obsolète / Non signé'}
+                                </div>
                               </div>
                             </div>
                             
@@ -3134,6 +3156,27 @@ export function AdminPanel() {
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" className="sr-only peer" checked={editForm.sportsBettingBlocked === true} onChange={(e) => setEditForm({...editForm, sportsBettingBlocked: e.target.checked})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-gray-800/50 hover:bg-black/60 transition-colors">
+                                <div>
+                                  <span className="text-sm font-bold text-gray-200 block">Accès Module Quizz</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5 block uppercase">Autoriser l'accès aux Quizz.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.quizzAccess === true} onChange={(e) => setEditForm({...editForm, quizzAccess: e.target.checked})} />
+                                  <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500 border border-gray-700 shadow-inner"></div>
+                                </label>
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-red-900/10 border border-red-900/30 hover:bg-red-900/20 transition-colors">
+                                <div>
+                                  <span className="text-sm font-bold text-red-200 block">Bloquer Accès Quizz</span>
+                                  <span className="text-[10px] text-red-500/70 font-mono mt-0.5 block uppercase">Empêche définitivement l'accès.</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" className="sr-only peer" checked={editForm.quizzBlocked === true} onChange={(e) => setEditForm({...editForm, quizzBlocked: e.target.checked})} />
                                   <div className="w-10 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 border border-gray-700 shadow-inner"></div>
                                 </label>
                               </div>

@@ -57,6 +57,8 @@ import { ScreenSizeGuard, IPGuard } from "./components/SecurityGuards";
 import { UpdateModal } from "./components/UpdateModal";
 import { Infos } from "./components/Infos";
 import { SportsBetting } from "./components/SportsBetting";
+import { Quizz } from "./components/Quizz";
+import { ChartCreator } from "./components/ChartCreator";
 
 export type ViewType =
   | "home"
@@ -104,7 +106,9 @@ export type ViewType =
   | "scratch-patrimoine"
   | "infos"
   | "stake-gaming"
-  | "sports";
+  | "sports"
+  | "quizz"
+  | "chart-creator";
 
 class ErrorBoundary extends React.Component<any, any> {
   state = { hasError: false, error: null as Error | null, errorInfo: null as React.ErrorInfo | null };
@@ -607,6 +611,7 @@ function InnerAppContent({
       <div className="flex flex-col flex-1 min-w-0 bg-transparent overflow-hidden h-[100dvh]">
         <div className="relative z-40 flex-shrink-0">
           <Header
+            view={view}
             setView={handleSetView as any}
             toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             toggleChat={() => setChatOpen(!chatOpen)}
@@ -806,6 +811,8 @@ function InnerAppContent({
             )}
             {view === "infos" && <Infos />}
             {view === "sports" && <SportsBetting />}
+            {view === "quizz" && <Quizz />}
+            {view === "chart-creator" && <ChartCreator />}
           </div>
 
           {/* Footer */}

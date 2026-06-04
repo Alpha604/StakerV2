@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { auth, db } from "../lib/firebase";
+import { TruckLoader } from "../components/TruckLoader";
 import {
   signInWithPopup,
   GoogleAuthProvider,
@@ -341,6 +342,10 @@ export interface CustomUser {
   totalBets?: number;
   sportsBettingAccess?: boolean;
   sportsBettingBlocked?: boolean;
+  quizzAccess?: boolean;
+  quizzBlocked?: boolean;
+  quizFlags?: Record<string, { correct: number; total: number; lastSeen: number }>;
+  quizMap?: Record<string, { correct: number; total: number; lastSeen: number }>;
   role?: "admin" | "user";
   status?: "pending" | "approved" | "suspended" | "banned";
   lastOnline?: number;
@@ -1290,11 +1295,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       {!loading ? (
         children
       ) : (
-        <div className="h-screen w-screen flex items-center justify-center bg-bg-base text-accent">
-          <div aria-label="Loading" role="img" className="wheel-and-hamster">
-            {/* Optional loader animation */}
-            <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-          </div>
+        <div className="h-screen w-screen bg-bg-base flex items-center justify-center">
+          <TruckLoader inline />
         </div>
       )}
     </UserContext.Provider>
