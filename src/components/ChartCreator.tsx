@@ -159,11 +159,6 @@ export const ChartCreator = () => {
   const updateRefLine = (id: string, updates: Partial<RefLine>) => setRefLines(refLines.map(r => r.id === id ? { ...r, ...updates } : r));
   const removeRefLine = (id: string) => setRefLines(refLines.filter(r => r.id !== id));
 
-  const exportJSON = () => {
-    const blob = new Blob([JSON.stringify({ title: chartTitle, type: chartType, series, data, settings, refLines }, null, 2)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `nexus_export_${Date.now()}.json`; a.click();
-  };
-
   const exportCSV = () => {
     let csv = "X-Axis"; series.forEach(s => csv += `;${s.name}`); csv += "\n";
     data.forEach(d => { csv += `"${d.name}"`; series.forEach(s => csv += `;${d[s.key] || 0}`); csv += "\n"; });
@@ -177,16 +172,35 @@ export const ChartCreator = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.data && parsed.series) {
-          setData(parsed.data); setSeries(parsed.series);
-          if (parsed.type) setChartType(parsed.type);
-          if (parsed.title) setChartTitle(parsed.title);
-          if (parsed.settings) setSettings({ ...settings, ...parsed.settings });
-          if (parsed.refLines) setRefLines(parsed.refLines);
-          toast.success("Projet chargé avec succès !");
-        } else toast.error("Format invalide.");
-      } catch (err) { toast.error("Erreur de parsing."); }
+        const text = event.target?.result as string;
+        const rows = text.split('\n').filter(r => r.trim());
+        if (rows.length < 2) return toast.error("CSV invalide");
+        
+        const headers = rows[0].split(';');
+        const newSeries: DataSeries[] = [];
+        for (let i = 1; i < headers.length; i++) {
+           newSeries.push({
+             id: `s_import_${i}`,
+             key: `v${i}`,
+             name: headers[i].replace(/["\r]/g, ''),
+             color: COLORS[(i-1) % 6],
+             chartType: "bar"
+           });
+        }
+        
+        const newData: DataPoint[] = [];
+        for (let i = 1; i < rows.length; i++) {
+           const ObjectData: DataPoint = { id: `pt_${i}`, name: rows[i].split(';')[0].replace(/["\r]/g, '') };
+           for (let j = 1; j < headers.length; j++) {
+              ObjectData[`v${j}`] = Number(rows[i].split(';')[j]) || 0;
+           }
+           newData.push(ObjectData);
+        }
+        
+        setSeries(newSeries);
+        setData(newData);
+        toast.success("CSV importé avec succès !");
+      } catch (err) { toast.error("Erreur de parsing CSV."); }
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -331,7 +345,7 @@ export const ChartCreator = () => {
   return (
     <div className={wrapperClass}>
       {/* Hidden inputs */}
-      <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
+      <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".csv" className="hidden" />
       
       {/* Global Toast hint */}
       {data.length === 0 && <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-[10px] shadow-xl animate-bounce">Utilisez Ctrl+V pour importer depuis Excel</div>}
@@ -344,13 +358,12 @@ export const ChartCreator = () => {
             </div>
             <div className="h-4 w-px bg-gray-800"></div>
             <div className="flex gap-1">
-               <TopButton icon={<Upload size={16}/>} label="Importer" onClick={() => fileInputRef.current?.click()} title="Importer un projet JSON" />
+               <TopButton icon={<Upload size={16}/>} label="Importer" onClick={() => fileInputRef.current?.click()} title="Importer un fichier CSV" />
                <TopButton icon={<ClipboardPaste size={16}/>} label="Coller" onClick={() => toast.success("Raccourci: Utilisez Ctrl+V sur n'importe où pour coller.")} title="Indication de collage Excel" />
-               <TopButton icon={<Save size={16}/>} label="Save" onClick={exportJSON} highlight title="Télécharger le modèle complet JSON" />
+               <TopButton icon={<Save size={16}/>} label="Save" onClick={exportCSV} highlight title="Télécharger le CSV" />
             </div>
          </div>
          <div className="flex items-center gap-1">
-            <TopButton icon={<Download size={16}/>} label="Export JSON" onClick={exportJSON} />
             <TopButton icon={<FileSpreadsheet size={16}/>} label="Export CSV" onClick={exportCSV} />
             <div className="h-4 w-px bg-gray-800 mx-1"></div>
             <TopButton icon={isFullscreen ? <Minimize size={16}/> : <Maximize size={16}/>} label={isFullscreen ? "Réduire" : "Plein Écran"} onClick={() => setIsFullscreen(!isFullscreen)} />
