@@ -478,14 +478,40 @@ export const ChartCreator = () => {
                      <AgGridReact
                         rowData={data}
                         columnDefs={[
-                           { field: "name", headerName: "Axe Primaire (X)", editable: true, flex: 1, pinned: 'left' },
+                           {
+                             headerName: "",
+                             field: "id",
+                             width: 40,
+                             pinned: "left",
+                             editable: false,
+                             sortable: false,
+                             filter: false,
+                             cellRenderer: (params: any) => (
+                               <button 
+                                 className="w-full flex h-full items-center justify-center text-red-500/50 hover:text-red-500 transition-colors"
+                                 onClick={() => removeDataPoint(params.value)}
+                               >
+                                 <Trash2 size={12} />
+                               </button>
+                             )
+                           },
+                           { field: "name", headerName: "Axe Primaire (X)", editable: true, flex: 1, pinned: 'left', minWidth: 150 },
                            ...series.map(s => ({ 
                               field: s.key, 
-                              headerName: s.name, 
+                              headerComponent: () => (
+                                 <div className="flex items-center w-full justify-between gap-2 group cursor-text">
+                                    <input type="color" className="w-4 h-4 rounded border-0 bg-transparent cursor-pointer p-0 shrink-0" value={s.color} onChange={e => updateSeries(s.id, {color: e.target.value})} />
+                                    <input className="flex-1 bg-transparent text-white font-bold outline-none text-xs min-w-[50px] w-full" value={s.name} onChange={e => updateSeries(s.id, {name: e.target.value})} onClick={(e)=>e.stopPropagation()} />
+                                    <button className="text-red-500 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded" onClick={(e) => { e.stopPropagation(); removeSeries(s.id); }}>
+                                       <Trash2 size={12} />
+                                    </button>
+                                 </div>
+                              ),
                               editable: true, 
                               flex: 1,
+                              minWidth: 150,
                               valueSetter: (params: any) => {
-                                if (params.newValue !== params.oldValue) {
+                                if (params.newValue !== params.oldValue && !isNaN(Number(params.newValue))) {
                                   updateDataPoint(params.data.id, s.key, params.newValue);
                                   return true;
                                 }
