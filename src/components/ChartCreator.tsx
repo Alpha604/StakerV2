@@ -476,7 +476,9 @@ export const ChartCreator = () => {
                <div className="flex-1 w-full relative z-10 ag-theme-alpine-dark" style={{ '--ag-background-color': '#050505', '--ag-header-background-color': '#18181b', '--ag-odd-row-background-color': '#09090b', '--ag-border-color': '#27272a' } as React.CSSProperties}>
                   <AgGridProvider modules={agGridModules}>
                      <AgGridReact
+                        theme="legacy"
                         rowData={data}
+                        context={{ removeDataPoint, updateSeries, removeSeries }}
                         columnDefs={[
                            {
                              headerName: "",
@@ -489,7 +491,7 @@ export const ChartCreator = () => {
                              cellRenderer: (params: any) => (
                                <button 
                                  className="w-full flex h-full items-center justify-center text-red-500/50 hover:text-red-500 transition-colors"
-                                 onClick={() => removeDataPoint(params.value)}
+                                 onClick={() => params.context.removeDataPoint(params.value)}
                                >
                                  <Trash2 size={12} />
                                </button>
@@ -498,11 +500,11 @@ export const ChartCreator = () => {
                            { field: "name", headerName: "Axe Primaire (X)", editable: true, flex: 1, pinned: 'left', minWidth: 150 },
                            ...series.map(s => ({ 
                               field: s.key, 
-                              headerComponent: () => (
+                              headerComponent: (params: any) => (
                                  <div className="flex items-center w-full justify-between gap-2 group cursor-text">
-                                    <input type="color" className="w-4 h-4 rounded border-0 bg-transparent cursor-pointer p-0 shrink-0" value={s.color} onChange={e => updateSeries(s.id, {color: e.target.value})} />
-                                    <input className="flex-1 bg-transparent text-white font-bold outline-none text-xs min-w-[50px] w-full" value={s.name} onChange={e => updateSeries(s.id, {name: e.target.value})} onClick={(e)=>e.stopPropagation()} />
-                                    <button className="text-red-500 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded" onClick={(e) => { e.stopPropagation(); removeSeries(s.id); }}>
+                                    <input type="color" className="w-4 h-4 rounded border-0 bg-transparent cursor-pointer p-0 shrink-0" value={s.color} onChange={e => params.context.updateSeries(s.id, {color: e.target.value})} />
+                                    <input className="flex-1 bg-transparent text-white font-bold outline-none text-xs min-w-[50px] w-full" value={s.name} onChange={e => params.context.updateSeries(s.id, {name: e.target.value})} onClick={(e)=>e.stopPropagation()} />
+                                    <button className="text-red-500 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded" onClick={(e) => { e.stopPropagation(); params.context.removeSeries(s.id); }}>
                                        <Trash2 size={12} />
                                     </button>
                                  </div>
